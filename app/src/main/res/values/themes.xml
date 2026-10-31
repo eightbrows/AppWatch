@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 言語の切り替えに AppCompatActivity を使うため、AppCompat のテーマを親にする。
+         画面の色は Compose 側（ui/theme）で決める。 -->
+    <style name="Theme.AppWatch" parent="Theme.AppCompat.DayNight.NoActionBar" />
+</resources>

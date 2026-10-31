@@ -1,0 +1,40 @@
+# Gradle
+.gradle/
+build/
+.kotlin/
+
+# Android Studio / IntelliJ（IDE・チーム開発用の設定はリポジトリに入れない）
+.idea/
+*.iml
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ローカル環境
+local.properties
+
+# ビルドの成果物
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+
+# 署名の鍵（絶対にコミットしない）
+*.jks
+*.keystore
+
+# ログ・メモリダンプ
+*.log
+*.hprof
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 作業レポート
+reports/
