@@ -1,0 +1,596 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "44452c1c87d5ee1467bbd92ddb15ff50",
+    "entities": [
+      {
+        "tableName": "dataset",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `kind` TEXT NOT NULL, `device_model` TEXT NOT NULL, `os_version` TEXT NOT NULL, `sdk_int` INTEGER NOT NULL, `app_version` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `exported_at` INTEGER, `imported_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceModel",
+            "columnName": "device_model",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "osVersion",
+            "columnName": "os_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sdkInt",
+            "columnName": "sdk_int",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "appVersion",
+            "columnName": "app_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exportedAt",
+            "columnName": "exported_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "importedAt",
+            "columnName": "imported_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "baseline_app",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataset_id` TEXT NOT NULL, `package_name` TEXT NOT NULL, `captured_at` INTEGER NOT NULL, `name` TEXT NOT NULL, `version_name` TEXT, `version_code` INTEGER NOT NULL, `kind` TEXT NOT NULL, `source` TEXT NOT NULL, `installer_package` TEXT, `initiating_package` TEXT, `is_enabled` INTEGER NOT NULL, `warnings` TEXT NOT NULL, `signer_sha256` TEXT NOT NULL, `first_install_time` INTEGER NOT NULL, `last_update_time` INTEGER NOT NULL, PRIMARY KEY(`dataset_id`, `package_name`), FOREIGN KEY(`dataset_id`) REFERENCES `dataset`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "datasetId",
+            "columnName": "dataset_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packageName",
+            "columnName": "package_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capturedAt",
+            "columnName": "captured_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "versionName",
+            "columnName": "version_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "versionCode",
+            "columnName": "version_code",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "installerPackage",
+            "columnName": "installer_package",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "initiatingPackage",
+            "columnName": "initiating_package",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isEnabled",
+            "columnName": "is_enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "warnings",
+            "columnName": "warnings",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "signerSha256",
+            "columnName": "signer_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstInstallTime",
+            "columnName": "first_install_time",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdateTime",
+            "columnName": "last_update_time",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "dataset_id",
+            "package_name"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "dataset",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "dataset_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "app_current",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataset_id` TEXT NOT NULL, `package_name` TEXT NOT NULL, `name` TEXT NOT NULL, `version_name` TEXT, `version_code` INTEGER NOT NULL, `kind` TEXT NOT NULL, `source` TEXT NOT NULL, `installer_package` TEXT, `initiating_package` TEXT, `is_enabled` INTEGER NOT NULL, `warnings` TEXT NOT NULL, `signer_sha256` TEXT NOT NULL, `first_install_time` INTEGER NOT NULL, `last_update_time` INTEGER NOT NULL, `is_present` INTEGER NOT NULL, `first_seen_at` INTEGER NOT NULL, `added_at` INTEGER, `removed_at` INTEGER, `reinstalled_at` INTEGER, `signature_changed_at` INTEGER, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`dataset_id`, `package_name`), FOREIGN KEY(`dataset_id`) REFERENCES `dataset`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "datasetId",
+            "columnName": "dataset_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packageName",
+            "columnName": "package_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "versionName",
+            "columnName": "version_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "versionCode",
+            "columnName": "version_code",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "installerPackage",
+            "columnName": "installer_package",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "initiatingPackage",
+            "columnName": "initiating_package",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isEnabled",
+            "columnName": "is_enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "warnings",
+            "columnName": "warnings",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "signerSha256",
+            "columnName": "signer_sha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstInstallTime",
+            "columnName": "first_install_time",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdateTime",
+            "columnName": "last_update_time",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPresent",
+            "columnName": "is_present",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstSeenAt",
+            "columnName": "first_seen_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedAt",
+            "columnName": "added_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "removedAt",
+            "columnName": "removed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reinstalledAt",
+            "columnName": "reinstalled_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "signatureChangedAt",
+            "columnName": "signature_changed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "dataset_id",
+            "package_name"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "dataset",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "dataset_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "app_event",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dataset_id` TEXT NOT NULL, `occurred_at` INTEGER NOT NULL, `type` TEXT NOT NULL, `package_name` TEXT NOT NULL, `name` TEXT NOT NULL, `version_name` TEXT, `version_code` INTEGER, `old_version_name` TEXT, `old_version_code` INTEGER, `source` TEXT, `is_reinstall` INTEGER NOT NULL, `old_status` TEXT, `new_status` TEXT, `reason` TEXT, `operation_id` TEXT, FOREIGN KEY(`dataset_id`) REFERENCES `dataset`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "datasetId",
+            "columnName": "dataset_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "occurredAt",
+            "columnName": "occurred_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packageName",
+            "columnName": "package_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "versionName",
+            "columnName": "version_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "versionCode",
+            "columnName": "version_code",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "oldVersionName",
+            "columnName": "old_version_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "oldVersionCode",
+            "columnName": "old_version_code",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isReinstall",
+            "columnName": "is_reinstall",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "oldStatus",
+            "columnName": "old_status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "newStatus",
+            "columnName": "new_status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "operationId",
+            "columnName": "operation_id",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_app_event_dataset_id_occurred_at",
+            "unique": false,
+            "columnNames": [
+              "dataset_id",
+              "occurred_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_app_event_dataset_id_occurred_at` ON `${TABLE_NAME}` (`dataset_id`, `occurred_at`)"
+          },
+          {
+            "name": "index_app_event_dataset_id_package_name",
+            "unique": false,
+            "columnNames": [
+              "dataset_id",
+              "package_name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_app_event_dataset_id_package_name` ON `${TABLE_NAME}` (`dataset_id`, `package_name`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "dataset",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "dataset_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "app_policy",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataset_id` TEXT NOT NULL, `package_name` TEXT NOT NULL, `review_status` TEXT NOT NULL, `admin_memo` TEXT, `is_pre_registered` INTEGER NOT NULL, `provisional_name` TEXT, `status_reason` TEXT, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`dataset_id`, `package_name`), FOREIGN KEY(`dataset_id`) REFERENCES `dataset`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "datasetId",
+            "columnName": "dataset_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packageName",
+            "columnName": "package_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reviewStatus",
+            "columnName": "review_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "adminMemo",
+            "columnName": "admin_memo",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isPreRegistered",
+            "columnName": "is_pre_registered",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provisionalName",
+            "columnName": "provisional_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "statusReason",
+            "columnName": "status_reason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "dataset_id",
+            "package_name"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "dataset",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "dataset_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "scan_daily",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dataset_id` TEXT NOT NULL, `date` TEXT NOT NULL, `count` INTEGER NOT NULL, `last_at` INTEGER NOT NULL, PRIMARY KEY(`dataset_id`, `date`), FOREIGN KEY(`dataset_id`) REFERENCES `dataset`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "datasetId",
+            "columnName": "dataset_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "count",
+            "columnName": "count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastAt",
+            "columnName": "last_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "dataset_id",
+            "date"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "dataset",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "dataset_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '44452c1c87d5ee1467bbd92ddb15ff50')"
+    ]
+  }
+}

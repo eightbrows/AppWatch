@@ -1,11 +1,16 @@
 package io.github.eightbrows.appwatch
 
 import android.app.Application
+import android.os.Build
 import android.util.Log
-import io.github.eightbrows.appwatch.data.apps.AppListStore
+import io.github.eightbrows.appwatch.data.apps.AppClassifier
 import io.github.eightbrows.appwatch.data.apps.PackageScanner
+import io.github.eightbrows.appwatch.data.db.AppWatchDatabase
+import io.github.eightbrows.appwatch.data.record.CheckRunner
+import io.github.eightbrows.appwatch.data.record.DeviceEnvironment
+import io.github.eightbrows.appwatch.data.record.RecordOutcome
+import io.github.eightbrows.appwatch.data.record.RecordRepository
 import io.github.eightbrows.appwatch.data.settings.SettingsRepository
-import io.github.eightbrows.appwatch.model.InstalledApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,26 +23,45 @@ class AppWatchApplication : Application() {
 
     val settingsRepository: SettingsRepository by lazy { SettingsRepository(this) }
 
-    val appListStore: AppListStore by lazy {
-        val scanner = PackageScanner(this)
-        AppListStore(
-            scanner = scanner::scan,
+    val database: AppWatchDatabase by lazy { AppWatchDatabase.create(this) }
+
+    val recordRepository: RecordRepository by lazy {
+        RecordRepository(
+            db = database,
+            environment = DeviceEnvironment(
+                deviceModel = Build.MODEL,
+                osVersion = "Android ${Build.VERSION.RELEASE}",
+                sdkInt = Build.VERSION.SDK_INT,
+                appVersion = BuildConfig.VERSION_NAME,
+            ),
             selfPackageName = packageName,
-            scope = appScope,
-            onLoaded = { if (BuildConfig.DEBUG) logSummary(it) },
         )
     }
 
-    /** 開発版だけ、判定結果の件数をログに出す（adb logcat -s AppWatch で見られる）。 */
-    private fun logSummary(apps: List<InstalledApp>) {
-        val kinds = apps.groupingBy { it.kind }.eachCount()
-        val sources = apps.groupingBy { it.kind to it.source }.eachCount()
-        val warnings = apps.flatMap { app -> app.warnings.map { it to app.kind } }.groupingBy { it }.eachCount()
-        Log.d(LOG_TAG, "total=${apps.size} kinds=$kinds")
-        Log.d(LOG_TAG, "sources=$sources")
-        Log.d(LOG_TAG, "warnings=$warnings disabled=${apps.count { !it.isEnabled }}")
-        apps.filter { it.warnings.isNotEmpty() }.forEach {
-            Log.d(LOG_TAG, "warn ${it.packageName} ${it.kind} installer=${it.installerPackage} ${it.warnings}")
+    val checkRunner: CheckRunner by lazy {
+        val scanner = PackageScanner(this)
+        CheckRunner(
+            scope = appScope,
+            scanner = { scanner.scan().map { AppClassifier.classify(it, packageName) } },
+            recorder = recordRepository,
+            onRecorded = { if (BuildConfig.DEBUG) logOutcome(it) },
+        )
+    }
+
+    /** 開発版だけ、チェックの結果をログに出す（adb logcat -s AppWatch で見られる）。 */
+    private fun logOutcome(outcome: RecordOutcome) {
+        if (outcome.isBaseline) {
+            Log.d(LOG_TAG, "baseline: ${outcome.appCount} apps")
+            return
+        }
+        Log.d(LOG_TAG, "check: ${outcome.appCount} apps, ${outcome.changes.size} changes")
+        outcome.changes.forEach { change ->
+            val detail = buildList {
+                change.oldVersionName?.let { add("${it} -> ${change.versionName}") }
+                if (change.isReinstall) add("reinstall")
+                change.newStatus?.let { add("${change.oldStatus} -> $it (${change.reason})") }
+            }.joinToString(" ")
+            Log.d(LOG_TAG, "  ${change.type} ${change.packageName} $detail")
         }
     }
 

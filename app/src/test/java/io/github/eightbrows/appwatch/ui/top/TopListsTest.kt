@@ -19,11 +19,12 @@ class TopListsTest {
         warnings: Set<AppWarning> = emptySet(),
         isNew: Boolean = false,
         day: Int = 1,
+        kind: AppKind = AppKind.USER_INSTALLED,
     ) = AppSummary(
         packageName = pkg,
         name = pkg,
         versionName = "1.0",
-        kind = AppKind.USER_INSTALLED,
+        kind = kind,
         source = InstallSource.GOOGLE_PLAY,
         warnings = warnings,
         reviewStatus = status,
@@ -70,6 +71,45 @@ class TopListsTest {
             listOf(app("b_ok", status = ReviewStatus.OK), app("a_unconfirmed"), app("c_caution", status = ReviewStatus.CAUTION)),
         )
         assertEquals(listOf("c_caution", "a_unconfirmed", "b_ok"), lists.all.map { it.packageName })
+    }
+
+    @Test
+    fun unconfirmed_isOnlyUserInstalledApps() {
+        // 仕様書 6章：プリインストールとシステムは、未確認でも「まだ確認していないアプリ」に出さない
+        val lists = TopLists.from(
+            listOf(
+                app("user"),
+                app("pre", kind = AppKind.PREINSTALLED),
+                app("sys", kind = AppKind.SYSTEM),
+            ),
+        )
+        assertEquals(listOf("user"), lists.unconfirmed.map { it.packageName })
+        assertEquals(3, lists.all.size)
+    }
+
+    @Test
+    fun newApps_areCardsRegardlessOfKind_andOkAppsAreNot() {
+        val lists = TopLists.from(
+            listOf(
+                app("new_pre", isNew = true, kind = AppKind.PREINSTALLED),
+                app("old_ok", status = ReviewStatus.OK),
+            ),
+        )
+        assertEquals(listOf("new_pre"), lists.cards.map { it.packageName })
+        assertTrue(lists.unconfirmed.isEmpty())
+    }
+
+    @Test
+    fun all_isOrderedByStatusThenKindThenName() {
+        val lists = TopLists.from(
+            listOf(
+                app("b_sys", kind = AppKind.SYSTEM),
+                app("c_user"),
+                app("a_pre", kind = AppKind.PREINSTALLED),
+                app("z_caution", status = ReviewStatus.CAUTION, kind = AppKind.SYSTEM),
+            ),
+        )
+        assertEquals(listOf("z_caution", "c_user", "a_pre", "b_sys"), lists.all.map { it.packageName })
     }
 
     @Test

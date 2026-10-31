@@ -107,14 +107,23 @@ class AppClassifierTest {
     }
 
     @Test
-    fun warnings_debugSignatureForAnyKind() {
+    fun warnings_debugSignatureOnlyForUserInstalled() {
         assertEquals(
             setOf(AppWarning.UNKNOWN_SOURCE, AppWarning.DEBUG_SIGNATURE),
             AppClassifier.warnings(AppKind.USER_INSTALLED, InstallSource.UNKNOWN, listOf(debugDn)),
         )
         assertEquals(
             setOf(AppWarning.DEBUG_SIGNATURE),
+            AppClassifier.warnings(AppKind.USER_INSTALLED, InstallSource.GOOGLE_PLAY, listOf(releaseDn, debugDn)),
+        )
+        // 仕様書 4章：プリインストールとシステムには警告を付けない（メーカーの開発用の鍵でも）
+        assertEquals(
+            emptySet<AppWarning>(),
             AppClassifier.warnings(AppKind.SYSTEM, InstallSource.UNKNOWN, listOf(releaseDn, debugDn)),
+        )
+        assertEquals(
+            emptySet<AppWarning>(),
+            AppClassifier.warnings(AppKind.PREINSTALLED, InstallSource.OTHER, listOf(debugDn)),
         )
     }
 

@@ -1,5 +1,6 @@
 package io.github.eightbrows.appwatch.ui.top
 
+import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.ReviewStatus
 
@@ -14,9 +15,9 @@ data class TopLists(
 ) {
     companion object {
         /**
-         * 本来の決まり（仕様書 6章）。記録と確認状態ができたら、仮の決まり（ProvisionalTopRule）からこちらに切り替える。
-         * - カード：新しく入ったアプリと、要注意のアプリ
-         * - まだ確認していないアプリ：カード以外の未確認のアプリ
+         * トップの振り分け（仕様書 6章）。[apps] には端末にあるアプリだけを渡す。
+         * - カード：新しく入ったアプリ（最初のチェックより後に追加され、問題なしでない）と、要注意のアプリ
+         * - まだ確認していないアプリ：確認状態が「未確認」の「後から導入」のアプリのうち、カードに出ていないもの
          */
         fun from(apps: List<AppSummary>): TopLists {
             val cards = apps
@@ -24,7 +25,11 @@ data class TopLists(
                 .sortedWith(CardOrder)
             val cardPackages = cards.mapTo(HashSet()) { it.packageName }
             val unconfirmed = apps
-                .filter { it.reviewStatus == ReviewStatus.UNCONFIRMED && it.packageName !in cardPackages }
+                .filter {
+                    it.reviewStatus == ReviewStatus.UNCONFIRMED &&
+                        it.kind == AppKind.USER_INSTALLED &&
+                        it.packageName !in cardPackages
+                }
                 .sortedByDescending { it.installedAt }
             return TopLists(cards = cards, unconfirmed = unconfirmed, all = apps.sortedWith(AllOrder))
         }

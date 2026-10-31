@@ -9,28 +9,39 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import io.github.eightbrows.appwatch.data.apps.AppListState
-import io.github.eightbrows.appwatch.data.apps.toSummary
+import io.github.eightbrows.appwatch.data.record.CheckState
 import io.github.eightbrows.appwatch.data.settings.AppLanguage
 import io.github.eightbrows.appwatch.data.settings.ThemeMode
 import io.github.eightbrows.appwatch.ui.navigation.Screen
 import io.github.eightbrows.appwatch.ui.navigation.rememberNavigator
 import io.github.eightbrows.appwatch.ui.settings.SettingsMenuScreen
-import io.github.eightbrows.appwatch.ui.top.ProvisionalTopRule
 import io.github.eightbrows.appwatch.ui.top.SelfDeleteWarningDialog
+import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.ui.top.TopActions
+import io.github.eightbrows.appwatch.ui.top.TopLists
 import io.github.eightbrows.appwatch.ui.top.TopScreen
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+
+/** トップに出す内容。 */
+data class TopData(
+    /** 端末にあるアプリ（データベースの内容）。読み込む前は null */
+    val apps: List<AppSummary>?,
+    /** 最終チェックの時刻（scan_daily の最後の時刻）。まだ一度もチェックしていなければ null */
+    val lastCheckAt: Long?,
+    val check: CheckState,
+)
 
 /** アプリ全体の画面。今はトップと設定メニューだけ。 */
 @Composable
 fun AppWatchApp(
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
-    appList: AppListState,
-    onRefreshAppList: () -> Unit,
+    top: TopData,
+    onRetryCheck: () -> Unit,
+    /** Android の削除・アプリ情報の画面を開く直前に呼ぶ（戻ったときに必ずチェックし直すため） */
+    onOpenSystemScreen: () -> Unit,
 ) {
     val context = LocalContext.current
     val navigator = rememberNavigator()
@@ -49,16 +60,17 @@ fun AppWatchApp(
     stateHolder.SaveableStateProvider(screen.name) {
         when (screen) {
             Screen.TOP -> {
-                val summaries = remember(appList.apps) { appList.apps?.map { it.toSummary() } }
-                // 【仮の決まり・ステップ2】記録ができたら TopLists.from に置き換える
-                val lists = remember(summaries) { summaries?.let(ProvisionalTopRule::lists) }
-                val lastCheckAt = remember(appList.loadedAt) {
-                    appList.loadedAt?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) }
+                // まずデータベースの内容をすぐに出す。一度もチェックしていなければ「取得中」を出す
+                val lists = remember(top.apps, top.lastCheckAt) {
+                    if (top.apps == null || top.lastCheckAt == null) null else TopLists.from(top.apps)
+                }
+                val lastCheckAt = remember(top.lastCheckAt) {
+                    top.lastCheckAt?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) }
                 }
                 TopScreen(
                     lists = lists,
-                    isLoading = appList.isLoading,
-                    loadFailed = appList.failed,
+                    isLoading = top.check.isChecking,
+                    loadFailed = top.check.failed,
                     lastCheckAt = lastCheckAt,
                     actions = TopActions(
                         onOpenSettings = { navigator.navigate(Screen.SETTINGS_MENU) },
@@ -66,12 +78,16 @@ fun AppWatchApp(
                             if (app.isSelf) {
                                 selfDeleteTarget = app.packageName
                             } else {
+                                onOpenSystemScreen()
                                 AppActions.uninstall(context, app.packageName)
                             }
                         },
-                        onOpenAppInfo = { app -> AppActions.openAppInfo(context, app.packageName) },
+                        onOpenAppInfo = { app ->
+                            onOpenSystemScreen()
+                            AppActions.openAppInfo(context, app.packageName)
+                        },
                         onShowDetails = { /* アプリの詳細は後のステップ */ },
-                        onRetry = onRefreshAppList,
+                        onRetry = onRetryCheck,
                     ),
                 )
             }
@@ -100,6 +116,7 @@ fun AppWatchApp(
             onCancel = { selfDeleteTarget = null },
             onConfirmDelete = {
                 selfDeleteTarget = null
+                onOpenSystemScreen()
                 AppActions.uninstall(context, packageName)
             },
         )

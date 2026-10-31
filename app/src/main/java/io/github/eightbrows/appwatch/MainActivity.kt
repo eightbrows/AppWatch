@@ -11,10 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import io.github.eightbrows.appwatch.data.settings.ThemeMode
 import io.github.eightbrows.appwatch.data.settings.isDark
 import io.github.eightbrows.appwatch.ui.AppWatchApp
+import io.github.eightbrows.appwatch.ui.TopData
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import kotlinx.coroutines.launch
 
@@ -36,17 +38,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 起動したときと、アプリに戻ってきたとき（削除やアプリ情報の画面から戻ったときなど）に一覧を取り直す。 */
+    /**
+     * アプリを開いたとき・戻ってきたときに1回チェックする（仕様書 5章）。
+     * 直前1分以内にチェック済みなら省略される（削除・アプリ情報の画面から戻ったときは省略しない）。
+     */
     override fun onResume() {
         super.onResume()
-        app.appListStore.refresh()
+        app.checkRunner.request()
     }
 
     @Composable
     private fun ThemedContent(mode: ThemeMode) {
         val darkTheme = mode.isDark(systemIsDark = isSystemInDarkTheme())
         val scope = rememberCoroutineScope()
-        val appList by app.appListStore.state.collectAsState()
+        // データベースの内容をすぐに出し、チェックが終わってデータベースが変わったら自動で更新される
+        val apps by remember { app.recordRepository.observePresentApps() }.collectAsState(initial = null)
+        val lastCheckAt by remember { app.recordRepository.observeLastCheckAt() }.collectAsState(initial = null)
+        val checkState by app.checkRunner.state.collectAsState()
 
         // ステータスバー・ナビゲーションバーの文字の色を、選んだテーマに合わせる
         DisposableEffect(darkTheme) {
@@ -61,8 +69,9 @@ class MainActivity : AppCompatActivity() {
             AppWatchApp(
                 themeMode = mode,
                 onThemeModeChange = { newMode -> scope.launch { app.settingsRepository.setThemeMode(newMode) } },
-                appList = appList,
-                onRefreshAppList = app.appListStore::refresh,
+                top = TopData(apps = apps, lastCheckAt = lastCheckAt, check = checkState),
+                onRetryCheck = { app.checkRunner.request() },
+                onOpenSystemScreen = app.checkRunner::forceNextRequest,
             )
         }
     }
