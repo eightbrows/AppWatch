@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,15 +27,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -47,20 +50,27 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.eightbrows.appwatch.R
+import io.github.eightbrows.appwatch.data.dummy.DummyData
 import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.AppWarning
+import io.github.eightbrows.appwatch.model.RemoveAction
 import io.github.eightbrows.appwatch.model.ReviewStatus
+import io.github.eightbrows.appwatch.model.removeAction
 import io.github.eightbrows.appwatch.ui.components.AppIcon
 import io.github.eightbrows.appwatch.ui.components.SegmentedToggle
 import io.github.eightbrows.appwatch.ui.components.StatusMark
@@ -71,21 +81,32 @@ import java.time.LocalDateTime
 
 private enum class TopTab { NEEDS_REVIEW, ALL }
 
+/** トップ画面のボタンを押したときの処理。 */
+data class TopActions(
+    val onOpenSettings: () -> Unit,
+    /** Android のアンインストール画面を開く（本アプリなら先に削除警告を出す） */
+    val onUninstall: (AppSummary) -> Unit,
+    /** Android のアプリ情報を開く */
+    val onOpenAppInfo: (AppSummary) -> Unit,
+    /** アプリの詳細（後のステップ） */
+    val onShowDetails: (AppSummary) -> Unit,
+    val onRetry: () -> Unit,
+)
+
 /**
  * トップ（本人）。画面サンプル 01_top.png。
- * 「削除する」「詳しく」「削除」はこのステップでは何もしない（後のステップで処理を付ける）。
+ * [lists] が null なのは、まだ一度もアプリ一覧を取得できていないとき。
  */
 @Composable
 fun TopScreen(
-    apps: List<AppSummary>,
-    lastCheckAt: LocalDateTime,
-    onOpenSettings: () -> Unit,
+    lists: TopLists?,
+    isLoading: Boolean,
+    loadFailed: Boolean,
+    lastCheckAt: LocalDateTime?,
+    actions: TopActions,
     modifier: Modifier = Modifier,
-    onDeleteApp: (AppSummary) -> Unit = {},
-    onShowDetails: (AppSummary) -> Unit = {},
 ) {
     var tab by rememberSaveable { mutableStateOf(TopTab.NEEDS_REVIEW) }
-    val lists = remember(apps) { TopLists.from(apps) }
     val systemBars = WindowInsets.systemBars.asPaddingValues()
 
     LazyColumn(
@@ -100,31 +121,47 @@ fun TopScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item(key = "header") { TopHeader(lastCheckAt = lastCheckAt, onOpenSettings = onOpenSettings) }
-        item(key = "tabs") {
-            SegmentedToggle(
-                options = listOf(
-                    TopTab.NEEDS_REVIEW to stringResource(R.string.top_tab_needs_review),
-                    TopTab.ALL to stringResource(R.string.top_tab_all),
-                ),
-                selected = tab,
-                onSelect = { tab = it },
-                itemHeight = 48.dp,
-                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
-            )
+        item(key = "header") {
+            TopHeader(lastCheckAt = lastCheckAt, isLoading = isLoading, onOpenSettings = actions.onOpenSettings)
         }
-        when (tab) {
-            TopTab.NEEDS_REVIEW -> needsReviewContent(lists, onDeleteApp, onShowDetails)
-            TopTab.ALL -> allContent(lists, onDeleteApp)
+        item(key = "tabs") {
+            Column {
+                SegmentedToggle(
+                    options = listOf(
+                        TopTab.NEEDS_REVIEW to stringResource(R.string.top_tab_needs_review),
+                        TopTab.ALL to stringResource(R.string.top_tab_all),
+                    ),
+                    selected = tab,
+                    onSelect = { tab = it },
+                    itemHeight = 48.dp,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                )
+                // 取り直し中は、前回の一覧を出したまま細い棒で知らせる
+                if (isLoading && lists != null) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .clip(RoundedCornerShape(2.dp)),
+                    )
+                }
+            }
+        }
+        when {
+            lists == null && loadFailed -> item(key = "failed") { LoadFailed(actions.onRetry) }
+            lists == null -> item(key = "loading") { FirstLoading() }
+            else -> {
+                if (loadFailed) item(key = "refresh_failed") { LoadFailed(actions.onRetry) }
+                when (tab) {
+                    TopTab.NEEDS_REVIEW -> needsReviewContent(lists, actions)
+                    TopTab.ALL -> allContent(lists, actions)
+                }
+            }
         }
     }
 }
 
-private fun LazyListScope.needsReviewContent(
-    lists: TopLists,
-    onDeleteApp: (AppSummary) -> Unit,
-    onShowDetails: (AppSummary) -> Unit,
-) {
+private fun LazyListScope.needsReviewContent(lists: TopLists, actions: TopActions) {
     if (lists.cards.isEmpty() && lists.unconfirmed.isEmpty()) {
         item(key = "nothing") {
             Text(
@@ -140,9 +177,7 @@ private fun LazyListScope.needsReviewContent(
     }
     if (lists.cards.isNotEmpty()) {
         item(key = "cards_title") { SectionTitle(stringResource(R.string.top_new_apps), lists.cards.size) }
-        items(lists.cards, key = { "card_" + it.packageName }) { app ->
-            NewAppCard(app = app, onDelete = { onDeleteApp(app) }, onDetails = { onShowDetails(app) })
-        }
+        items(lists.cards, key = { "card_" + it.packageName }) { app -> NewAppCard(app, actions) }
     }
     if (lists.unconfirmed.isNotEmpty()) {
         item(key = "unconfirmed_title") {
@@ -153,20 +188,20 @@ private fun LazyListScope.needsReviewContent(
             )
         }
         items(lists.unconfirmed, key = { "unconfirmed_" + it.packageName }) { app ->
-            AppRow(app = app, showStatus = false, onDelete = { onDeleteApp(app) })
+            AppRow(app = app, showStatus = false, actions = actions)
         }
     }
 }
 
-private fun LazyListScope.allContent(lists: TopLists, onDeleteApp: (AppSummary) -> Unit) {
+private fun LazyListScope.allContent(lists: TopLists, actions: TopActions) {
     item(key = "all_title") { SectionTitle(stringResource(R.string.top_all_apps), lists.all.size) }
     items(lists.all, key = { "all_" + it.packageName }) { app ->
-        AppRow(app = app, showStatus = true, onDelete = { onDeleteApp(app) })
+        AppRow(app = app, showStatus = true, actions = actions)
     }
 }
 
 @Composable
-private fun TopHeader(lastCheckAt: LocalDateTime, onOpenSettings: () -> Unit) {
+private fun TopHeader(lastCheckAt: LocalDateTime?, isLoading: Boolean, onOpenSettings: () -> Unit) {
     Row(verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f)) {
             Text(
@@ -175,13 +210,61 @@ private fun TopHeader(lastCheckAt: LocalDateTime, onOpenSettings: () -> Unit) {
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.semantics { heading() },
             )
-            Text(
-                text = stringResource(R.string.top_last_check, formatDateTime(lastCheckAt)),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            val status = when {
+                lastCheckAt != null -> stringResource(R.string.top_last_check, formatDateTime(lastCheckAt))
+                isLoading -> stringResource(R.string.top_loading)
+                else -> null
+            }
+            if (status != null) {
+                Text(
+                    text = status,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         LongPressSettingsButton(onLongPress = onOpenSettings)
+    }
+}
+
+@Composable
+private fun FirstLoading() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 48.dp)
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        CircularProgressIndicator()
+        Text(
+            text = stringResource(R.string.top_loading),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun LoadFailed(onRetry: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = AppWatchTheme.colors.warningContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.top_load_failed),
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppWatchTheme.colors.onWarningContainer,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onRetry) { Text(stringResource(R.string.action_retry)) }
+        }
     }
 }
 
@@ -248,7 +331,7 @@ private fun SectionTitle(title: String, count: Int, modifier: Modifier = Modifie
 
 /** 「新しく入ったアプリ」のカード。要注意は赤枠、警告ありはオレンジ枠、その他は枠なし。 */
 @Composable
-private fun NewAppCard(app: AppSummary, onDelete: () -> Unit, onDetails: () -> Unit) {
+private fun NewAppCard(app: AppSummary, actions: TopActions) {
     val colors = AppWatchTheme.colors
     val isCaution = app.reviewStatus == ReviewStatus.CAUTION
     val hasWarning = app.warnings.isNotEmpty()
@@ -266,7 +349,7 @@ private fun NewAppCard(app: AppSummary, onDelete: () -> Unit, onDetails: () -> U
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box {
-                    AppIcon(name = app.name, packageName = app.packageName)
+                    AppIcon(name = app.name, packageName = app.packageName, versionKey = app.versionName)
                     if (isCaution) {
                         StatusMark(
                             status = ReviewStatus.CAUTION,
@@ -298,64 +381,80 @@ private fun NewAppCard(app: AppSummary, onDelete: () -> Unit, onDetails: () -> U
             }
 
             // 要注意のカードでは「以前に削除したアプリです」を見出しの下に出しているので、ここでは除く
-            val warningsToShow = app.warnings
+            app.warnings
                 .filterNot { isCaution && it == AppWarning.REINSTALLED }
                 .sortedBy { it.ordinal }
-            warningsToShow.forEach { WarningLine(it) }
+                .forEach { WarningLine(it) }
 
             if (isCaution && !app.adminMemo.isNullOrBlank()) {
                 AdminMemoBox(app.adminMemo)
             }
 
-            if (isCaution) {
-                DeleteButton(onClick = onDelete, modifier = Modifier.fillMaxWidth())
-            } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DeleteButton(onClick = onDelete, modifier = Modifier.weight(2f))
-                    OutlinedButton(
-                        onClick = onDetails,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.action_details),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
+            // 各カード（要注意を含む）に「削除する」と「詳しく」。消し方はアプリの種類で変わる
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                when (app.removeAction) {
+                    RemoveAction.UNINSTALL -> DeleteButton(
+                        onClick = { actions.onUninstall(app) },
+                        modifier = Modifier.weight(2f),
+                    )
+                    RemoveAction.APP_INFO -> AppInfoButton(
+                        onClick = { actions.onOpenAppInfo(app) },
+                        modifier = Modifier.weight(2f),
+                    )
+                    RemoveAction.NONE -> Unit
+                }
+                OutlinedButton(
+                    onClick = { actions.onShowDetails(app) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.action_details),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                    )
                 }
             }
         }
     }
 }
 
+/** アプリ名と「本アプリ」「無効」のラベル。幅が足りないときは、名前を詰めずにラベルを次の行に送る。 */
 @Composable
-private fun AppName(app: AppSummary, style: androidx.compose.ui.text.TextStyle) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+private fun AppName(app: AppSummary, style: TextStyle) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(
             text = app.name,
             style = style,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false),
         )
-        if (app.isSelf) {
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.app_self_label),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            )
-        }
+        if (app.isSelf) NameLabel(stringResource(R.string.app_self_label))
+        if (!app.isEnabled) NameLabel(stringResource(R.string.app_disabled_label))
     }
+}
+
+@Composable
+private fun NameLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    )
 }
 
 @Composable
@@ -433,9 +532,29 @@ private fun DeleteButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
+/** 削除できないプリインストールのアプリ用。「削除する」の代わりに出す。 */
+@Composable
+private fun AppInfoButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(56.dp),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.onSurfaceVariant),
+        contentPadding = PaddingValues(horizontal = 8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.action_app_info),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 /** 一覧の1行（「まだ確認していないアプリ」「すべて」）。 */
 @Composable
-private fun AppRow(app: AppSummary, showStatus: Boolean, onDelete: () -> Unit) {
+private fun AppRow(app: AppSummary, showStatus: Boolean, actions: TopActions) {
     val colors = AppWatchTheme.colors
     Surface(
         shape = RoundedCornerShape(14.dp),
@@ -443,46 +562,87 @@ private fun AppRow(app: AppSummary, showStatus: Boolean, onDelete: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (showStatus) {
-                StatusMark(status = app.reviewStatus, size = 24.dp)
-                Spacer(Modifier.width(10.dp))
-            }
-            AppIcon(name = app.name, packageName = app.packageName, size = 44.dp)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                AppName(app, style = MaterialTheme.typography.titleMedium)
-                // 幅が狭いので、追加日時と入手元は行を分ける（「Google Play」の途中で折り返さないように）
-                Text(
-                    text = addedText(app, withSource = false),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = stringResource(app.source.labelRes()),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            // システムのアプリは通常アンインストールできないため、ボタンを出さない
-            if (app.kind != AppKind.SYSTEM) {
-                Spacer(Modifier.width(8.dp))
-                OutlinedButton(
-                    onClick = onDelete,
-                    modifier = Modifier.height(44.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.5.dp, colors.danger),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.action_delete),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = colors.danger,
+            // 確認状態の印はアイコンの右下に重ねる（幅の狭い端末でも名前の幅を確保するため）
+            Box {
+                AppIcon(name = app.name, packageName = app.packageName, size = 44.dp, versionKey = app.versionName)
+                if (showStatus) {
+                    StatusMark(
+                        status = app.reviewStatus,
+                        size = 20.dp,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .offset(x = 5.dp, y = 5.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface),
                     )
                 }
             }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                AppName(app, style = MaterialTheme.typography.titleMedium)
+                if (app.kind == AppKind.USER_INSTALLED) {
+                    // 幅が狭いので、追加日時と入手元は行を分ける（「Google Play」の途中で折り返さないように）
+                    RowDetail(addedText(app, withSource = false))
+                    RowDetail(stringResource(app.source.labelRes()))
+                } else {
+                    // プリインストール・システムは追加日時や入手元に意味がないので、種類を出す
+                    RowDetail(stringResource(app.kind.labelRes()))
+                }
+            }
+            when (app.removeAction) {
+                RemoveAction.UNINSTALL -> RowButton(
+                    text = stringResource(R.string.action_delete),
+                    color = colors.danger,
+                    onClick = { actions.onUninstall(app) },
+                )
+                RemoveAction.APP_INFO -> RowButton(
+                    text = stringResource(R.string.action_app_info_short),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = { actions.onOpenAppInfo(app) },
+                )
+                // システムのアプリには削除ボタンを出さない（仕様書 6章）
+                RemoveAction.NONE -> Unit
+            }
         }
+    }
+}
+
+@Composable
+private fun RowDetail(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun RowButton(text: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
+    Spacer(Modifier.width(8.dp))
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.height(44.dp),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.5.dp, color),
+        contentPadding = PaddingValues(horizontal = 10.dp),
+    ) {
+        Text(text = text, style = MaterialTheme.typography.labelMedium, color = color, maxLines = 1)
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1400)
+@Composable
+private fun TopScreenPreview() {
+    AppWatchTheme {
+        TopScreen(
+            lists = TopLists.from(DummyData.apps),
+            isLoading = false,
+            loadFailed = false,
+            lastCheckAt = DummyData.lastCheckAt,
+            actions = TopActions({}, {}, {}, {}, {}),
+        )
     }
 }

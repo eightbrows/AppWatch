@@ -36,6 +36,11 @@ data class AppWatchColors(
     val warningBorder: Color,
     val warningContainer: Color,
     val onWarningContainer: Color,
+    /** 本アプリの削除警告の丸い印 */
+    val warningStrong: Color,
+    /** 安全な方の操作（本アプリの削除警告の「やめる」） */
+    val safeAction: Color,
+    val onSafeAction: Color,
     /** 問題なし・許可済み */
     val ok: Color,
     val onOk: Color,
@@ -60,6 +65,9 @@ internal val LightAppWatchColors = AppWatchColors(
     warningBorder = Color(0xFFEBA77A),
     warningContainer = Color(0xFFFFF3E5),
     onWarningContainer = Color(0xFF8A4300),
+    warningStrong = Color(0xFFB8480F),
+    safeAction = Color(0xFF1F4FAE),
+    onSafeAction = Color(0xFFFFFFFF),
     ok = Color(0xFF2E7D32),
     onOk = Color(0xFFFFFFFF),
     unconfirmed = Color(0xFF8A867F),
@@ -79,6 +87,9 @@ internal val DarkAppWatchColors = AppWatchColors(
     warningBorder = Color(0xFFA8693F),
     warningContainer = Color(0xFF3A2A1A),
     onWarningContainer = Color(0xFFF6C38F),
+    warningStrong = Color(0xFFC75A1E),
+    safeAction = Color(0xFF9DBBF2),
+    onSafeAction = Color(0xFF0B1F44),
     ok = Color(0xFF81C784),
     onOk = Color(0xFF0D2B10),
     unconfirmed = Color(0xFF9A958E),

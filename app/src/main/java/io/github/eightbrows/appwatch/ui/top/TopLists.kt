@@ -13,20 +13,31 @@ data class TopLists(
     val all: List<AppSummary>,
 ) {
     companion object {
+        /**
+         * 本来の決まり（仕様書 6章）。記録と確認状態ができたら、仮の決まり（ProvisionalTopRule）からこちらに切り替える。
+         * - カード：新しく入ったアプリと、要注意のアプリ
+         * - まだ確認していないアプリ：カード以外の未確認のアプリ
+         */
         fun from(apps: List<AppSummary>): TopLists {
-            // 要注意のアプリは「最上位に赤枠で表示」（仕様書 4章）のため、新しく入ったかどうかに関係なくカードに出す
             val cards = apps
                 .filter { it.isNew || it.reviewStatus == ReviewStatus.CAUTION }
-                .sortedWith(compareBy<AppSummary> { cardRank(it) }.thenByDescending { it.installedAt })
-            val cardPackages = cards.map { it.packageName }.toSet()
+                .sortedWith(CardOrder)
+            val cardPackages = cards.mapTo(HashSet()) { it.packageName }
             val unconfirmed = apps
                 .filter { it.reviewStatus == ReviewStatus.UNCONFIRMED && it.packageName !in cardPackages }
                 .sortedByDescending { it.installedAt }
-            val all = apps.sortedWith(
-                compareBy<AppSummary> { statusRank(it.reviewStatus) }.thenBy { it.name },
-            )
-            return TopLists(cards = cards, unconfirmed = unconfirmed, all = all)
+            return TopLists(cards = cards, unconfirmed = unconfirmed, all = apps.sortedWith(AllOrder))
         }
+
+        /** カードの並び：要注意 → 警告あり → その他。同じ中では新しく入った順。 */
+        internal val CardOrder: Comparator<AppSummary> =
+            compareBy<AppSummary> { cardRank(it) }.thenByDescending { it.installedAt }
+
+        /** 「すべて」の並び：確認状態（要注意 → 未確認 → 問題なし）→ 種類（後から導入 → プリイン → システム）→ 名前。 */
+        internal val AllOrder: Comparator<AppSummary> =
+            compareBy<AppSummary> { statusRank(it.reviewStatus) }
+                .thenBy { it.kind.ordinal } // AppKind の宣言順（後から導入 → プリイン → システム）
+                .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
 
         private fun cardRank(app: AppSummary): Int = when {
             app.reviewStatus == ReviewStatus.CAUTION -> 0

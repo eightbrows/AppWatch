@@ -12,7 +12,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import io.github.eightbrows.appwatch.data.settings.SettingsRepository
 import io.github.eightbrows.appwatch.data.settings.ThemeMode
 import io.github.eightbrows.appwatch.data.settings.isDark
 import io.github.eightbrows.appwatch.ui.AppWatchApp
@@ -25,22 +24,29 @@ import kotlinx.coroutines.launch
  */
 class MainActivity : AppCompatActivity() {
 
-    private val settings by lazy { SettingsRepository(applicationContext) }
+    private val app: AppWatchApplication get() = application as AppWatchApplication
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             // 保存済みのテーマを読み終えるまでは何も描かない（一瞬違う色で表示されるのを防ぐ）
-            val themeMode: ThemeMode? by settings.themeMode.collectAsState(initial = null)
+            val themeMode: ThemeMode? by app.settingsRepository.themeMode.collectAsState(initial = null)
             themeMode?.let { ThemedContent(it) }
         }
+    }
+
+    /** 起動したときと、アプリに戻ってきたとき（削除やアプリ情報の画面から戻ったときなど）に一覧を取り直す。 */
+    override fun onResume() {
+        super.onResume()
+        app.appListStore.refresh()
     }
 
     @Composable
     private fun ThemedContent(mode: ThemeMode) {
         val darkTheme = mode.isDark(systemIsDark = isSystemInDarkTheme())
         val scope = rememberCoroutineScope()
+        val appList by app.appListStore.state.collectAsState()
 
         // ステータスバー・ナビゲーションバーの文字の色を、選んだテーマに合わせる
         DisposableEffect(darkTheme) {
@@ -54,7 +60,9 @@ class MainActivity : AppCompatActivity() {
         AppWatchTheme(darkTheme = darkTheme) {
             AppWatchApp(
                 themeMode = mode,
-                onThemeModeChange = { newMode -> scope.launch { settings.setThemeMode(newMode) } },
+                onThemeModeChange = { newMode -> scope.launch { app.settingsRepository.setThemeMode(newMode) } },
+                appList = appList,
+                onRefreshAppList = app.appListStore::refresh,
             )
         }
     }

@@ -7,10 +7,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.core.os.ConfigurationCompat
 import io.github.eightbrows.appwatch.R
+import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.PermissionState
 import io.github.eightbrows.appwatch.model.ReviewStatus
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -47,10 +49,21 @@ fun PermissionState.labelRes(): Int = when (this) {
     PermissionState.NOT_CONFIGURED -> R.string.state_not_configured
 }
 
-/** 日時を strings.xml の書式（format_date_time）で文字にする。 */
+@StringRes
+fun AppKind.labelRes(): Int = when (this) {
+    AppKind.USER_INSTALLED -> R.string.kind_user_installed
+    AppKind.PREINSTALLED -> R.string.kind_preinstalled
+    AppKind.SYSTEM -> R.string.kind_system
+}
+
+/**
+ * 日時を strings.xml の書式で文字にする。
+ * 今年なら月日と時刻（format_date_time）、それより前なら年月日（format_date_with_year）。
+ */
 @Composable
 fun formatDateTime(dateTime: LocalDateTime): String {
-    val pattern = stringResource(R.string.format_date_time)
+    val sameYear = dateTime.year == LocalDate.now().year
+    val pattern = stringResource(if (sameYear) R.string.format_date_time else R.string.format_date_with_year)
     val configuration = LocalConfiguration.current
     val formatter = remember(pattern, configuration) {
         val locale = ConfigurationCompat.getLocales(configuration)[0] ?: Locale.getDefault()

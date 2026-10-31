@@ -21,8 +21,32 @@ enum class UsageMode { MONITOR, VIEW_ONLY }
 enum class PermissionState { GRANTED, CONFIGURED, NOT_CONFIGURED }
 
 /**
+ * 端末から取得し、種類・入手元・警告を判定したアプリ1件。
+ * 時刻はエポックミリ秒（Android の PackageInfo と同じ）。
+ */
+data class InstalledApp(
+    val packageName: String,
+    val name: String,
+    val versionName: String?,
+    val versionCode: Long,
+    val kind: AppKind,
+    val source: InstallSource,
+    /** インストールしたアプリ（Google Play ストアなど）。分からなければ null。 */
+    val installerPackage: String?,
+    /** 入手のきっかけになったアプリ（Android 11 以上のみ。例：ブラウザ）。分からなければ null。 */
+    val initiatingPackage: String?,
+    val warnings: Set<AppWarning>,
+    /** 今の署名の証明書（SHA-256）。「署名が変わった」の判定に使う予定。 */
+    val signerSha256: List<String>,
+    val firstInstallTime: Long,
+    val lastUpdateTime: Long,
+    val isEnabled: Boolean,
+    val isSelf: Boolean,
+)
+
+/**
  * 画面に出す1件のアプリ。
- * 今はダミーデータから作る。後のステップで、端末から取得した情報とデータベースから作る。
+ * 端末の情報（InstalledApp）と、管理者の設定（確認状態・管理者メモ。今はまだない）から作る。
  */
 data class AppSummary(
     val packageName: String,
@@ -34,8 +58,33 @@ data class AppSummary(
     val reviewStatus: ReviewStatus,
     val adminMemo: String?,
     val installedAt: LocalDateTime,
-    /** 新しく入ったアプリ（トップでカード表示する）かどうか。判定の決まりは後のステップで決める。 */
+    /** 新しく入ったアプリ（最初のチェックより後に追加され、問題なしになっていない）。記録ができるまでは常に false。 */
     val isNew: Boolean,
     /** 本アプリ自身かどうか。名前の横に「本アプリ」を付ける。 */
     val isSelf: Boolean = false,
+    /** 有効かどうか。無効なら名前の横に「無効」を付ける。 */
+    val isEnabled: Boolean = true,
 )
+
+/** アプリを消すときに開く画面（仕様書 6章）。 */
+enum class RemoveAction {
+    /** Android のアンインストール画面 */
+    UNINSTALL,
+
+    /** Android のアプリ情報（削除できないプリインストールのアプリ。無効化はそこから行う） */
+    APP_INFO,
+
+    /** 削除ボタンを出さない（システムのアプリ） */
+    NONE,
+}
+
+/**
+ * システムの印があるアプリは、利用者が削除できない（更新の取り消しだけになる）。
+ * そのためプリインストールはアプリ情報へ案内し、システムはボタンを出さない。
+ */
+val AppSummary.removeAction: RemoveAction
+    get() = when (kind) {
+        AppKind.USER_INSTALLED -> RemoveAction.UNINSTALL
+        AppKind.PREINSTALLED -> RemoveAction.APP_INFO
+        AppKind.SYSTEM -> RemoveAction.NONE
+    }

@@ -1,6 +1,7 @@
 package io.github.eightbrows.appwatch.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,12 +19,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -140,11 +145,33 @@ private val IconPalette = listOf(
 )
 
 /**
- * アプリのアイコン。今は名前の1文字目を色付きの四角に出す。
- * 後のステップで、端末から取得したアイコンに差し替える。
+ * アプリのアイコン。端末から読んだ本物のアイコンを出す。
+ * 読み込み中や、端末にないアプリ（プレビュー用のダミーデータ）は、名前の1文字目を色付きの四角に出す。
  */
 @Composable
-fun AppIcon(name: String, packageName: String, modifier: Modifier = Modifier, size: Dp = 56.dp) {
+fun AppIcon(
+    name: String,
+    packageName: String,
+    modifier: Modifier = Modifier,
+    size: Dp = 56.dp,
+    versionKey: String = "",
+) {
+    val sizePx = with(LocalDensity.current) { size.roundToPx() }
+    val icon by rememberAppIcon(packageName, versionKey, sizePx)
+    val loaded = icon
+    if (loaded != null) {
+        Image(
+            bitmap = remember(loaded) { loaded.asImageBitmap() },
+            contentDescription = null,
+            modifier = modifier.size(size),
+        )
+    } else {
+        LetterIcon(name = name, packageName = packageName, modifier = modifier, size = size)
+    }
+}
+
+@Composable
+private fun LetterIcon(name: String, packageName: String, modifier: Modifier, size: Dp) {
     val color = IconPalette[packageName.hashCode().absoluteValue % IconPalette.size]
     Box(
         modifier = modifier

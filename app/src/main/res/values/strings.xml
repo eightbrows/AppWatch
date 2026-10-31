@@ -8,6 +8,7 @@
     <string name="admin_badge">管理者用</string>
     <!-- 日時の書式（java.time.format.DateTimeFormatter の形式） -->
     <string name="format_date_time">M月d日 H:mm</string>
+    <string name="format_date_with_year">yyyy年M月d日</string>
     <plurals name="count_apps">
         <item quantity="one">%1$d件</item>
         <item quantity="other">%1$d件</item>
@@ -23,16 +24,35 @@
     <string name="top_nothing_to_review">確認が必要なアプリはありません</string>
     <string name="top_open_settings">設定（長押しで開きます）</string>
     <string name="top_open_settings_action">設定を開く</string>
+    <string name="top_loading">アプリの一覧を取得しています</string>
+    <string name="top_load_failed">アプリの一覧を取得できませんでした</string>
+    <string name="action_retry">もう一度試す</string>
 
     <!-- アプリの表示 -->
     <string name="app_added_at">%1$s に追加</string>
     <string name="app_added_at_with_source">%1$s に追加 ・ %2$s</string>
     <string name="app_self_label">本アプリ</string>
+    <string name="app_disabled_label">無効</string>
     <string name="app_previously_deleted">以前に削除したアプリです</string>
     <string name="app_admin_memo">管理者メモ</string>
     <string name="action_delete_app">削除する</string>
     <string name="action_details">詳しく</string>
     <string name="action_delete">削除</string>
+    <string name="action_app_info">Android のアプリ情報</string>
+    <string name="action_app_info_short">アプリ情報</string>
+    <string name="error_cannot_open_screen">画面を開けませんでした</string>
+
+    <!-- 種類 -->
+    <string name="kind_user_installed">後から導入</string>
+    <string name="kind_preinstalled">プリインストール</string>
+    <string name="kind_system">システム</string>
+
+    <!-- 本アプリの削除警告 -->
+    <string name="self_delete_title">このアプリを\n削除しますか？</string>
+    <string name="self_delete_body">このアプリを削除すると、見守りが止まり、これまでの記録も消えます。削除する前に管理者に相談して下さい。</string>
+    <string name="self_delete_cancel">やめる</string>
+    <string name="self_delete_confirm">削除する</string>
+    <string name="self_delete_note">「削除する」の後、Android の削除確認に進みます</string>
 
     <!-- 警告 -->
     <string name="warning_not_from_play">Google Play 以外から入りました</string>
