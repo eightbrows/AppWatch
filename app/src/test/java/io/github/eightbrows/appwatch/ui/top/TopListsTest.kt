@@ -113,6 +113,18 @@ class TopListsTest {
     }
 
     @Test
+    fun signatureChangedApp_isCardUntilOk() {
+        // 仕様書 6章：署名が変わって「未確認」に戻ったアプリは、新しくなくてもカード（オレンジ枠）
+        val sig = app("sig", warnings = setOf(AppWarning.SIGNATURE_CHANGED))
+        val lists = TopLists.from(listOf(sig))
+        assertEquals(listOf("sig"), lists.cards.map { it.packageName })
+        assertTrue(lists.unconfirmed.isEmpty())
+        // 「問題なし」なら（警告は消える決まりだが、残っていても）カードにしない
+        val ok = TopLists.from(listOf(sig.copy(reviewStatus = ReviewStatus.OK)))
+        assertTrue(ok.cards.isEmpty())
+    }
+
+    @Test
     fun dummyData_matchesMockup() {
         // 画面サンプル 01_top.png と同じく、新しく入ったアプリは3件（要注意・警告あり・普通の順）
         val lists = TopLists.from(DummyData.apps)

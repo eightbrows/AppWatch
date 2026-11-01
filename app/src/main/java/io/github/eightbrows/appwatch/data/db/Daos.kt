@@ -42,6 +42,13 @@ interface AppRecordDao {
     @Insert
     suspend fun insertEvents(events: List<AppEventEntity>)
 
+    /** 「以前に削除したアプリ」「署名が変わった」の警告を消す（「問題なし」にしたとき）。変化の記録は残す。 */
+    @Query(
+        "UPDATE app_current SET reinstalled_at = NULL, signature_changed_at = NULL, updated_at = :now " +
+            "WHERE dataset_id = :datasetId AND package_name IN (:packageNames)",
+    )
+    suspend fun clearRecordedWarnings(datasetId: String, packageNames: List<String>, now: Long)
+
     @Query("SELECT * FROM app_event WHERE dataset_id = :datasetId ORDER BY occurred_at, id")
     suspend fun getEvents(datasetId: String): List<AppEventEntity>
 }

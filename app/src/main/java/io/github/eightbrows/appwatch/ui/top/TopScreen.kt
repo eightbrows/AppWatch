@@ -270,7 +270,7 @@ private fun LoadFailed(onRetry: () -> Unit) {
 
 /** 右上の歯車。薄い色で、長押しのときだけ反応する（短く押しても何も起きない）。 */
 @Composable
-private fun LongPressSettingsButton(onLongPress: () -> Unit) {
+internal fun LongPressSettingsButton(onLongPress: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     val currentOnLongPress by rememberUpdatedState(onLongPress)
     val description = stringResource(R.string.top_open_settings)

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ウィジェットの枠と丸の色（ライト）。ダークは values-night/colors.xml。文字の色は AppWatchWidget.kt の WidgetColors（値をそろえる）。 -->
+<resources>
+    <color name="widget_surface">#FFFFFF</color>
+    <color name="widget_caution">#B3261E</color>
+    <color name="widget_warning">#B8480F</color>
+    <color name="widget_neutral">#5F6368</color>
+    <color name="widget_circle_caution">#B3261E</color>
+    <color name="widget_circle_warning">#B8480F</color>
+    <color name="widget_circle_neutral">#5F6368</color>
+    <color name="widget_circle_ok">#2E7D32</color>
+</resources>

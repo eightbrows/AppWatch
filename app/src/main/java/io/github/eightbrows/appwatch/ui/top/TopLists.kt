@@ -2,6 +2,7 @@ package io.github.eightbrows.appwatch.ui.top
 
 import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppSummary
+import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.ReviewStatus
 
 /** トップ画面に出す一覧。画面の部品から切り離して、並び順を単体テストできるようにしている。 */
@@ -16,13 +17,12 @@ data class TopLists(
     companion object {
         /**
          * トップの振り分け（仕様書 6章）。[apps] には端末にあるアプリだけを渡す。
-         * - カード：新しく入ったアプリ（最初のチェックより後に追加され、問題なしでない）と、要注意のアプリ
+         * - カード：新しく入ったアプリ（最初のチェックより後に追加され、問題なしでない）、要注意のアプリ、
+         *   署名が変わったアプリ（「問題なし」になるまで。オレンジ枠）
          * - まだ確認していないアプリ：確認状態が「未確認」の「後から導入」のアプリのうち、カードに出ていないもの
          */
         fun from(apps: List<AppSummary>): TopLists {
-            val cards = apps
-                .filter { it.isNew || it.reviewStatus == ReviewStatus.CAUTION }
-                .sortedWith(CardOrder)
+            val cards = apps.filter { isCard(it) }.sortedWith(CardOrder)
             val cardPackages = cards.mapTo(HashSet()) { it.packageName }
             val unconfirmed = apps
                 .filter {
@@ -33,6 +33,15 @@ data class TopLists(
                 .sortedByDescending { it.installedAt }
             return TopLists(cards = cards, unconfirmed = unconfirmed, all = apps.sortedWith(AllOrder))
         }
+
+        /**
+         * カードで出すか。署名が変わった警告は「問題なし」にした時点で消える（仕様書 4章）ので、
+         * 警告が付いている間は「問題なし」になっていない。
+         */
+        private fun isCard(app: AppSummary): Boolean =
+            app.isNew ||
+                app.reviewStatus == ReviewStatus.CAUTION ||
+                (AppWarning.SIGNATURE_CHANGED in app.warnings && app.reviewStatus != ReviewStatus.OK)
 
         /** カードの並び：要注意 → 警告あり → その他。同じ中では新しく入った順。 */
         internal val CardOrder: Comparator<AppSummary> =

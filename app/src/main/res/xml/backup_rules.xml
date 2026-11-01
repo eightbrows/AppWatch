@@ -1,13 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   自動バックアップ（Android 11 以下）。仕様書 9章：データベースと設定値（DataStore）を対象にする。
+   Android 12 以上は data_extraction_rules.xml が使われる。両方を同じ内容にしておくこと。
+   言語の設定（AppCompat が保存するファイル）は対象にしない（仕様書 8章）。
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Room のデータベース（appwatch.db と、その -wal・-shm） -->
+    <include domain="database" path="." />
+    <!-- DataStore の設定値（files/datastore/settings.preferences_pb） -->
+    <include domain="file" path="datastore/" />
 </full-backup-content>

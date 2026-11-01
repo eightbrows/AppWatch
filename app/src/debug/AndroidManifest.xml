@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 開発版だけに入る設定。正式版（release）には含まれない。 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- ウィジェットの6つの状態を adb から切り替えて確かめる（DUMP の権限が要るので adb からしか呼べない） -->
+        <receiver
+            android:name=".widget.DebugWidgetReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
+
+        <!-- 初回設定をやり直す（完了状態と使い方を消す）。DUMP の権限が要るので adb からしか呼べない -->
+        <receiver
+            android:name=".ui.setup.DebugSetupReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
+    </application>
+
+</manifest>

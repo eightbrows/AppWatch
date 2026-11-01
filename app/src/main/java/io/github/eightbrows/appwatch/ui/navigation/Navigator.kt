@@ -7,7 +7,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 
 /** 画面の種類。画面を増やすときはここに足す。 */
-enum class Screen { TOP, SETTINGS_MENU }
+enum class Screen { TOP, SETTINGS_MENU, SETUP, IMPORTED_DATA }
 
 /**
  * 画面の切り替え（Navigation Compose は使わない簡単な仕組み）。
@@ -21,10 +21,19 @@ class Navigator internal constructor(initial: List<Screen>) {
 
     val current: Screen get() = backStack.last()
 
+    /** 積み重ねのいちばん下（最初の画面）。 */
+    val root: Screen get() = backStack.first()
+
     val canGoBack: Boolean get() = backStack.size > 1
 
     fun navigate(screen: Screen) {
         if (current != screen) backStack.add(screen)
+    }
+
+    /** 積み重ねを捨てて、[screen] を最初の画面にする（初回設定が終わったときなど）。 */
+    fun resetTo(screen: Screen) {
+        backStack.clear()
+        backStack.add(screen)
     }
 
     /** 1つ前の画面に戻る。最初の画面なら何もせず false を返す。 */

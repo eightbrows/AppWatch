@@ -127,4 +127,79 @@
     <string name="settings_license">ライセンス</string>
     <string name="settings_license_desc">本アプリ Apache-2.0 ・ 使用部品</string>
     <string name="settings_website">公式サイト</string>
+
+    <!-- ホーム画面のウィジェット（仕様書 6章） -->
+    <string name="widget_description">確認が必要なアプリなど、大事なお知らせを1つ表示します</string>
+    <!-- 日時の書式（ウィジェット用。java.time.format.DateTimeFormatter の形式） -->
+    <string name="format_widget_date_time">M/d H:mm</string>
+    <string name="widget_last_check">最終チェック %1$s</string>
+    <string name="widget_last_check_none">最終チェック —</string>
+    <!-- 「アプリ 2件」の途中で折り返さないように、文字の間に改行しない印（\u2060）、空白は改行しない空白（\u00A0）を入れている -->
+    <plurals name="widget_caution_title">
+        <item quantity="other">要注意のア\u2060プ\u2060リ\u00A0%1$d\u2060件</item>
+    </plurals>
+    <string name="widget_caution_note">削除しない場合は、管理者に相談して下さい</string>
+    <string name="widget_stopped_title">チェックが停止しています</string>
+    <string name="widget_stopped_note">アプリを起動しても改善しない場合は、管理者に連絡して下さい</string>
+    <plurals name="widget_review_title">
+        <item quantity="other">確認が必要なア\u2060プ\u2060リ\u00A0%1$d\u2060件</item>
+    </plurals>
+    <string name="widget_review_note">削除しない場合は、管理者に確認を依頼して下さい</string>
+    <string name="widget_settings_title">設定の確認が必要です</string>
+    <string name="widget_settings_note">管理者に設定の確認を依頼して下さい</string>
+    <string name="widget_setup_title">管理者に初期設定を依頼して下さい</string>
+    <string name="widget_setup_note">初期設定が完了していません</string>
+    <string name="widget_clear_title">確認が必要なアプリは0件</string>
+
+    <!-- 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png） -->
+    <string name="setup_progress">初回設定　%1$d / %2$d</string>
+    <string name="setup_next">次へ</string>
+    <string name="setup_later">後で設定する</string>
+    <string name="setup_finish">設定を完了する</string>
+
+    <string name="setup_mode_title">アプリ見守当番へ\nようこそ</string>
+    <string name="setup_mode_body">この端末の使い方を選んで下さい。設定は管理者が行います。</string>
+    <string name="setup_mode_monitor_desc">インストールされたアプリを定期的に記録し、不要なアプリの削除を手伝います。本人が使う端末です。</string>
+    <string name="setup_mode_viewer_desc">書き出されたデータを取り込んで閲覧するだけです。この端末のアプリは記録しません。</string>
+    <string name="setup_mode_note">後から設定で変更できます。</string>
+
+    <string name="setup_settings_title">見守りを続けるための\n設定</string>
+    <string name="setup_settings_body">定期チェックが Android に止められないように設定します。</string>
+    <string name="setup_battery_desc">チェックが止まるのを防ぎます</string>
+    <string name="setup_unused_desc">長く開かなくても止まらないようにします（Android 11 以上）</string>
+    <string name="setup_configure">設定する</string>
+    <string name="setup_configured">設定済み</string>
+    <string name="setup_permissions_note">アプリ一覧の取得と削除の権限は、インストール時に許可されています。削除するときは毎回、確認が表示されます。</string>
+
+    <string name="setup_check_running">アプリを記録しています</string>
+    <string name="setup_check_failed">アプリを記録できませんでした</string>
+    <plurals name="setup_check_title">
+        <item quantity="other">アプリ %1$d件を記録しました</item>
+    </plurals>
+    <string name="setup_check_body">アプリごとに、次の3つのどれかを設定します。</string>
+    <string name="setup_status_ok_desc">確認して、残してよいアプリ</string>
+    <string name="setup_status_unconfirmed_desc">まだ確認していないアプリ</string>
+    <string name="setup_status_caution_desc">削除してほしいアプリ</string>
+    <string name="setup_check_instruction">チェックを付けた項目のアプリを、まとめて「問題なし」にします。付けない項目は「未確認」になります。</string>
+    <string name="setup_category_system_desc">Android の動作に必要な組み込みアプリ</string>
+    <string name="setup_category_preinstalled_desc">端末の購入時から初期導入されているアプリ</string>
+    <string name="setup_category_play_desc">後から導入・Google Play から入手</string>
+    <string name="setup_category_other_desc">後から導入・Google Play 以外から入手</string>
+    <string name="setup_category_unknown_desc">後から導入・入手元が分からない</string>
+    <string name="setup_category_self">このアプリ（%1$s）</string>
+    <string name="setup_category_self_desc">Google Play 以外から入手・本アプリ自身</string>
+    <string name="setup_check_note">警告（開発用の署名など）のあるアプリは「未確認」のままです。後から個別に変更できます。</string>
+
+    <string name="setup_widget_title">ウィジェットの追加</string>
+    <string name="setup_widget_section">ホーム画面</string>
+    <string name="setup_widget_card_title">ウィジェットを追加</string>
+    <string name="setup_widget_card_desc">状態がひと目で分かります。タップで追加の確認が出ます</string>
+    <string name="setup_widget_add">追加する</string>
+    <string name="setup_widget_added">追加済み</string>
+    <string name="setup_widget_unsupported">このホーム画面では、ボタンで追加できません。ホーム画面の何もないところを長押しし、「ウィジェット」から「アプリ見守当番」を選んで置いて下さい。</string>
+
+    <!-- 取り込んだデータ（閲覧専用の最初の画面。取り込みは後のステップ） -->
+    <string name="imported_title">取り込んだデータ</string>
+    <string name="imported_badge">閲覧専用</string>
+    <string name="imported_empty">まだ取り込んだデータはありません</string>
 </resources>

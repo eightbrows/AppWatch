@@ -54,12 +54,14 @@ class CheckRunnerTest {
         recorder: FakeRecorder,
         now: () -> Long = { 10_000_000L },
         scanner: () -> List<InstalledApp> = { listOf(app) },
+        allowed: () -> Boolean = { true },
     ) = CheckRunner(
         scope = backgroundScope,
         scanner = scanner,
         recorder = recorder,
         clock = now,
         ioDispatcher = StandardTestDispatcher(testScheduler),
+        isAutomaticCheckAllowed = { allowed() },
     )
 
     @Test
@@ -148,6 +150,33 @@ class CheckRunnerTest {
         recorder.last = 10_000_000L - 1_000
         runner.request().join()
         assertEquals(1, recorder.recordCount) // 強制は1回だけ
+    }
+
+    @Test
+    fun automaticCheck_isNotDone_beforeSetupOrInViewOnly() = runTest {
+        val recorder = FakeRecorder()
+        val runner = runner(recorder, allowed = { false })
+        assertEquals(CheckOutcome.NotAllowed, runner.checkIfAllowed())
+        assertEquals(CheckOutcome.NotAllowed, runner.checkIfAllowed(force = true))
+        runner.forceNextRequest()
+        runner.request().join()
+        assertEquals(0, recorder.recordCount)
+        assertFalse(runner.state.value.isChecking)
+    }
+
+    @Test
+    fun directCheck_ignoresPermission_forFirstCheckInSetup() = runTest {
+        // 初回設定の「最初のチェック」は、許可を見ずに check() を直接呼ぶ
+        val recorder = FakeRecorder()
+        val outcome = runner(recorder, allowed = { false }).check(force = true)
+        assertTrue(outcome is CheckOutcome.Recorded)
+        assertEquals(1, recorder.recordCount)
+    }
+
+    @Test
+    fun automaticCheck_runs_whenAllowed() = runTest {
+        val recorder = FakeRecorder()
+        assertTrue(runner(recorder).checkIfAllowed() is CheckOutcome.Recorded)
     }
 
     @Test

@@ -5,6 +5,19 @@ plugins {
     alias(libs.plugins.room)
 }
 
+// バージョン（仕様書 6章）。手で書き換えるのは versionName だけ。
+// 形式は YYYYMMDD-DNN（開発版）／YYYYMMDD-RNN（正式版）。
+val appVersionName = "20261031-D05"
+
+// versionCode は versionName の数字部分から作る（20261031-D04 → 2026103104）。
+// 日付と通し番号が増えれば必ず大きくなるので、上書きインストールで困らない。
+val appVersionCode: Int = run {
+    require(Regex("""\d{8}-[DR]\d{2}""").matches(appVersionName)) {
+        "versionName は YYYYMMDD-DNN か YYYYMMDD-RNN の形にして下さい: $appVersionName"
+    }
+    appVersionName.filter { it.isDigit() }.toInt()
+}
+
 android {
     namespace = "io.github.eightbrows.appwatch"
     compileSdk {
@@ -15,8 +28,8 @@ android {
         applicationId = "io.github.eightbrows.appwatch"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "20261031-D03"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

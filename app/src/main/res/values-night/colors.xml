@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ウィジェットの色（ダーク）。 -->
+<resources>
+    <color name="widget_surface">#2A2826</color>
+    <color name="widget_caution">#FF8A80</color>
+    <color name="widget_warning">#F2B37E</color>
+    <color name="widget_neutral">#C4C7CC</color>
+    <color name="widget_circle_caution">#C6352C</color>
+    <color name="widget_circle_warning">#C75A1E</color>
+    <color name="widget_circle_neutral">#80868B</color>
+    <color name="widget_circle_ok">#388E3C</color>
+</resources>

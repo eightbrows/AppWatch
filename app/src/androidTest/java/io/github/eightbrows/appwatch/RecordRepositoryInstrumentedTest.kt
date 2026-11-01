@@ -14,6 +14,8 @@ import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.InstalledApp
 import io.github.eightbrows.appwatch.model.ReviewStatus
+import io.github.eightbrows.appwatch.ui.setup.SetupCategory
+import io.github.eightbrows.appwatch.ui.setup.SetupSelection
 import io.github.eightbrows.appwatch.ui.top.TopLists
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -161,6 +163,68 @@ class RecordRepositoryInstrumentedTest {
         val types = db.appRecordDao().getEvents(ds).map { it.type }
         assertEquals(listOf(ChangeType.STATUS_CHANGED, ChangeType.SIGNATURE_CHANGED, ChangeType.STATUS_CHANGED), types)
         assertEquals(listOf("bbbb"), db.appRecordDao().getCurrent(ds).single().signerSha256)
+    }
+
+    @Test
+    fun settingOk_clearsReinstallAndSignatureWarnings_butKeepsHistory() = runBlocking {
+        val repo = repository()
+        repo.record(listOf(app("qr")), now)
+        now += HOUR
+        repo.record(emptyList(), now) // 削除
+        now += HOUR
+        repo.record(listOf(app("qr", signer = "bbbb", firstInstall = 900)), now) // 別の署名で再インストール
+
+        val before = repo.observePresentApps().first().single()
+        assertTrue(AppWarning.REINSTALLED in before.warnings)
+        assertTrue(AppWarning.SIGNATURE_CHANGED in before.warnings)
+        assertEquals(listOf("qr"), TopLists.from(listOf(before)).cards.map { it.packageName })
+
+        repo.setReviewStatus(listOf("qr"), ReviewStatus.OK)
+
+        val after = repo.observePresentApps().first().single()
+        assertFalse(AppWarning.REINSTALLED in after.warnings) // 仕様書 4章：「問題なし」で消す
+        assertFalse(AppWarning.SIGNATURE_CHANGED in after.warnings)
+        assertTrue(AppWarning.NOT_FROM_PLAY in after.warnings) // 端末の情報の警告は残る
+        assertTrue(TopLists.from(listOf(after)).cards.isEmpty())
+        val types = db.appRecordDao().getEvents(repo.localDatasetId()).map { it.type }
+        assertTrue(ChangeType.SIGNATURE_CHANGED in types) // 変化の記録は残る
+    }
+
+    @Test
+    fun signatureChangedApp_isCardWhileUnconfirmed() = runBlocking {
+        val repo = repository()
+        repo.record(listOf(app("bank")), now)
+        repo.setReviewStatus(listOf("bank"), ReviewStatus.OK)
+        now += HOUR
+        repo.record(listOf(app("bank", signer = "bbbb")), now) // 「問題なし」→「未確認」に戻る
+
+        val bank = repo.observePresentApps().first().single()
+        assertEquals(ReviewStatus.UNCONFIRMED, bank.reviewStatus)
+        assertFalse(bank.isNew) // 新しく入ったアプリではないが
+        assertEquals(listOf("bank"), TopLists.from(listOf(bank)).cards.map { it.packageName }) // カードに出る
+    }
+
+    @Test
+    fun setupBulkOk_isSavedAndRecordedAsOneOperation() = runBlocking {
+        // 初回設定の3「最初のチェック」と同じ流れ：選んだアプリだけを、まとめて「問題なし」にする
+        val repo = repository()
+        val self = app("io.github.eightbrows.appwatch") // 警告（Google Play 以外）があっても、本アプリは含める
+        repo.record(listOf(app("a"), app("b"), self), now)
+        repo.setReviewStatus(listOf("b"), ReviewStatus.CAUTION) // 「要注意」は変えない
+        val present = repo.observePresentApps().first()
+
+        val targets = SetupSelection.targets(present, SetupSelection.DEFAULT_CHECKED + SetupCategory.OTHER_SOURCE)
+        assertEquals(listOf("io.github.eightbrows.appwatch"), targets) // a は警告ありなので除く、b は要注意
+        assertEquals(1, repo.setReviewStatus(targets, ReviewStatus.OK, operationId = "setup"))
+
+        val after = repo.observePresentApps().first().associateBy { it.packageName }
+        assertEquals(ReviewStatus.OK, after.getValue("io.github.eightbrows.appwatch").reviewStatus)
+        assertEquals(ReviewStatus.UNCONFIRMED, after.getValue("a").reviewStatus)
+        assertEquals(ReviewStatus.CAUTION, after.getValue("b").reviewStatus)
+        val event = db.appRecordDao().getEvents(repo.localDatasetId()).single { it.operationId == "setup" }
+        assertEquals(ChangeType.STATUS_CHANGED, event.type)
+        assertEquals(ReviewStatus.UNCONFIRMED, event.oldStatus) // 変更前の値を持つ（元に戻す用）
+        assertEquals(ReviewStatus.OK, event.newStatus)
     }
 
     @Test

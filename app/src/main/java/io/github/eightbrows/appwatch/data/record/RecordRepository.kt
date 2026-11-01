@@ -179,6 +179,11 @@ class RecordRepository(
             if (changed.isNotEmpty()) {
                 policyDao.upsert(changed.map { it.first.toEntity(datasetId) })
                 recordDao.insertEvents(changed.map { it.second.toEntity(datasetId) })
+                // 「問題なし」にした時点で、「以前に削除したアプリ」「署名が変わった」の警告を消す（仕様書 4章）。
+                // 変化の記録（app_event）はそのまま残るので、「これまでの経緯」には出る
+                if (status == ReviewStatus.OK) {
+                    recordDao.clearRecordedWarnings(datasetId, changed.map { it.first.packageName }, now)
+                }
             }
             changed.size
         }

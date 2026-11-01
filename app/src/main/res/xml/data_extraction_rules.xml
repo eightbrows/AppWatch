@@ -1,19 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   自動バックアップと機種変更時の引き継ぎ（Android 12 以上）。仕様書 9章：データベースと設定値（DataStore）を対象にする。
+   Android 11 以下は backup_rules.xml が使われる。両方を同じ内容にしておくこと。
+   言語の設定（AppCompat が保存するファイル）は対象にしない（仕様書 8章）。
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <include domain="database" path="." />
+        <include domain="file" path="datastore/" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <include domain="database" path="." />
+        <include domain="file" path="datastore/" />
     </device-transfer>
-    -->
 </data-extraction-rules>

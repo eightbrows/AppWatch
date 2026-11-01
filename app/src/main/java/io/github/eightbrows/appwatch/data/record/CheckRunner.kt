@@ -49,6 +49,9 @@ sealed interface CheckOutcome {
     /** 別のチェックが動いていたので省略した */
     data object AlreadyRunning : CheckOutcome
 
+    /** 自動のチェックが許されていない（初回設定の前・閲覧専用）ので行わなかった */
+    data object NotAllowed : CheckOutcome
+
     data class Failed(val error: Exception) : CheckOutcome
 }
 
@@ -65,6 +68,8 @@ class CheckRunner(
     private val clock: () -> Long = System::currentTimeMillis,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val minIntervalMillis: Long = MIN_INTERVAL_MILLIS,
+    /** 自動のチェック（アプリを開いたとき・定期チェック）を行ってよいか。初回設定の前と閲覧専用では false */
+    private val isAutomaticCheckAllowed: suspend () -> Boolean = { true },
     private val onRecorded: (RecordOutcome) -> Unit = {},
 ) {
     private val mutex = Mutex()
@@ -80,10 +85,16 @@ class CheckRunner(
         forceNext.set(true)
     }
 
-    /** 裏でチェックを頼む（アプリを開いたとき・戻ってきたときなど）。 */
-    fun request(): Job = scope.launch { check(force = forceNext.getAndSet(false)) }
+    /** 裏でチェックを頼む（アプリを開いたとき・戻ってきたときなど）。自動のチェックが許されていなければ何もしない。 */
+    fun request(): Job = scope.launch { checkIfAllowed(force = forceNext.getAndSet(false)) }
 
-    /** チェックを1回行い、終わるまで待つ。 */
+    /** 自動のチェックが許されていれば、チェックを1回行う（定期チェックもこれを使う）。 */
+    suspend fun checkIfAllowed(force: Boolean = false): CheckOutcome {
+        if (!isAutomaticCheckAllowed()) return CheckOutcome.NotAllowed
+        return check(force)
+    }
+
+    /** チェックを1回行い、終わるまで待つ。初回設定の「最初のチェック」は、許可を見ずにこれを直接呼ぶ。 */
     suspend fun check(force: Boolean = false): CheckOutcome {
         if (!mutex.tryLock()) return CheckOutcome.AlreadyRunning
         try {
