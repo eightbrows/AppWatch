@@ -37,6 +37,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -97,6 +98,8 @@ fun <T> SegmentedToggle(
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
     itemHeight: Dp = 44.dp,
+    /** 文字の形。選択肢が3つ以上で幅が狭いときは小さめにする（「システムに従う」が切れないように） */
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
 ) {
     val colors = AppWatchTheme.colors
     Row(
@@ -123,8 +126,8 @@ fun <T> SegmentedToggle(
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = label,
-                        modifier = Modifier.padding(horizontal = 4.dp),
-                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 2.dp),
+                        style = textStyle,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) {
                             MaterialTheme.colorScheme.onSurface

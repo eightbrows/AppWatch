@@ -7,7 +7,22 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 
 /** 画面の種類。画面を増やすときはここに足す。 */
-enum class Screen { TOP, SETTINGS_MENU, SETUP, IMPORTED_DATA }
+enum class Screen {
+    TOP,
+    SETTINGS_MENU,
+    SETUP,
+    IMPORTED_DATA,
+
+    // 設定メニューから開く画面
+    HEALTH_CHECK,
+    LICENSES,
+
+    // 後のステップで作る画面（今は仮の画面）
+    APP_STATUS,
+    PRE_REGISTER,
+    HISTORY,
+    EXPORT_IMPORT,
+}
 
 /**
  * 画面の切り替え（Navigation Compose は使わない簡単な仕組み）。

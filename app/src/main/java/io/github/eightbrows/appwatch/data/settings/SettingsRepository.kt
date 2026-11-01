@@ -67,6 +67,17 @@ class SettingsRepository(context: Context) {
         dataStore.edit { it[KEY_USAGE_MODE] = mode.name }
     }
 
+    /**
+     * 使い方と初回設定の完了状態を、1回の書き込みでまとめて保存する。
+     * 別々に保存すると、1つ目を保存した時点で画面が切り替わり、2つ目が保存されないことがあるため。
+     */
+    suspend fun setUsageModeAndSetup(mode: UsageMode, completed: Boolean) {
+        dataStore.edit {
+            it[KEY_USAGE_MODE] = mode.name
+            it[KEY_SETUP_COMPLETED] = completed
+        }
+    }
+
     /** 初回設定の状態（完了したか・使い方）をまとめて読む。 */
     val setupState: Flow<SetupState> = dataStore.data
         .map { prefs ->
@@ -86,8 +97,8 @@ class SettingsRepository(context: Context) {
     }
 
     companion object {
-        val CHECK_INTERVALS: List<Int> = listOf(30, 60, 180, 360)
-        const val DEFAULT_CHECK_INTERVAL: Int = 30
+        val CHECK_INTERVALS: List<Int> = CheckInterval.entries.map { it.minutes }
+        val DEFAULT_CHECK_INTERVAL: Int = CheckInterval.DEFAULT.minutes
 
         /** 保存されていなければ未完了。今入っている端末も、更新後に開くと初回設定から始まる。 */
         const val SETUP_COMPLETED_IF_UNSET: Boolean = false

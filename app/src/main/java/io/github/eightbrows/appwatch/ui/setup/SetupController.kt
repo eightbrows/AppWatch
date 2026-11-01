@@ -1,12 +1,8 @@
 package io.github.eightbrows.appwatch.ui.setup
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import androidx.core.content.IntentCompat
+import androidx.annotation.StringRes
 import io.github.eightbrows.appwatch.AppWatchApplication
 import io.github.eightbrows.appwatch.data.record.CheckOutcome
 import io.github.eightbrows.appwatch.data.system.DeviceSettings
@@ -41,16 +37,15 @@ class SetupController(context: Context) {
     fun isUnusedAppRestrictionsExcluded(): Boolean = DeviceSettings.isUnusedAppRestrictionsExcluded(appContext)
 
     /** 未使用アプリの一時停止は Android 11 以上の仕組み。10 以下では行を出さない。 */
-    val showsUnusedAppRestrictions: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+    val showsUnusedAppRestrictions: Boolean = DeviceSettings.hasUnusedAppRestrictions
 
-    /** 電池の最適化から除外する確認を出す（REQUEST_IGNORE_BATTERY_OPTIMIZATIONS が必要）。 */
-    @SuppressLint("BatteryLife") // 見守りのための定期チェックが目的（仕様書 2章）。Google Play では配布しない
-    fun batteryOptimizationIntent(): Intent =
-        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.fromParts("package", appContext.packageName, null))
+    fun batteryOptimizationIntent(): Intent = DeviceSettings.batteryOptimizationIntent(appContext)
 
-    /** 未使用アプリの一時停止の設定画面（本アプリの画面）を開く。 */
-    fun unusedAppRestrictionsIntent(): Intent =
-        IntentCompat.createManageUnusedAppRestrictionsIntent(appContext, appContext.packageName)
+    fun unusedAppRestrictionsIntent(): Intent = DeviceSettings.unusedAppRestrictionsIntent(appContext)
+
+    /** 未使用アプリの一時停止の設定画面で、どのスイッチを切り替えるかの案内。 */
+    @get:StringRes
+    val unusedAppRestrictionsHint: Int get() = DeviceSettings.unusedAppRestrictionsHint()
 
     // ---- 3 最初のチェック ----
 

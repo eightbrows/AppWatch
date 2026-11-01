@@ -4,20 +4,27 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.record.CheckState
-import io.github.eightbrows.appwatch.data.settings.AppLanguage
 import io.github.eightbrows.appwatch.data.settings.StartDestination
 import io.github.eightbrows.appwatch.data.settings.ThemeMode
 import io.github.eightbrows.appwatch.ui.navigation.Screen
 import io.github.eightbrows.appwatch.ui.navigation.rememberNavigator
 import io.github.eightbrows.appwatch.ui.imported.ImportedDataScreen
-import io.github.eightbrows.appwatch.ui.settings.SettingsMenuScreen
+import io.github.eightbrows.appwatch.ui.settings.HealthCheckRoute
+import io.github.eightbrows.appwatch.ui.settings.LicenseRoute
+import io.github.eightbrows.appwatch.ui.settings.PlaceholderScreen
+import io.github.eightbrows.appwatch.ui.settings.SettingsController
+import io.github.eightbrows.appwatch.ui.settings.SettingsDestination
+import io.github.eightbrows.appwatch.ui.settings.SettingsMenuRoute
 import io.github.eightbrows.appwatch.ui.setup.SetupController
 import io.github.eightbrows.appwatch.ui.setup.SetupScreen
 import io.github.eightbrows.appwatch.ui.top.SelfDeleteWarningDialog
@@ -45,11 +52,22 @@ private fun StartDestination.toScreen(): Screen = when (this) {
     StartDestination.IMPORTED_DATA -> Screen.IMPORTED_DATA
 }
 
+private fun SettingsDestination.toScreen(): Screen = when (this) {
+    SettingsDestination.APP_STATUS -> Screen.APP_STATUS
+    SettingsDestination.PRE_REGISTER -> Screen.PRE_REGISTER
+    SettingsDestination.HISTORY -> Screen.HISTORY
+    SettingsDestination.EXPORT_IMPORT -> Screen.EXPORT_IMPORT
+    SettingsDestination.IMPORTED_DATA -> Screen.IMPORTED_DATA
+    SettingsDestination.HEALTH_CHECK -> Screen.HEALTH_CHECK
+    SettingsDestination.LICENSES -> Screen.LICENSES
+}
+
 /** アプリ全体の画面（初回設定、トップ、取り込んだデータ、設定メニュー）。 */
 @Composable
 fun AppWatchApp(
     startDestination: StartDestination,
     setupController: SetupController,
+    settingsController: SettingsController,
     /** アプリに戻ってくるたびに増える数（初回設定で、設定画面から戻ったときに状態を読み直す） */
     resumeCount: Int,
     themeMode: ThemeMode,
@@ -72,6 +90,8 @@ fun AppWatchApp(
     LaunchedEffect(startDestination) {
         if (navigator.root != startDestination.toScreen()) resetTo(startDestination.toScreen())
     }
+    // 見守る端末に戻すときは、初回設定を2の画面から始める（アプリを閉じて開き直したら1から）
+    var setupInitialStep by rememberSaveable { mutableIntStateOf(1) }
     val goBack: () -> Unit = {
         val leaving = navigator.current
         if (navigator.back()) stateHolder.removeState(leaving.name)
@@ -87,12 +107,30 @@ fun AppWatchApp(
             Screen.SETUP -> SetupScreen(
                 controller = setupController,
                 resumeCount = resumeCount,
-                onCompleted = { destination -> resetTo(destination.toScreen()) },
+                initialStep = setupInitialStep,
+                onCompleted = { destination ->
+                    setupInitialStep = 1
+                    resetTo(destination.toScreen())
+                },
             )
 
             Screen.IMPORTED_DATA -> ImportedDataScreen(
                 onOpenSettings = { navigator.navigate(Screen.SETTINGS_MENU) },
+                // 設定メニューから開いたとき（最初の画面でないとき）は、戻るボタンを出す
+                onBack = if (navigator.root == Screen.IMPORTED_DATA) null else goBack,
             )
+
+            Screen.HEALTH_CHECK -> HealthCheckRoute(settingsController, resumeCount, onBack = goBack)
+
+            Screen.LICENSES -> LicenseRoute(settingsController, onBack = goBack)
+
+            Screen.APP_STATUS -> PlaceholderScreen(stringResource(R.string.settings_app_status), onBack = goBack)
+
+            Screen.PRE_REGISTER -> PlaceholderScreen(stringResource(R.string.settings_pre_register), onBack = goBack)
+
+            Screen.HISTORY -> PlaceholderScreen(stringResource(R.string.settings_history), onBack = goBack)
+
+            Screen.EXPORT_IMPORT -> PlaceholderScreen(stringResource(R.string.settings_export_import), onBack = goBack)
 
             Screen.TOP -> {
                 // まずデータベースの内容をすぐに出す。一度もチェックしていなければ「取得中」を出す
@@ -127,22 +165,15 @@ fun AppWatchApp(
                 )
             }
 
-            Screen.SETTINGS_MENU -> {
-                // 言語を切り替えると Activity が作り直されるので、ここでは表示用に持つだけでよい
-                var language by remember { mutableStateOf(AppLanguage.current()) }
-                SettingsMenuScreen(
-                    themeMode = themeMode,
-                    onThemeModeChange = onThemeModeChange,
-                    language = language,
-                    onLanguageChange = {
-                        if (it != language) {
-                            language = it
-                            AppLanguage.apply(it)
-                        }
-                    },
-                    onBack = goBack,
-                )
-            }
+            Screen.SETTINGS_MENU -> SettingsMenuRoute(
+                controller = settingsController,
+                resumeCount = resumeCount,
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange,
+                onNavigate = { destination -> navigator.navigate(destination.toScreen()) },
+                onSwitchToMonitor = { setupInitialStep = 2 },
+                onBack = goBack,
+            )
         }
     }
 

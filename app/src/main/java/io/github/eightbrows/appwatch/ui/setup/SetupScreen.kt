@@ -74,6 +74,7 @@ private const val STEP_COUNT = 4
  * 戻る操作で前の画面へ。1の画面で戻るとアプリを閉じる（この画面が最初の画面なので）。
  *
  * @param resumeCount アプリに戻ってくるたびに増える数。設定画面から戻ったときに状態を読み直すのに使う
+ * @param initialStep 最初に出す画面。設定メニューから見守る端末に戻すときは 2（使い方の選択は出さない）
  * @param onCompleted 初回設定が終わったときに、次に開く画面を渡して呼ぶ
  */
 @Composable
@@ -81,8 +82,9 @@ fun SetupScreen(
     controller: SetupController,
     resumeCount: Int,
     onCompleted: (StartDestination) -> Unit,
+    initialStep: Int = 1,
 ) {
-    var step by rememberSaveable { mutableIntStateOf(1) }
+    var step by rememberSaveable { mutableIntStateOf(initialStep) }
     var mode by rememberSaveable { mutableStateOf(UsageMode.MONITOR) }
     var checkedNames by rememberSaveable {
         mutableStateOf(SetupSelection.DEFAULT_CHECKED.map { it.name })
@@ -91,7 +93,8 @@ fun SetupScreen(
     var firstCheckDone by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    BackHandler(enabled = step > 1) { step-- }
+    // 最初に出した画面より前には戻らない（その画面で戻るとアプリを閉じる）
+    BackHandler(enabled = step > initialStep) { step-- }
 
     when (step) {
         1 -> ModeStep(
@@ -355,6 +358,8 @@ private fun SettingsStep(controller: SetupController, resumeCount: Int, onNext: 
                     description = stringResource(R.string.setup_unused_desc),
                     done = unusedOk,
                     onConfigure = { open(controller.unusedAppRestrictionsIntent()) },
+                    // 開いた画面で、どのスイッチを切り替えるかの案内（Android 12 以上と 11 で名前が違う）
+                    hint = if (unusedOk) null else stringResource(controller.unusedAppRestrictionsHint),
                 )
             }
         }
@@ -372,8 +377,33 @@ private fun SettingsStep(controller: SetupController, resumeCount: Int, onNext: 
 }
 
 @Composable
-private fun SettingRow(title: String, description: String, done: Boolean, onConfigure: () -> Unit) {
-    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun SettingRow(
+    title: String,
+    description: String,
+    done: Boolean,
+    onConfigure: () -> Unit,
+    hint: String? = null,
+) {
+    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SettingRowMain(title, description, done, onConfigure)
+        if (hint != null) {
+            Text(
+                text = hint,
+                style = MaterialTheme.typography.bodySmall,
+                color = AppWatchTheme.colors.onWarningContainer,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AppWatchTheme.colors.warningContainer)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingRowMain(title: String, description: String, done: Boolean, onConfigure: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

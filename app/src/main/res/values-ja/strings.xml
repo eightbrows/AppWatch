@@ -86,7 +86,7 @@
     <string name="settings_export_import">データの書き出し・取り込み</string>
     <string name="settings_export_import_desc">この端末のデータをファイルにする／ファイルを開く</string>
     <string name="settings_imported_data">取り込んだデータ</string>
-    <string name="settings_imported_data_none">ありません</string>
+    <string name="settings_imported_data_none">なし</string>
     <string name="settings_list_separator">、</string>
 
     <string name="settings_section_behavior">動作</string>
@@ -94,7 +94,6 @@
     <string name="usage_mode_monitor">見守る端末</string>
     <string name="usage_mode_view_only">閲覧専用</string>
     <string name="settings_check_interval">チェック間隔</string>
-    <string name="check_interval_minutes">%1$d分</string>
     <string name="settings_health_check">動作チェック</string>
     <string name="health_all_ok">すべて正常</string>
     <string name="health_needs_attention">確認が必要</string>
@@ -134,22 +133,23 @@
     <string name="format_widget_date_time">M/d H:mm</string>
     <string name="widget_last_check">最終チェック %1$s</string>
     <string name="widget_last_check_none">最終チェック —</string>
-    <!-- 「アプリ 2件」の途中で折り返さないように、文字の間に改行しない印（\u2060）、空白は改行しない空白（\u00A0）を入れている -->
+    <!-- ウィジェットの見出しは、2行になるときに言葉の途中で改行しないよう、改行してよい所に「|」を入れる（仕様書 6章）。
+         「|」以外の所では改行しない。表示するときに「|」は消える（WidgetText.keepWords） -->
     <plurals name="widget_caution_title">
-        <item quantity="other">要注意のア\u2060プ\u2060リ\u00A0%1$d\u2060件</item>
+        <item quantity="other">要注意の|アプリ %1$d件</item>
     </plurals>
     <string name="widget_caution_note">削除しない場合は、管理者に相談して下さい</string>
-    <string name="widget_stopped_title">チェックが停止しています</string>
+    <string name="widget_stopped_title">チェックが|停止しています</string>
     <string name="widget_stopped_note">アプリを起動しても改善しない場合は、管理者に連絡して下さい</string>
     <plurals name="widget_review_title">
-        <item quantity="other">確認が必要なア\u2060プ\u2060リ\u00A0%1$d\u2060件</item>
+        <item quantity="other">確認が必要な|アプリ %1$d件</item>
     </plurals>
     <string name="widget_review_note">削除しない場合は、管理者に確認を依頼して下さい</string>
-    <string name="widget_settings_title">設定の確認が必要です</string>
+    <string name="widget_settings_title">設定の確認が|必要です</string>
     <string name="widget_settings_note">管理者に設定の確認を依頼して下さい</string>
-    <string name="widget_setup_title">管理者に初期設定を依頼して下さい</string>
+    <string name="widget_setup_title">管理者に|初期設定を|依頼して下さい</string>
     <string name="widget_setup_note">初期設定が完了していません</string>
-    <string name="widget_clear_title">確認が必要なアプリは0件</string>
+    <string name="widget_clear_title">確認が必要な|アプリは0件</string>
 
     <!-- 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png） -->
     <string name="setup_progress">初回設定　%1$d / %2$d</string>
@@ -202,4 +202,55 @@
     <string name="imported_title">取り込んだデータ</string>
     <string name="imported_badge">閲覧専用</string>
     <string name="imported_empty">まだ取り込んだデータはありません</string>
+
+    <!-- 設定メニュー：チェック間隔の選択肢 -->
+    <string name="check_interval_30m">30分</string>
+    <string name="check_interval_1h">1時間</string>
+    <string name="check_interval_3h">3時間</string>
+    <string name="check_interval_6h">6時間</string>
+
+    <!-- 設定メニュー：ダイアログ -->
+    <string name="dialog_cancel">やめる</string>
+    <string name="viewonly_confirm_title">閲覧専用にしますか？</string>
+    <string name="viewonly_confirm_body">この端末のアプリのチェックとウィジェットが止まります。これまでの記録は残ります。</string>
+    <string name="viewonly_confirm_ok">閲覧専用にする</string>
+    <string name="unused_dialog_open">設定画面を開く</string>
+    <!-- 未使用アプリの一時停止の設定画面で、どのスイッチを切り替えるかの案内（Android 12 以上と 11 で名前が違う） -->
+    <string name="unused_hint_android12">開いた画面の下の方にある「使用していないアプリを一時停止」をオフにして下さい。</string>
+    <string name="unused_hint_android11">開いた画面で、使っていないときに権限を自動で削除する設定をオフにして下さい。</string>
+
+    <!-- 動作チェック -->
+    <string name="health_section_settings">端末の設定</string>
+    <string name="health_section_check">チェック</string>
+    <string name="health_last_check">最終チェック</string>
+    <string name="health_never_checked">まだチェックしていません</string>
+    <string name="health_checks_7days">直近7日のチェック回数</string>
+    <plurals name="health_check_count">
+        <item quantity="other">%1$d回</item>
+    </plurals>
+    <string name="health_periodic">定期チェック</string>
+    <string name="health_registered">登録済み</string>
+    <string name="health_not_registered">登録されていません</string>
+    <string name="health_stopped_note">最終チェックが、チェック間隔の3倍より前です。アプリを開いても改善しない場合は、電池の最適化などの設定を確認して下さい。</string>
+
+    <!-- ライセンス（全文はアプリに入れず、名前の一覧だけ） -->
+    <string name="license_app_heading">本アプリ</string>
+    <string name="license_components_heading">使用部品</string>
+    <string name="license_note">各ライセンスの全文は、リポジトリで確認できます。</string>
+    <string name="license_open_repository">リポジトリを開く</string>
+    <string-array name="license_component_names">
+        <item>Jetpack Compose（UI・Material 3）</item>
+        <item>AndroidX Activity・Core・Lifecycle</item>
+        <item>AndroidX AppCompat</item>
+        <item>AndroidX Room</item>
+        <item>AndroidX DataStore</item>
+        <item>AndroidX WorkManager</item>
+        <item>AndroidX Glance</item>
+        <item>Kotlin 標準ライブラリ</item>
+        <item>kotlinx.coroutines</item>
+        <item>Material Icons（アイコンの形）</item>
+    </string-array>
+
+    <!-- まだ作っていない画面 -->
+    <string name="placeholder_body">この画面は後のステップで作ります。</string>
 </resources>

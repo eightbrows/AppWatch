@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import io.github.eightbrows.appwatch.data.system.ScanDay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
@@ -129,6 +131,15 @@ class RecordRepository(
             combine(recordDao.observePresent(datasetId), policyDao.observeAll(datasetId)) { current, policies ->
                 val policyByPackage = policies.associate { it.packageName to it.toPolicy() }
                 current.map { it.toTracked().toSummary(policyByPackage[it.packageName], selfPackageName) }
+            },
+        )
+    }
+
+    /** チェックの実行記録（日ごと）。動作チェックの「直近7日のチェック回数」に使う。 */
+    fun observeScanDays(): Flow<List<ScanDay>> = flow {
+        emitAll(
+            scanDailyDao.observeAll(localDatasetId()).map { rows ->
+                rows.map { ScanDay(date = it.date, count = it.count, lastAt = it.lastAt) }
             },
         )
     }

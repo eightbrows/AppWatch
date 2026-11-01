@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.github.eightbrows.appwatch.R
+import io.github.eightbrows.appwatch.ui.components.AdminTopBar
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import io.github.eightbrows.appwatch.ui.top.LongPressSettingsButton
 
@@ -32,7 +33,19 @@ import io.github.eightbrows.appwatch.ui.top.LongPressSettingsButton
  * 右上の歯車は、トップと同じく長押しで設定メニューを開く（使い方を変えられるようにするため）。
  */
 @Composable
-fun ImportedDataScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
+fun ImportedDataScreen(
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** 設定メニューから開いたときの戻る操作。最初の画面（閲覧専用）なら null で、代わりに歯車を出す */
+    onBack: (() -> Unit)? = null,
+) {
+    if (onBack != null) {
+        Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            AdminTopBar(title = stringResource(R.string.imported_title), onBack = onBack)
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) { EmptyCard() }
+        }
+        return
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -61,17 +74,22 @@ fun ImportedDataScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier
             Spacer(Modifier.weight(1f))
             LongPressSettingsButton(onLongPress = onOpenSettings)
         }
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                text = stringResource(R.string.imported_empty),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
-            )
-        }
+        EmptyCard()
+    }
+}
+
+@Composable
+private fun EmptyCard() {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = stringResource(R.string.imported_empty),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+        )
     }
 }

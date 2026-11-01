@@ -11,11 +11,11 @@ import io.github.eightbrows.appwatch.data.record.DeviceEnvironment
 import io.github.eightbrows.appwatch.data.record.RecordOutcome
 import io.github.eightbrows.appwatch.data.record.RecordRepository
 import io.github.eightbrows.appwatch.data.settings.SettingsRepository
-import io.github.eightbrows.appwatch.data.settings.SetupState
 import io.github.eightbrows.appwatch.widget.AppWatchWidget
-import io.github.eightbrows.appwatch.widget.WidgetPlacement
-import io.github.eightbrows.appwatch.work.CheckScheduler
+import io.github.eightbrows.appwatch.work.MonitoringEffects
+import io.github.eightbrows.appwatch.work.MonitoringPolicy
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,26 +63,18 @@ class AppWatchApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // 起動時と、初回設定・使い方・チェック間隔が変わったときに、見守りの仕組みを合わせる
+        // 起動時と、初回設定・使い方・チェック間隔が変わったときに、見守りの仕組み（定期チェック・ウィジェット）を合わせる。
+        // チェック間隔を変えたときは、新しい間隔で登録し直される。記録（データベース）はどの場合も消さない
         appScope.launch {
-            combine(settingsRepository.setupState, settingsRepository.checkIntervalMinutes, ::Pair)
-                .collect { (setup, minutes) -> applyMonitoringState(setup, minutes) }
+            combine(settingsRepository.setupState, settingsRepository.checkIntervalMinutes, MonitoringPolicy::decide)
+                .distinctUntilChanged()
+                .collect { decision -> MonitoringEffects.apply(this@AppWatchApplication, decision) }
         }
     }
 
-    /**
-     * 見守る端末（初回設定が完了）なら定期チェックを登録し、そうでなければ登録を外す。
-     * 閲覧専用ではウィジェットの受け取りを無効にして、ウィジェットの一覧に出ないようにする。
-     * 記録（データベース）はどの場合も消さない。
-     */
-    private suspend fun applyMonitoringState(setup: SetupState, intervalMinutes: Int) {
-        if (setup.isMonitoring) {
-            CheckScheduler.schedule(this, intervalMinutes)
-        } else {
-            CheckScheduler.cancel(this)
-        }
-        WidgetPlacement.setEnabled(this, setup.usesWidget)
-        if (setup.usesWidget) AppWatchWidget.updateAll(this)
+    /** ウィジェットを更新する（言語やテーマを切り替えた後など）。画面が作り直されても続くよう、アプリ全体の処理で行う。 */
+    fun refreshWidget() {
+        appScope.launch { AppWatchWidget.updateAll(this@AppWatchApplication) }
     }
 
     /** 開発版だけ、チェックの結果をログに出す（adb logcat -s AppWatch で見られる）。 */

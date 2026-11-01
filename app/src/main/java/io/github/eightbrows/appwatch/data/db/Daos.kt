@@ -84,4 +84,7 @@ interface ScanDailyDao {
 
     @Query("SELECT * FROM scan_daily WHERE dataset_id = :datasetId ORDER BY date")
     suspend fun getAll(datasetId: String): List<ScanDailyEntity>
+
+    @Query("SELECT * FROM scan_daily WHERE dataset_id = :datasetId ORDER BY date")
+    fun observeAll(datasetId: String): Flow<List<ScanDailyEntity>>
 }

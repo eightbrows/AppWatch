@@ -126,7 +126,10 @@ private fun styleOf(context: Context, status: WidgetStatus): WidgetStyle = when 
     )
 }
 
-private fun titleOf(context: Context, state: WidgetState): String {
+/** 見出し。2行になるときに言葉の途中で改行しないようにする（strings.xml の「|」の所でだけ改行）。 */
+private fun titleOf(context: Context, state: WidgetState): String = WidgetText.keepWords(rawTitleOf(context, state))
+
+private fun rawTitleOf(context: Context, state: WidgetState): String {
     val res = context.resources
     return when (state.status) {
         WidgetStatus.CAUTION_APPS -> res.getQuantityString(R.plurals.widget_caution_title, state.count, state.count)

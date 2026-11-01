@@ -7,4 +7,18 @@
     <string name="language_japanese" translatable="false">日本語</string>
     <string name="language_english" translatable="false">English</string>
     <string name="settings_website_url" translatable="false">https://eightbrows.github.io/</string>
+    <string name="repository_url" translatable="false">https://github.com/eightbrows/AppWatch</string>
+    <string name="license_apache2" translatable="false">Apache License 2.0</string>
+    <string-array name="license_component_licenses" translatable="false">
+        <item>Apache License 2.0</item>
+        <item>Apache License 2.0</item>
+        <item>Apache License 2.0</item>
+        <item>Apache License 2.0</item>
+        <item>Apache License 2.0</item>
+        <item>Apache License 2.0</item>
+        <item>Apache License 2.0</item>
+        <item>Apache License 2.0</item>
+        <item>Apache License 2.0</item>
+        <item>Apache License 2.0</item>
+    </string-array>
 </resources>
