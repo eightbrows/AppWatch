@@ -1,5 +1,6 @@
 package io.github.eightbrows.appwatch.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -128,4 +129,89 @@ interface ScanDailyDao {
 
     @Query("SELECT * FROM scan_daily WHERE dataset_id = :datasetId ORDER BY date")
     fun observeAll(datasetId: String): Flow<List<ScanDailyEntity>>
+}
+
+/** データ1件ごとの数（取り込んだデータの「要注意 n件」）。 */
+data class DatasetCount(
+    @ColumnInfo(name = "dataset_id") val datasetId: String,
+    @ColumnInfo(name = "count") val count: Int,
+)
+
+/** 書き出し・取り込み・復元（仕様書 7章）で、1つのデータの中身をまとめて読み書きする。 */
+@Dao
+interface TransferDao {
+    @Query("SELECT * FROM dataset WHERE id = :id")
+    suspend fun getDataset(id: String): DatasetEntity?
+
+    @Query("SELECT * FROM dataset WHERE kind = 'IMPORTED' ORDER BY imported_at DESC")
+    fun observeImported(): Flow<List<DatasetEntity>>
+
+    @Query("SELECT * FROM dataset WHERE kind = 'IMPORTED' ORDER BY imported_at DESC")
+    suspend fun getImported(): List<DatasetEntity>
+
+    /** データごとの、端末にあるアプリのうち「要注意」の数。 */
+    @Query(
+        "SELECT p.dataset_id AS dataset_id, COUNT(*) AS count FROM app_policy p " +
+            "JOIN app_current c ON c.dataset_id = p.dataset_id AND c.package_name = p.package_name " +
+            "WHERE p.review_status = 'CAUTION' AND c.is_present = 1 GROUP BY p.dataset_id",
+    )
+    fun observeCautionCounts(): Flow<List<DatasetCount>>
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertDataset(dataset: DatasetEntity)
+
+    @Upsert
+    suspend fun upsertDataset(dataset: DatasetEntity)
+
+    @Query("UPDATE dataset SET name = :name WHERE id = :id")
+    suspend fun renameDataset(id: String, name: String)
+
+    @Query("DELETE FROM dataset WHERE id = :id")
+    suspend fun deleteDatasetRow(id: String)
+
+    @Query("DELETE FROM baseline_app WHERE dataset_id = :id")
+    suspend fun deleteBaseline(id: String)
+
+    @Query("DELETE FROM app_current WHERE dataset_id = :id")
+    suspend fun deleteCurrent(id: String)
+
+    @Query("DELETE FROM app_event WHERE dataset_id = :id")
+    suspend fun deleteEvents(id: String)
+
+    @Query("DELETE FROM app_policy WHERE dataset_id = :id")
+    suspend fun deletePolicies(id: String)
+
+    @Query("DELETE FROM scan_daily WHERE dataset_id = :id")
+    suspend fun deleteScanDays(id: String)
+
+    // 同じ行が2つあれば失敗させる（取り込みの途中で失敗したら、まとめて元に戻す）
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertBaseline(rows: List<BaselineAppEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertCurrent(rows: List<AppCurrentEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertEvents(rows: List<AppEventEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertPolicies(rows: List<AppPolicyEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertScanDays(rows: List<ScanDailyEntity>)
+
+    @Query("SELECT * FROM baseline_app WHERE dataset_id = :id ORDER BY package_name")
+    suspend fun getBaseline(id: String): List<BaselineAppEntity>
+
+    @Query("SELECT * FROM app_current WHERE dataset_id = :id ORDER BY package_name")
+    suspend fun getCurrent(id: String): List<AppCurrentEntity>
+
+    @Query("SELECT * FROM app_event WHERE dataset_id = :id ORDER BY occurred_at, id")
+    suspend fun getEvents(id: String): List<AppEventEntity>
+
+    @Query("SELECT * FROM app_policy WHERE dataset_id = :id ORDER BY package_name")
+    suspend fun getPolicies(id: String): List<AppPolicyEntity>
+
+    @Query("SELECT * FROM scan_daily WHERE dataset_id = :id ORDER BY date")
+    suspend fun getScanDays(id: String): List<ScanDailyEntity>
 }

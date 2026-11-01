@@ -94,8 +94,8 @@ class HistoryRulesTest {
         val first = LocalDate.of(2026, 10, 8)
         assertEquals(DateRange(first, today), HistoryRules.quickRange(QuickRange.LAST_7_DAYS, first, today))
         assertEquals(DateRange(first, today), HistoryRules.quickRange(QuickRange.LAST_30_DAYS, first, today))
-        // 3つとも同じ期間になるので、3つとも強調する
-        assertEquals(QuickRange.entries.toSet(), HistoryRules.matchingQuick(DateRange(first, today), first, today))
+        // 3つとも同じ期間になる（前回以降は出していない）
+        assertEquals(setOf(QuickRange.LAST_7_DAYS, QuickRange.LAST_30_DAYS, QuickRange.ALL), HistoryRules.matchingQuick(DateRange(first, today), first, today))
     }
 
     @Test
@@ -292,7 +292,7 @@ class HistoryRulesTest {
             InstallSource.OTHER to "Google Play 以外",
             InstallSource.UNKNOWN to "入手元が分からない",
         ),
-        signatureNote = "削除→再インストールの可能性",
+        signatureNote = "別の作り手のアプリに入れ替わった可能性",
         resetText = "記録を取り直しました",
     )
 
@@ -313,7 +313,7 @@ class HistoryRulesTest {
             "[追加] クリーナー Pro v1.0.3 (jp.example.cleanerpro) 10/10 21:30 Google Play 以外",
             "[追加] 天気ナビ v4.2.0 (jp.example.tenkinavi) 10/09 09:00 Google Play",
             "[削除] 懸賞チェッカー v2.0.1（削除時） (jp.example.kenshou) 10/05 14:30",
-            "[署名が変わった] 家計メモ v2.3.0 (jp.example.kakeimemo) 10/04 22:00 削除→再インストールの可能性",
+            "[署名が変わった] 家計メモ v2.3.0 (jp.example.kakeimemo) 10/04 22:00 別の作り手のアプリに入れ替わった可能性",
         ).joinToString("\n")
         assertEquals(expected, HistoryRules.shareText(result, texts, zone))
     }
@@ -350,5 +350,65 @@ class HistoryRulesTest {
         val changes = listOf(AppChange(type = ChangeType.RESET, packageName = "", name = "", occurredAt = at("2026-10-06T10:00")))
         val lines = HistoryRules.shareText(HistoryRules.build(changes, emptyList(), range, emptySet(), zone), texts, zone).lines()
         assertEquals("[初期化] 記録を取り直しました 10/06 10:00", lines[3])
+    }
+
+    // ---- 取り込んだデータ（書き出し日を今日とする）・前回以降 ----
+
+    @Test
+    fun 取り込んだデータは書き出し日を今日として数える() {
+        val exportDate = LocalDate.of(2026, 10, 28)
+        val clock = HistoryClock(today = exportDate, firstCheckDate = LocalDate.of(2026, 9, 1))
+        assertEquals(DateRange(LocalDate.of(2026, 10, 22), exportDate), HistoryRules.quickRange(QuickRange.LAST_7_DAYS, clock))
+        assertEquals(DateRange(LocalDate.of(2026, 9, 29), exportDate), HistoryRules.quickRange(QuickRange.LAST_30_DAYS, clock))
+        // 書き出し日より後の日は選べない
+        val checked = HistoryRules.checkedDates(listOf(day("2026-10-27"), day("2026-10-30")), exportDate)
+        assertFalse(HistoryRules.isSelectable(LocalDate.of(2026, 10, 30), checked, exportDate))
+    }
+
+    @Test
+    fun 前回以降は前回の書き出し日から今回の書き出し日まで() {
+        val clock = HistoryClock(today = LocalDate.of(2026, 10, 28), firstCheckDate = LocalDate.of(2026, 9, 1), previousExportDate = LocalDate.of(2026, 10, 20))
+        assertEquals(DateRange(LocalDate.of(2026, 10, 20), LocalDate.of(2026, 10, 28)), HistoryRules.quickRange(QuickRange.SINCE_LAST, clock))
+        assertEquals(listOf(QuickRange.LAST_7_DAYS, QuickRange.LAST_30_DAYS, QuickRange.SINCE_LAST, QuickRange.ALL), clock.quickButtons)
+        // 前回の書き出し日がなければ、ボタンを出さない
+        assertEquals(listOf(QuickRange.LAST_7_DAYS, QuickRange.LAST_30_DAYS, QuickRange.ALL), clock.copy(previousExportDate = null).quickButtons)
+    }
+
+    // ---- 強調するボタン（1つだけ） ----
+
+    @Test
+    fun 最後に押したボタンだけを青くする() {
+        // 最初のチェックが最近なので、直近7日・直近30日・全期間が同じ期間になる
+        val clock = HistoryClock(today = today, firstCheckDate = LocalDate.of(2026, 10, 8))
+        val range = HistoryRules.quickRange(QuickRange.LAST_30_DAYS, clock)
+        assertEquals(QuickRange.LAST_30_DAYS, HistoryRules.highlighted(QuickRange.LAST_30_DAYS, range, clock))
+        assertEquals(QuickRange.ALL, HistoryRules.highlighted(QuickRange.ALL, range, clock))
+    }
+
+    @Test
+    fun カレンダーで選んだときは同じ期間のボタンのうち最も短いもの() {
+        val clock = HistoryClock(today = today, firstCheckDate = LocalDate.of(2026, 10, 8))
+        val picked = DateRange(LocalDate.of(2026, 10, 8), today)
+        assertEquals(QuickRange.LAST_7_DAYS, HistoryRules.highlighted(null, picked, clock))
+        val longClock = HistoryClock(today = today, firstCheckDate = LocalDate.of(2026, 9, 20))
+        assertEquals(QuickRange.LAST_30_DAYS, HistoryRules.highlighted(null, DateRange(LocalDate.of(2026, 9, 20), today), longClock))
+        // どのボタンとも違う期間なら、どれも青くしない
+        assertNull(HistoryRules.highlighted(null, DateRange(LocalDate.of(2026, 10, 9), LocalDate.of(2026, 10, 10)), longClock))
+    }
+
+    @Test
+    fun 前回以降を押していても_出していなければ使わない() {
+        val clock = HistoryClock(today = today, firstCheckDate = LocalDate.of(2026, 10, 8))
+        val range = HistoryRules.quickRange(QuickRange.LAST_7_DAYS, clock)
+        assertEquals(QuickRange.LAST_7_DAYS, HistoryRules.highlighted(QuickRange.SINCE_LAST, range, clock))
+    }
+
+    @Test
+    fun 共有の文字_取り込んだデータは端末の行を入れる() {
+        val result = HistoryRules.build(listOf(change(ChangeType.ADDED, "2026-10-05T10:00")), emptyList(), range, emptySet(), zone)
+        val lines = HistoryRules.shareText(result, texts, zone, deviceLine = "端末：端末A（2026/10/28 21:00 時点）").lines()
+        assertEquals("アプリ見守当番 履歴と比較", lines[0])
+        assertEquals("端末：端末A（2026/10/28 21:00 時点）", lines[1])
+        assertEquals("期間：2026/10/04 〜 2026/10/11", lines[2])
     }
 }

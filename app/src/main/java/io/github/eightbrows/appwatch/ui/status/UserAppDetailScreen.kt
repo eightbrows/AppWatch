@@ -64,7 +64,7 @@ fun UserAppDetailRoute(
     onUninstall: (AppStatusEntry) -> Unit,
     onOpenAppInfo: (AppStatusEntry) -> Unit,
 ) {
-    val detail by remember(packageName) { controller.detail(packageName) }.collectAsState(initial = null)
+    val detail by remember(packageName) { controller.localDetail(packageName) }.collectAsState(initial = null)
     val entry = detail?.entry
     // 「削除する」を押したか。戻ってきてチェックで端末から消えたのが分かったら、トップへ戻る
     var uninstallRequested by rememberSaveable { mutableStateOf(false) }

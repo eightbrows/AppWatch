@@ -9,7 +9,11 @@ import io.github.eightbrows.appwatch.data.status.AppStatusRules
 import io.github.eightbrows.appwatch.data.status.FilterChip
 import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.model.UsageMode
+import io.github.eightbrows.appwatch.data.transfer.DataSelection
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -63,7 +67,21 @@ class AppStatusController(context: Context) {
     private val app = context.applicationContext as AppWatchApplication
     private val repository = app.recordRepository
 
-    val entries: Flow<List<AppStatusEntry>> = repository.observeStatusEntries()
+    /** 選択中のデータ（この端末／取り込んだデータ）。確認状態・履歴と比較・アプリの詳細で共通。 */
+    val selection: Flow<DataSelection> = app.dataSelector.selection
+
+    fun selectDataset(datasetId: String) {
+        app.appScope.launch { app.dataSelector.select(datasetId) }
+    }
+
+    /** 確認状態の画面の行（選択中のデータ）。閲覧専用で取り込んだデータがなければ空。 */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val entries: Flow<List<AppStatusEntry>> = selection.flatMapLatest { sel ->
+        sel.selected?.let { repository.observeStatusEntries(it.id) } ?: flowOf(emptyList())
+    }
+
+    /** この端末のデータの行（事前登録の画面で、登録済み・端末にあるかを調べる）。 */
+    val localEntries: Flow<List<AppStatusEntry>> = repository.observeStatusEntries()
 
     val filterEnabled: Flow<Set<FilterChip>> = app.settingsRepository.statusFilterEnabled
 
@@ -71,7 +89,14 @@ class AppStatusController(context: Context) {
         app.appScope.launch { app.settingsRepository.setStatusFilterEnabled(enabled) }
     }
 
-    fun detail(packageName: String): Flow<AppDetail> = repository.observeAppDetail(packageName)
+    /** アプリの詳細（管理者用、選択中のデータ）。 */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun detail(packageName: String): Flow<AppDetail> = selection.flatMapLatest { sel ->
+        sel.selected?.let { repository.observeAppDetail(it.id, packageName) } ?: flowOf(AppDetail(entry = null, events = emptyList()))
+    }
+
+    /** アプリの詳細（本人用）。いつもこの端末のデータ。 */
+    fun localDetail(packageName: String): Flow<AppDetail> = repository.observeAppDetail(packageName)
 
     private val _pendingNotice = MutableStateFlow<StatusNotice?>(null)
 

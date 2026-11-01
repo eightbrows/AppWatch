@@ -74,7 +74,10 @@ import io.github.eightbrows.appwatch.data.status.FilterRow
 import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.ReviewStatus
+import io.github.eightbrows.appwatch.data.transfer.DataSelection
 import io.github.eightbrows.appwatch.ui.components.AdminTopBar
+import io.github.eightbrows.appwatch.ui.components.DataSwitcher
+import io.github.eightbrows.appwatch.ui.components.ViewingFooter
 import io.github.eightbrows.appwatch.ui.components.StatusMark
 import io.github.eightbrows.appwatch.ui.components.formatDateTime
 import io.github.eightbrows.appwatch.ui.components.formatShortDate
@@ -95,6 +98,9 @@ fun AppStatusRoute(
     onPreRegister: () -> Unit,
 ) {
     val entries by remember { controller.entries }.collectAsState(initial = null)
+    val selection by remember { controller.selection }.collectAsState(initial = null)
+    // 取り込んだデータを見ているときは、変更の操作（選択・まとめての変更・事前登録）を出さない
+    val readOnly = selection?.isViewingImported == true
     val enabled by remember { controller.filterEnabled }.collectAsState(initial = null)
     var query by rememberSaveable { mutableStateOf("") }
     // 選んだアプリ（パッケージ名）。画面の回転でも消えないように保存する
@@ -110,8 +116,8 @@ fun AppStatusRoute(
         else AppStatusRules.visible(currentEntries, currentEnabled, query)
     }
     // 絞り込みや検索で見えなくなったアプリは、まとめて変える対象にしない
-    val selectedVisible = remember(visible, selected) {
-        val set = selected.toSet()
+    val selectedVisible = remember(visible, selected, readOnly) {
+        val set = if (readOnly) emptySet() else selected.toSet()
         visible.filter { it.packageName in set }
     }
 
@@ -127,6 +133,12 @@ fun AppStatusRoute(
             } else {
                 StatusList(
                     visible = visible,
+                    selection = selection,
+                    onSelectDataset = { id ->
+                        selected = emptyList()
+                        controller.selectDataset(id)
+                    },
+                    readOnly = readOnly,
                     enabled = currentEnabled,
                     query = query,
                     selected = selectedVisible.mapTo(HashSet()) { it.packageName },
@@ -149,10 +161,11 @@ fun AppStatusRoute(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     // 下部のボタンがないときは、ナビゲーションバーに重ならないようにする
-                    .then(if (selectedVisible.isEmpty()) Modifier.navigationBarsPadding() else Modifier)
+                    .then(if (selectedVisible.isEmpty() && !readOnly) Modifier.navigationBarsPadding() else Modifier)
                     .padding(horizontal = 8.dp),
             )
         }
+        if (readOnly) ViewingFooter()
         if (selectedVisible.isNotEmpty()) {
             BulkActions(
                 onSelect = { status ->
@@ -240,6 +253,9 @@ internal fun noticeText(resources: Resources, notice: StatusNotice): String = wh
 @Composable
 private fun StatusList(
     visible: List<AppStatusEntry>,
+    selection: DataSelection?,
+    onSelectDataset: (String) -> Unit,
+    readOnly: Boolean,
     enabled: Set<FilterChip>,
     query: String,
     selected: Set<String>,
@@ -256,16 +272,21 @@ private fun StatusList(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // データの切り替え（この端末／取り込んだデータ）は、取り込みのステップでこの上に足す
-        item(key = "search") { SearchRow(query, onQueryChange, onPreRegister) }
+        // データの切り替え（この端末／取り込んだデータ）と、閲覧中の帯
+        if (selection != null && selection.showsSwitcher) {
+            item(key = "data") { DataSwitcher(selection, onSelectDataset, Modifier.padding(top = 4.dp)) }
+        }
+        item(key = "search") { SearchRow(query, onQueryChange, onPreRegister, preRegisterEnabled = !readOnly) }
         item(key = "filters") { Filters(enabled, onToggleChip) }
-        stickyHeader(key = "selection") {
-            SelectionBar(
-                visibleCount = visible.size,
-                selectedCount = selected.size,
-                onSelectAllVisible = onSelectAllVisible,
-                onClearSelection = onClearSelection,
-            )
+        if (!readOnly) {
+            stickyHeader(key = "selection") {
+                SelectionBar(
+                    visibleCount = visible.size,
+                    selectedCount = selected.size,
+                    onSelectAllVisible = onSelectAllVisible,
+                    onClearSelection = onClearSelection,
+                )
+            }
         }
         if (visible.isEmpty()) {
             item(key = "empty") {
@@ -281,6 +302,7 @@ private fun StatusList(
             StatusRow(
                 entry = entry,
                 isSelected = entry.packageName in selected,
+                showCheckbox = !readOnly,
                 onToggleSelect = { onToggleSelect(entry.packageName) },
                 onClick = { onOpenDetail(entry.packageName) },
             )
@@ -289,7 +311,7 @@ private fun StatusList(
 }
 
 @Composable
-private fun SearchRow(query: String, onQueryChange: (String) -> Unit, onPreRegister: () -> Unit) {
+private fun SearchRow(query: String, onQueryChange: (String) -> Unit, onPreRegister: () -> Unit, preRegisterEnabled: Boolean = true) {
     Row(
         modifier = Modifier.padding(top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -349,6 +371,7 @@ private fun SearchRow(query: String, onQueryChange: (String) -> Unit, onPreRegis
         }
         Button(
             onClick = onPreRegister,
+            enabled = preRegisterEnabled,
             modifier = Modifier.height(48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
@@ -481,7 +504,7 @@ private fun SelectionBar(
 
 /** 一覧の1行。端末にないアプリは灰色。行を押すとアプリの詳細を開く。 */
 @Composable
-private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, onToggleSelect: () -> Unit, onClick: () -> Unit) {
+private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: Boolean, onToggleSelect: () -> Unit, onClick: () -> Unit) {
     val colors = AppWatchTheme.colors
     val dim = !entry.isPresent
     val mainColor = if (dim) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
@@ -494,13 +517,15 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, onToggleSelect
             .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick),
     ) {
-        Row(Modifier.padding(end = 12.dp, top = 4.dp, bottom = 12.dp)) {
-            val selectLabel = stringResource(R.string.status_select_app, entry.name)
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onToggleSelect() },
-                modifier = Modifier.semantics { contentDescription = selectLabel },
-            )
+        Row(Modifier.padding(start = if (showCheckbox) 0.dp else 14.dp, end = 12.dp, top = 4.dp, bottom = 12.dp)) {
+            if (showCheckbox) {
+                val selectLabel = stringResource(R.string.status_select_app, entry.name)
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onToggleSelect() },
+                    modifier = Modifier.semantics { contentDescription = selectLabel },
+                )
+            }
             StatusMark(status = entry.status, size = 24.dp, modifier = Modifier.padding(top = 12.dp))
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f).padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {

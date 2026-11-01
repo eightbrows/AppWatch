@@ -70,6 +70,7 @@ fun SettingsMenuRoute(
 ) {
     val context = LocalContext.current
     val cautionCount by controller.cautionCount.collectAsState(initial = 0)
+    val importedNames by controller.importedNames.collectAsState(initial = emptyList())
     val setup by controller.setupState.collectAsState(initial = null)
     val interval by controller.checkInterval.collectAsState(initial = CheckInterval.DEFAULT)
     val (healthInput, _) = rememberHealth(controller, resumeCount)
@@ -79,7 +80,7 @@ fun SettingsMenuRoute(
     SettingsMenuScreen(
         state = SettingsMenuState(
             cautionCount = cautionCount,
-            importedDataNames = emptyList(), // 取り込みは後のステップ
+            importedDataNames = importedNames,
             usageMode = setup?.usageMode ?: UsageMode.MONITOR,
             checkInterval = interval,
             healthAllOk = HealthCheck.evaluate(healthInput).allOk,

@@ -88,7 +88,11 @@ import io.github.eightbrows.appwatch.data.history.QuickRange
 import io.github.eightbrows.appwatch.data.record.AppChange
 import io.github.eightbrows.appwatch.data.record.ChangeType
 import io.github.eightbrows.appwatch.model.InstallSource
+import io.github.eightbrows.appwatch.data.history.HistoryClock
+import io.github.eightbrows.appwatch.data.transfer.DataSelection
 import io.github.eightbrows.appwatch.ui.components.AdminTopBar
+import io.github.eightbrows.appwatch.ui.components.DataSwitcher
+import io.github.eightbrows.appwatch.ui.components.formatSnapshotTime
 import io.github.eightbrows.appwatch.ui.status.AppStatusController
 import io.github.eightbrows.appwatch.ui.status.rememberNoticePresenter
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
@@ -111,20 +115,27 @@ fun HistoryRoute(
     onOpenDetail: (String) -> Unit,
 ) {
     val records by remember { controller.records }.collectAsState(initial = null)
+    val selection by remember { controller.selection }.collectAsState(initial = null)
     val zone = remember { ZoneId.systemDefault() }
-    val today = LocalDate.now(zone)
+    val viewing = selection?.selected?.takeIf { !it.isLocal }
+    // 取り込んだデータでは、「今日」の代わりにファイルの書き出し日を使う（仕様書 7章）
+    val today = viewing?.exportedAt?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() } ?: LocalDate.now(zone)
+    val previousExportDate = viewing?.previousExportedAt?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
 
-    // 期間：すぐ選べるボタンで選んだものか、カレンダーで選んだもの（画面の回転でも消えないように保存する）
-    var quickName by rememberSaveable { mutableStateOf<String?>(QuickRange.LAST_7_DAYS.name) }
-    var customStart by rememberSaveable { mutableStateOf<Long?>(null) }
-    var customEnd by rememberSaveable { mutableStateOf<Long?>(null) }
-    var hiddenNames by rememberSaveable { mutableStateOf(listOf<String>()) }
+    // 期間：すぐ選べるボタンで選んだものか、カレンダーで選んだもの（画面の回転でも消えないように保存する）。
+    // データを切り替えたら、開いたときと同じ「直近7日」・すべて表示に戻す
+    val datasetKey = selection?.selected?.id
+    var quickName by rememberSaveable(datasetKey) { mutableStateOf<String?>(QuickRange.LAST_7_DAYS.name) }
+    var customStart by rememberSaveable(datasetKey) { mutableStateOf<Long?>(null) }
+    var customEnd by rememberSaveable(datasetKey) { mutableStateOf<Long?>(null) }
+    var hiddenNames by rememberSaveable(datasetKey) { mutableStateOf(listOf<String>()) }
     var showPicker by rememberSaveable { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     rememberNoticePresenter(statusController, snackbarHostState)
     val texts = rememberShareTexts()
     val context = LocalContext.current
+    val deviceLine = viewing?.let { stringResource(R.string.history_share_device, it.name, it.exportedAt?.let { t -> formatSnapshotTime(t) }.orEmpty()) }
 
     Column(
         Modifier
@@ -133,21 +144,25 @@ fun HistoryRoute(
     ) {
         AdminTopBar(title = stringResource(R.string.settings_history), onBack = onBack)
         val current = records
-        if (current == null) {
+        val currentSelection = selection
+        if (current == null || currentSelection == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             return@Column
         }
 
         val checkedDates = remember(current.scanDays, today) { HistoryRules.checkedDates(current.scanDays, today) }
-        val firstDate = checkedDates.minOrNull()
-        val quick = quickName?.let { name -> QuickRange.entries.firstOrNull { it.name == name } }
+        val clock = HistoryClock(today = today, firstCheckDate = checkedDates.minOrNull(), previousExportDate = previousExportDate)
+        val firstDate = clock.firstCheckDate
+        val quick = quickName?.let { name -> clock.quickButtons.firstOrNull { it.name == name } }
         val start = customStart
         val end = customEnd
         val range = if (quick == null && start != null && end != null) {
             HistoryRules.clamp(DateRange(LocalDate.ofEpochDay(start), LocalDate.ofEpochDay(end)), firstDate, today)
         } else {
-            HistoryRules.quickRange(quick ?: QuickRange.LAST_7_DAYS, firstDate, today)
+            HistoryRules.quickRange(quick ?: QuickRange.LAST_7_DAYS, clock)
         }
+        // 青くするのは1つだけ：最後に押したボタン、カレンダーで選んだときは同じ期間のうち最も短いもの
+        val highlighted = HistoryRules.highlighted(if (customStart == null) quick ?: QuickRange.LAST_7_DAYS else null, range, clock)
         val hidden = hiddenNames.mapNotNullTo(HashSet()) { name -> HistoryKind.entries.firstOrNull { it.name == name } }
         val result = remember(current, range, hidden, zone) { HistoryRules.build(current.changes, current.scanDays, range, hidden, zone) }
 
@@ -156,7 +171,10 @@ fun HistoryRoute(
                 result = result,
                 texts = texts,
                 zone = zone,
-                matching = HistoryRules.matchingQuick(range, firstDate, today),
+                selection = currentSelection,
+                onSelectDataset = controller::select,
+                buttons = clock.quickButtons,
+                highlighted = highlighted,
                 canPick = firstDate != null,
                 onOpenPicker = { showPicker = true },
                 onQuick = { selected ->
@@ -178,7 +196,7 @@ fun HistoryRoute(
         }
         ShareBar(
             enabled = result.rows.isNotEmpty(),
-            onShare = { share(context, texts.title, HistoryRules.shareText(result, texts, zone)) },
+            onShare = { share(context, texts.title, HistoryRules.shareText(result, texts, zone, deviceLine)) },
         )
 
         if (showPicker && firstDate != null) {
@@ -271,7 +289,10 @@ private fun HistoryList(
     result: HistoryResult,
     texts: HistoryShareTexts,
     zone: ZoneId,
-    matching: Set<QuickRange>,
+    selection: DataSelection,
+    onSelectDataset: (String) -> Unit,
+    buttons: List<QuickRange>,
+    highlighted: QuickRange?,
     canPick: Boolean,
     onOpenPicker: () -> Unit,
     onQuick: (QuickRange) -> Unit,
@@ -285,8 +306,11 @@ private fun HistoryList(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
     ) {
+        if (selection.showsSwitcher) {
+            item(key = "data") { DataSwitcher(selection, onSelectDataset, Modifier.padding(bottom = 10.dp)) }
+        }
         item(key = "period") { PeriodBoxes(result.range, canPick, onOpenPicker) }
-        item(key = "quick") { QuickButtons(matching, onQuick) }
+        item(key = "quick") { QuickButtons(buttons, highlighted, onQuick) }
         item(key = "counts") { CountButtons(result, onToggleKind) }
         item(key = "header") { ListHeader(result) }
         val emptyReason = HistoryRules.emptyReason(result)
@@ -365,19 +389,23 @@ private fun PeriodBox(label: String, date: String, enabled: Boolean, onClick: ()
 
 /** すぐ選べる期間。今の期間と同じボタンは青で強調する。 */
 @Composable
-private fun QuickButtons(matching: Set<QuickRange>, onQuick: (QuickRange) -> Unit) {
-    Row(
+private fun QuickButtons(buttons: List<QuickRange>, highlighted: QuickRange?, onQuick: (QuickRange) -> Unit) {
+    // 4つ（前回以降あり）のときは、1行に収まるように小さめにする
+    val compact = buttons.size > 3
+    FlowRow(
         modifier = Modifier.padding(bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        QuickRange.entries.forEach { quick ->
-            val on = quick in matching
+        buttons.forEach { quick ->
+            val on = quick == highlighted
             val shape = RoundedCornerShape(50)
             Text(
                 text = stringResource(
                     when (quick) {
                         QuickRange.LAST_7_DAYS -> R.string.history_quick_7
                         QuickRange.LAST_30_DAYS -> R.string.history_quick_30
+                        QuickRange.SINCE_LAST -> R.string.history_quick_since_last
                         QuickRange.ALL -> R.string.history_quick_all
                     },
                 ),
@@ -392,8 +420,8 @@ private fun QuickButtons(matching: Set<QuickRange>, onQuick: (QuickRange) -> Uni
                     .clickable(role = Role.Button) { onQuick(quick) }
                     .semantics { selected = on }
                     .heightIn(min = 34.dp)
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
-                style = MaterialTheme.typography.bodyMedium,
+                    .padding(horizontal = if (compact) 10.dp else 14.dp, vertical = 6.dp),
+                style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
                 fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
                 color = if (on) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

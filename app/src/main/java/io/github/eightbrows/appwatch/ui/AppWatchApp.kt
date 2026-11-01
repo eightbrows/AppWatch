@@ -20,10 +20,11 @@ import io.github.eightbrows.appwatch.ui.navigation.Screen
 import io.github.eightbrows.appwatch.ui.navigation.rememberNavigator
 import io.github.eightbrows.appwatch.ui.history.HistoryController
 import io.github.eightbrows.appwatch.ui.history.HistoryRoute
-import io.github.eightbrows.appwatch.ui.imported.ImportedDataScreen
+import io.github.eightbrows.appwatch.ui.imported.ImportedDataRoute
+import io.github.eightbrows.appwatch.ui.transfer.ExportImportRoute
+import io.github.eightbrows.appwatch.ui.transfer.TransferController
 import io.github.eightbrows.appwatch.ui.settings.HealthCheckRoute
 import io.github.eightbrows.appwatch.ui.settings.LicenseRoute
-import io.github.eightbrows.appwatch.ui.settings.PlaceholderScreen
 import io.github.eightbrows.appwatch.ui.settings.SettingsController
 import io.github.eightbrows.appwatch.ui.settings.SettingsDestination
 import io.github.eightbrows.appwatch.ui.settings.SettingsMenuRoute
@@ -78,6 +79,7 @@ fun AppWatchApp(
     settingsController: SettingsController,
     statusController: AppStatusController,
     historyController: HistoryController,
+    transferController: TransferController,
     /** アプリに戻ってくるたびに増える数（初回設定で、設定画面から戻ったときに状態を読み直す） */
     resumeCount: Int,
     themeMode: ThemeMode,
@@ -91,9 +93,20 @@ fun AppWatchApp(
     /** 共有で受け取った文面。事前登録の画面に入れたら [onSharedTextConsumed] を呼ぶ */
     sharedText: SharedText? = null,
     onSharedTextConsumed: () -> Unit = {},
+    /** ファイルを開いて（ACTION_VIEW）起動したか（このときは書き出し・取り込みの画面を最初の画面にする） */
+    startedFromFile: Boolean = false,
+    /** ファイルアプリなどから開いたファイル。取り込みの流れに入れたら [onOpenFileConsumed] を呼ぶ */
+    openFileUri: android.net.Uri? = null,
+    onOpenFileConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
-    val navigator = rememberNavigator(start = if (startedFromShare) Screen.PRE_REGISTER else startDestination.toScreen())
+    val navigator = rememberNavigator(
+        start = when {
+            startedFromShare -> Screen.PRE_REGISTER
+            startedFromFile -> Screen.EXPORT_IMPORT
+            else -> startDestination.toScreen()
+        },
+    )
     // 画面ごとの状態（選んでいるタブ、スクロール位置など）を、別の画面から戻ったときにも保つ
     val stateHolder = rememberSaveableStateHolder()
     // 最初の画面を切り替える。それまでの画面の状態（初回設定の途中の画面など）は捨てる
@@ -103,8 +116,8 @@ fun AppWatchApp(
     }
     // 初回設定の完了・使い方の変更・開発版のやり直しで行き先が変わったら、最初の画面を切り替える
     LaunchedEffect(startDestination) {
-        // 共有で開いた画面は、事前登録だけのための画面なので切り替えない
-        if (!startedFromShare && navigator.root != startDestination.toScreen()) resetTo(startDestination.toScreen())
+        // 共有・ファイルで開いた画面は、事前登録・取り込みだけのための画面なので切り替えない
+        if (!startedFromShare && !startedFromFile && navigator.root != startDestination.toScreen()) resetTo(startDestination.toScreen())
     }
     // 見守る端末に戻すときは、初回設定を2の画面から始める（アプリを閉じて開き直したら1から）
     var setupInitialStep by rememberSaveable { mutableIntStateOf(1) }
@@ -127,6 +140,20 @@ fun AppWatchApp(
     // 共有を受け取ったら、事前登録の画面を開く（開いているこの画面の上に重ねず、同じ画面なら入れ直すだけ）
     LaunchedEffect(sharedText) {
         if (sharedText != null && navigator.current != Screen.PRE_REGISTER) navigator.navigate(Screen.PRE_REGISTER)
+    }
+
+    // ファイルを開いたら、書き出し・取り込みの画面で取り込みの流れに入る
+    LaunchedEffect(openFileUri) {
+        if (openFileUri != null && navigator.current != Screen.EXPORT_IMPORT) navigator.navigate(Screen.EXPORT_IMPORT)
+    }
+    // 「閲覧のみ」で取り込んだら、取り込んだデータの画面へ（すでに開いていればそこまで戻る）
+    val onImportedForViewing: (io.github.eightbrows.appwatch.data.transfer.ImportOutcome) -> Unit = {
+        navigator.popTo(Screen.IMPORTED_DATA).forEach { stateHolder.removeState(it.name) }
+    }
+    // 復元したら、最初の画面（トップ）に戻る
+    val onRestored: () -> Unit = {
+        android.widget.Toast.makeText(context, R.string.restore_done, android.widget.Toast.LENGTH_LONG).show()
+        resetTo(startDestination.toScreen())
     }
 
     // 本アプリの削除警告を出しているときは、そのパッケージ名（画面の回転でも消えないように保存する）
@@ -160,10 +187,15 @@ fun AppWatchApp(
                 },
             )
 
-            Screen.IMPORTED_DATA -> ImportedDataScreen(
+            Screen.IMPORTED_DATA -> ImportedDataRoute(
+                controller = transferController,
                 onOpenSettings = { navigator.navigate(Screen.SETTINGS_MENU) },
                 // 設定メニューから開いたとき（最初の画面でないとき）は、戻るボタンを出す
                 onBack = if (navigator.root == Screen.IMPORTED_DATA) null else goBack,
+                onOpenStatus = { navigator.navigate(Screen.APP_STATUS) },
+                onOpenHistory = { navigator.navigate(Screen.HISTORY) },
+                onImportedForViewing = onImportedForViewing,
+                onRestored = onRestored,
             )
 
             Screen.HEALTH_CHECK -> HealthCheckRoute(settingsController, resumeCount, onBack = goBack)
@@ -245,7 +277,15 @@ fun AppWatchApp(
                 },
             )
 
-            Screen.EXPORT_IMPORT -> PlaceholderScreen(stringResource(R.string.settings_export_import), onBack = goBack)
+            Screen.EXPORT_IMPORT -> ExportImportRoute(
+                controller = transferController,
+                openUri = openFileUri,
+                onOpenUriConsumed = onOpenFileConsumed,
+                // ファイルを開いて起動したとき（最初の画面）は、戻ると画面を閉じて開いたアプリに戻る
+                onBack = { if (!goBackOrFalse()) onFinish() },
+                onImportedForViewing = onImportedForViewing,
+                onRestored = onRestored,
+            )
 
             Screen.TOP -> {
                 // まずデータベースの内容をすぐに出す。一度もチェックしていなければ「取得中」を出す

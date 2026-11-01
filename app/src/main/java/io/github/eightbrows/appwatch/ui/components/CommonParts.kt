@@ -158,7 +158,13 @@ fun AppIcon(
     modifier: Modifier = Modifier,
     size: Dp = 56.dp,
     versionKey: String = "",
+    /** false なら端末のアイコンを読まず、頭文字の印にする（取り込んだデータ：別の端末のアプリなので） */
+    loadIcon: Boolean = true,
 ) {
+    if (!loadIcon) {
+        LetterIcon(name = name, packageName = packageName, modifier = modifier, size = size)
+        return
+    }
     val sizePx = with(LocalDensity.current) { size.roundToPx() }
     val icon by rememberAppIcon(packageName, versionKey, sizePx)
     val loaded = icon

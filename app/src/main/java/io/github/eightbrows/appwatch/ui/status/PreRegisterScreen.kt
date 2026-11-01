@@ -77,7 +77,7 @@ fun PreRegisterRoute(
     onBack: () -> Unit,
     onOpenDetail: (String) -> Unit,
 ) {
-    val entries by remember { controller.entries }.collectAsState(initial = null)
+    val entries by remember { controller.localEntries }.collectAsState(initial = null)
     val usageMode by remember { controller.usageMode }.collectAsState(initial = null)
     var input by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }

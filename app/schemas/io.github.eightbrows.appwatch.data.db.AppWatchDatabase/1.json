@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "dd36c52bb5f31a2068ef761344cb63e0",
+    "identityHash": "a06a3c9a49198efc4de269e77198594e",
     "entities": [
       {
         "tableName": "dataset",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `kind` TEXT NOT NULL, `device_model` TEXT NOT NULL, `os_version` TEXT NOT NULL, `sdk_int` INTEGER NOT NULL, `app_version` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `exported_at` INTEGER, `imported_at` INTEGER, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `kind` TEXT NOT NULL, `device_id` TEXT NOT NULL, `device_model` TEXT NOT NULL, `os_version` TEXT NOT NULL, `sdk_int` INTEGER NOT NULL, `app_version` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `exported_at` INTEGER, `previous_exported_at` INTEGER, `imported_at` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -23,6 +23,12 @@
           {
             "fieldPath": "kind",
             "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceId",
+            "columnName": "device_id",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -62,6 +68,11 @@
             "affinity": "INTEGER"
           },
           {
+            "fieldPath": "previousExportedAt",
+            "columnName": "previous_exported_at",
+            "affinity": "INTEGER"
+          },
+          {
             "fieldPath": "importedAt",
             "columnName": "imported_at",
             "affinity": "INTEGER"
@@ -72,7 +83,18 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_dataset_device_id",
+            "unique": false,
+            "columnNames": [
+              "device_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_dataset_device_id` ON `${TABLE_NAME}` (`device_id`)"
+          }
+        ]
       },
       {
         "tableName": "baseline_app",
@@ -625,7 +647,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dd36c52bb5f31a2068ef761344cb63e0')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a06a3c9a49198efc4de269e77198594e')"
     ]
   }
 }

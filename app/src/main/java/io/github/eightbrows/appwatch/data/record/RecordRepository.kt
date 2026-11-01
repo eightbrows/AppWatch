@@ -16,7 +16,12 @@ import io.github.eightbrows.appwatch.data.status.AppStatusRules
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.InstalledApp
 import io.github.eightbrows.appwatch.model.ReviewStatus
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -76,6 +81,8 @@ class RecordRepository(
     @Volatile
     private var localId: String? = null
 
+    private val localIdFlow = MutableStateFlow<String?>(null)
+
     /**
      * この端末のデータの番号。初回起動時に UUID で作り、端末の識別番号を兼ねる。
      * 起動ごとに1回、アプリのバージョンと OS の情報を最新にする。
@@ -93,6 +100,7 @@ class RecordRepository(
                             id = id,
                             name = environment.deviceModel,
                             kind = DatasetKind.LOCAL,
+                            deviceId = id,
                             deviceModel = environment.deviceModel,
                             osVersion = environment.osVersion,
                             sdkInt = environment.sdkInt,
@@ -102,7 +110,10 @@ class RecordRepository(
                     )
                 }
             }
-            id.also { localId = it }
+            id.also {
+                localId = it
+                localIdFlow.value = it
+            }
         }
     }
 
@@ -144,64 +155,75 @@ class RecordRepository(
 
     // ---- 画面用 ----
 
+    /** この端末のデータの番号。復元で番号が変わったら、新しい番号が流れる。 */
+    fun observeLocalDatasetId(): Flow<String> = flow {
+        localDatasetId()
+        emitAll(localIdFlow.filterNotNull())
+    }.distinctUntilChanged()
+
+    /**
+     * 復元でこの端末のデータの番号が変わったときに呼ぶ（[localDatasetId] と、この端末のデータを見ている画面を新しい番号にする）。
+     */
+    fun onLocalDatasetReplaced(newId: String) {
+        localId = newId
+        localIdFlow.value = newId
+    }
+
     /** トップに出す、端末にあるアプリ。データベースが変わるたびに流れる。 */
-    fun observePresentApps(): Flow<List<AppSummary>> = flow {
-        val datasetId = localDatasetId()
-        emitAll(
-            combine(recordDao.observePresent(datasetId), policyDao.observeAll(datasetId)) { current, policies ->
-                val policyByPackage = policies.associate { it.packageName to it.toPolicy() }
-                current.map { it.toTracked().toSummary(policyByPackage[it.packageName], selfPackageName) }
-            },
-        )
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observePresentApps(): Flow<List<AppSummary>> = observeLocalDatasetId().flatMapLatest { datasetId ->
+        combine(recordDao.observePresent(datasetId), policyDao.observeAll(datasetId)) { current, policies ->
+            val policyByPackage = policies.associate { it.packageName to it.toPolicy() }
+            current.map { it.toTracked().toSummary(policyByPackage[it.packageName], selfPackageName) }
+        }
     }
 
     /** チェックの実行記録（日ごと）。動作チェックの「直近7日のチェック回数」に使う。 */
-    fun observeScanDays(): Flow<List<ScanDay>> = flow {
-        emitAll(
-            scanDailyDao.observeAll(localDatasetId()).map { rows ->
-                rows.map { ScanDay(date = it.date, count = it.count, lastAt = it.lastAt) }
-            },
-        )
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeScanDays(): Flow<List<ScanDay>> = observeLocalDatasetId().flatMapLatest { datasetId ->
+        scanDailyDao.observeAll(datasetId).map { rows ->
+            rows.map { ScanDay(date = it.date, count = it.count, lastAt = it.lastAt) }
+        }
     }
 
     /** 最終チェックの時刻（scan_daily の最後の時刻）。 */
-    fun observeLastCheckAt(): Flow<Long?> = flow {
-        emitAll(scanDailyDao.observeLastCheckAt(localDatasetId()))
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeLastCheckAt(): Flow<Long?> = observeLocalDatasetId().flatMapLatest { scanDailyDao.observeLastCheckAt(it) }
 
-    /** アプリの確認状態の画面の行（端末にないアプリは、確認状態・管理者メモ・事前登録が残っているものだけ）。 */
-    fun observeStatusEntries(): Flow<List<AppStatusEntry>> = flow {
-        val datasetId = localDatasetId()
-        emitAll(
-            combine(recordDao.observeCurrent(datasetId), policyDao.observeAll(datasetId)) { current, policies ->
-                AppStatusRules.buildEntries(
-                    tracked = current.map { it.toTracked() },
-                    policies = policies.associate { it.packageName to it.toPolicy() },
-                    selfPackageName = selfPackageName,
-                )
-            },
-        )
-    }
+    /** この端末のデータの、アプリの確認状態の画面の行。 */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeStatusEntries(): Flow<List<AppStatusEntry>> = observeLocalDatasetId().flatMapLatest { observeStatusEntries(it) }
 
-    /** アプリの詳細（管理者用）。記録も設定もないアプリなら entry は null。 */
-    fun observeAppDetail(packageName: String): Flow<AppDetail> = flow {
-        val datasetId = localDatasetId()
-        emitAll(
-            combine(
-                recordDao.observeCurrentOne(datasetId, packageName),
-                policyDao.observe(datasetId, packageName),
-                recordDao.observeEventsFor(datasetId, packageName),
-            ) { current, policy, events ->
-                val policyState = policy?.toPolicy()
-                val entry = when {
-                    current != null -> AppStatusRules.entryOf(current.toTracked(), policyState, selfPackageName)
-                    policyState != null -> AppStatusRules.entryOf(policyState, selfPackageName)
-                    else -> null
-                }
-                AppDetail(entry = entry, events = events.map { it.toChange() })
-            },
-        )
-    }
+    /** アプリの確認状態の画面の行（端末にないアプリは、確認状態・管理者メモ・事前登録が残っているものだけ）。[datasetId] で読むデータを選ぶ。 */
+    fun observeStatusEntries(datasetId: String): Flow<List<AppStatusEntry>> =
+        combine(recordDao.observeCurrent(datasetId), policyDao.observeAll(datasetId)) { current, policies ->
+            AppStatusRules.buildEntries(
+                tracked = current.map { it.toTracked() },
+                policies = policies.associate { it.packageName to it.toPolicy() },
+                selfPackageName = selfPackageName,
+            )
+        }
+
+    /** この端末のデータの、アプリの詳細（管理者用）。 */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeAppDetail(packageName: String): Flow<AppDetail> =
+        observeLocalDatasetId().flatMapLatest { observeAppDetail(it, packageName) }
+
+    /** アプリの詳細（管理者用）。記録も設定もないアプリなら entry は null。[datasetId] で読むデータを選ぶ。 */
+    fun observeAppDetail(datasetId: String, packageName: String): Flow<AppDetail> =
+        combine(
+            recordDao.observeCurrentOne(datasetId, packageName),
+            policyDao.observe(datasetId, packageName),
+            recordDao.observeEventsFor(datasetId, packageName),
+        ) { current, policy, events ->
+            val policyState = policy?.toPolicy()
+            val entry = when {
+                current != null -> AppStatusRules.entryOf(current.toTracked(), policyState, selfPackageName)
+                policyState != null -> AppStatusRules.entryOf(policyState, selfPackageName)
+                else -> null
+            }
+            AppDetail(entry = entry, events = events.map { it.toChange() })
+        }
 
     /**
      * 履歴と比較で使う記録（端末の変化とチェックの実行記録）。

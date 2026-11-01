@@ -30,6 +30,7 @@ abstract class AppWatchDatabase : RoomDatabase() {
     abstract fun appRecordDao(): AppRecordDao
     abstract fun policyDao(): PolicyDao
     abstract fun scanDailyDao(): ScanDailyDao
+    abstract fun transferDao(): TransferDao
 
     companion object {
         const val FILE_NAME = "appwatch.db"

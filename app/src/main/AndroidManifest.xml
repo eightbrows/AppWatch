@@ -44,6 +44,15 @@
 
                 <data android:mimeType="text/plain" />
             </intent-filter>
+            <!-- ファイルアプリなどから .appwatch のファイルを開いたとき（取り込み）。中身で AppWatch のファイルか判断する -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/gzip" />
+            </intent-filter>
         </activity>
 
         <!-- ホーム画面のウィジェット（Glance） -->

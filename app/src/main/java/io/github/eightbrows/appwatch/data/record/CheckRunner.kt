@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -115,6 +116,13 @@ class CheckRunner(
             mutex.unlock()
         }
     }
+
+    /**
+     * チェックと同時に動かしてはいけない処理（復元）を行う。動いているチェックが終わるのを待ち、
+     * 処理の間に頼まれたチェックは省略される。[block] には、端末のアプリを取得する関数を渡す。
+     */
+    suspend fun <T> exclusive(block: suspend (scan: suspend () -> List<InstalledApp>) -> T): T =
+        mutex.withLock { block { withContext(ioDispatcher) { scanner() } } }
 
     private suspend fun isRecentlyChecked(): Boolean {
         val last = recorder.lastCheckAt() ?: return false

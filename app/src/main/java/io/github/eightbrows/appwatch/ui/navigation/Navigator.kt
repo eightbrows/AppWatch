@@ -26,7 +26,7 @@ enum class Screen {
     // 履歴と比較（設定メニューから開く）
     HISTORY,
 
-    // 後のステップで作る画面（今は仮の画面）
+    // データの書き出し・取り込み（設定メニュー、ファイルアプリから開いたとき）
     EXPORT_IMPORT,
 }
 
@@ -55,6 +55,21 @@ class Navigator internal constructor(initial: List<Screen>) {
     fun resetTo(screen: Screen) {
         backStack.clear()
         backStack.add(screen)
+    }
+
+    /**
+     * [screen] まで戻る。積み重ねの中になければ、その上に開く。
+     * @return 閉じた画面（呼び出し側で画面の状態を捨てるため）
+     */
+    fun popTo(screen: Screen): List<Screen> {
+        val index = backStack.lastIndexOf(screen)
+        if (index < 0) {
+            navigate(screen)
+            return emptyList()
+        }
+        val removed = backStack.subList(index + 1, backStack.size).toList()
+        repeat(removed.size) { backStack.removeAt(backStack.lastIndex) }
+        return removed
     }
 
     /** 1つ前の画面に戻る。最初の画面なら何もせず false を返す。 */

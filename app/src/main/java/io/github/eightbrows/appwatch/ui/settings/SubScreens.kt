@@ -243,19 +243,3 @@ fun LicenseScreen(onBack: () -> Unit, onOpenRepository: () -> Unit) {
     }
 }
 
-// ---- 仮の画面 ----
-
-/** まだ作っていない画面（アプリの確認状態・事前登録・履歴と比較・書き出しと取り込み）の仮の画面。 */
-@Composable
-fun PlaceholderScreen(title: String, onBack: () -> Unit) {
-    AdminPage(title = title, onBack = onBack) {
-        Card {
-            Text(
-                text = stringResource(R.string.placeholder_body),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
-            )
-        }
-    }
-}

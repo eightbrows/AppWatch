@@ -32,6 +32,9 @@ class SettingsController(context: Context) {
         .map { apps -> apps.count { it.reviewStatus == ReviewStatus.CAUTION } }
         .distinctUntilChanged()
 
+    /** 取り込んだデータの名前（設定メニューの「取り込んだデータ」の行の補足）。 */
+    val importedNames: Flow<List<String>> = app.transferRepository.observeImported().map { list -> list.map { it.name } }
+
     val setupState: Flow<SetupState> = app.settingsRepository.setupState
 
     val checkInterval: Flow<CheckInterval> = app.settingsRepository.checkIntervalMinutes.map(CheckInterval::fromMinutes)

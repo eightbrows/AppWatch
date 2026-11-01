@@ -20,6 +20,12 @@
             android:name=".data.record.DebugShiftRecordsReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
+
+        <!-- この端末のデータを「別の端末のファイル」として書き出す（取り込みの確認用）。DUMP の権限が要るので adb からしか呼べない -->
+        <receiver
+            android:name=".data.transfer.DebugExportReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
     </application>
 
 </manifest>

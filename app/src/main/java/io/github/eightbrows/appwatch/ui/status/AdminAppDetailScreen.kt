@@ -68,6 +68,8 @@ import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.ui.components.AdminTopBar
+import io.github.eightbrows.appwatch.ui.components.ViewingBand
+import io.github.eightbrows.appwatch.ui.components.ViewingFooter
 import io.github.eightbrows.appwatch.ui.components.AppIcon
 import io.github.eightbrows.appwatch.ui.components.formatDateTime
 import io.github.eightbrows.appwatch.ui.components.formatShortDate
@@ -89,6 +91,9 @@ fun AdminAppDetailRoute(
     onOpenAppInfo: (AppStatusEntry) -> Unit,
 ) {
     val detail by remember(packageName) { controller.detail(packageName) }.collectAsState(initial = null)
+    val selection by remember { controller.selection }.collectAsState(initial = null)
+    // 取り込んだデータを見ているときは、見るだけ（保存・アプリ情報・アンインストール・登録の解除を出さない）
+    val viewing = selection?.isViewingImported == true
     val entry = detail?.entry
 
     // 編集中の値（画面の回転でも消えないように保存する）。読み込んだ最初の1回だけ、保存されている値を入れる
@@ -136,11 +141,13 @@ fun AdminAppDetailRoute(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Header(entry)
+            selection?.let { ViewingBand(it) }
+            Header(entry, loadIcon = !viewing)
             WarningBox(entry, current.events)
             SectionLabel(stringResource(R.string.detail_status))
             StatusButtons(
                 selected = status,
+                enabled = !viewing,
                 onSelect = {
                     status = it
                     if (it == ReviewStatus.OK) pressedOk = true
@@ -151,9 +158,10 @@ fun AdminAppDetailRoute(
                 value = memo,
                 onValueChange = { memo = it },
                 modifier = Modifier.fillMaxWidth(),
+                readOnly = viewing,
                 minLines = 2,
                 textStyle = MaterialTheme.typography.bodyLarge,
-                placeholder = { Text(stringResource(R.string.detail_memo_hint)) },
+                placeholder = { Text(stringResource(if (viewing) R.string.detail_memo_none else R.string.detail_memo_hint)) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -162,6 +170,10 @@ fun AdminAppDetailRoute(
             )
             SectionLabel(stringResource(R.string.detail_history))
             History(current.events)
+        }
+        if (viewing) {
+            ViewingFooter()
+            return@Column
         }
         BottomButtons(
             entry = entry,
@@ -227,10 +239,10 @@ internal fun SectionLabel(text: String) {
 
 /** アイコン、アプリ名、バージョン、入手元・インストール日、パッケージ名。端末にないアプリは灰色の印。 */
 @Composable
-internal fun Header(entry: AppStatusEntry) {
+internal fun Header(entry: AppStatusEntry, loadIcon: Boolean = true) {
     Row(verticalAlignment = Alignment.Top) {
         if (entry.isPresent) {
-            AppIcon(name = entry.name, packageName = entry.packageName, size = 56.dp, versionKey = entry.versionName.orEmpty())
+            AppIcon(name = entry.name, packageName = entry.packageName, size = 56.dp, versionKey = entry.versionName.orEmpty(), loadIcon = loadIcon)
         } else {
             AbsentMark(entry.name)
         }
@@ -356,7 +368,7 @@ private fun warningText(warning: AppWarning, entry: AppStatusEntry, events: List
 
 /** 確認の状態の3つのボタン（問題なし／未確認／要注意）。 */
 @Composable
-private fun StatusButtons(selected: ReviewStatus, onSelect: (ReviewStatus) -> Unit) {
+private fun StatusButtons(selected: ReviewStatus, onSelect: (ReviewStatus) -> Unit, enabled: Boolean = true) {
     val colors = AppWatchTheme.colors
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf(ReviewStatus.OK, ReviewStatus.UNCONFIRMED, ReviewStatus.CAUTION).forEach { status ->
@@ -368,6 +380,7 @@ private fun StatusButtons(selected: ReviewStatus, onSelect: (ReviewStatus) -> Un
             }
             Surface(
                 onClick = { onSelect(status) },
+                enabled = enabled,
                 modifier = Modifier
                     .weight(1f)
                     .height(52.dp)

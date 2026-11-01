@@ -19,18 +19,25 @@ import io.github.eightbrows.appwatch.model.ReviewStatus
 /** データのまとまりの種類。 */
 enum class DatasetKind { LOCAL, IMPORTED }
 
-/** dataset：データのまとまり。この端末の番号（UUID）は初回起動時に作り、端末の識別番号を兼ねる。 */
-@Entity(tableName = "dataset")
+/**
+ * dataset：データのまとまり。この端末の番号（UUID）は初回起動時に作り、端末の識別番号を兼ねる。
+ * 取り込んだデータは別に番号を作り、書き出した端末の識別番号を [deviceId] に持つ（同じ端末かどうかの判断に使う）。
+ */
+@Entity(tableName = "dataset", indices = [Index(value = ["device_id"])])
 data class DatasetEntity(
     @PrimaryKey @ColumnInfo(name = "id") val id: String,
     @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "kind") val kind: DatasetKind,
+    /** 端末の識別番号。この端末のデータでは [id] と同じ。取り込んだデータでは、書き出した端末の識別番号 */
+    @ColumnInfo(name = "device_id") val deviceId: String,
     @ColumnInfo(name = "device_model") val deviceModel: String,
     @ColumnInfo(name = "os_version") val osVersion: String,
     @ColumnInfo(name = "sdk_int") val sdkInt: Int,
     @ColumnInfo(name = "app_version") val appVersion: String,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "exported_at") val exportedAt: Long? = null,
+    /** 同じ端末のデータを置き換えたときの、前のデータの書き出し日時（履歴と比較の「前回以降」） */
+    @ColumnInfo(name = "previous_exported_at") val previousExportedAt: Long? = null,
     @ColumnInfo(name = "imported_at") val importedAt: Long? = null,
 )
 

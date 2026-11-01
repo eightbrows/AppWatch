@@ -2,6 +2,7 @@ package io.github.eightbrows.appwatch
 
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -24,6 +25,7 @@ import io.github.eightbrows.appwatch.ui.settings.SettingsController
 import io.github.eightbrows.appwatch.ui.setup.SetupController
 import io.github.eightbrows.appwatch.ui.status.AppStatusController
 import io.github.eightbrows.appwatch.ui.status.SharedText
+import io.github.eightbrows.appwatch.ui.transfer.TransferController
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -40,6 +42,7 @@ class MainActivity : AppCompatActivity() {
     private val settingsController by lazy { SettingsController(this) }
     private val statusController by lazy { AppStatusController(this) }
     private val historyController by lazy { HistoryController(this) }
+    private val transferController by lazy { TransferController(this) }
 
     /** アプリに戻ってくるたびに増える数（初回設定で、設定画面から戻ったときに状態を読み直すのに使う）。 */
     private val resumeCount = MutableStateFlow(0)
@@ -53,10 +56,19 @@ class MainActivity : AppCompatActivity() {
      */
     private val startedFromShare: Boolean by lazy { intent?.action == Intent.ACTION_SEND }
 
+    /** ファイルアプリなどから開いた .appwatch のファイル（取り込みの流れに入れる）。読んだら null に戻す。 */
+    private val openFile = MutableStateFlow<Uri?>(null)
+
+    /** ファイルを開いて（ACTION_VIEW）起動したか。共有と同じく、書き出し・取り込みの画面だけを最初の画面にし、戻ると開いたアプリに戻る。 */
+    private val startedFromFile: Boolean by lazy { intent?.action == Intent.ACTION_VIEW && intent?.data != null }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (savedInstanceState == null) receiveShare(intent)
+        if (savedInstanceState == null) {
+            receiveShare(intent)
+            receiveFile(intent)
+        }
         setContent {
             // 保存済みのテーマと初回設定の状態を読み終えるまでは何も描かない
             // （一瞬違う色や違う画面が出るのを防ぐ）
@@ -73,6 +85,12 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         receiveShare(intent)
+        receiveFile(intent)
+    }
+
+    private fun receiveFile(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_VIEW) return
+        openFile.value = intent.data ?: return
     }
 
     private fun receiveShare(intent: Intent?) {
@@ -103,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         val checkState by app.checkRunner.state.collectAsState()
         val resumes by resumeCount.collectAsState()
         val shared by sharedText.collectAsState()
+        val fileToOpen by openFile.collectAsState()
 
         // ステータスバー・ナビゲーションバーの文字の色を、選んだテーマに合わせる
         DisposableEffect(darkTheme) {
@@ -120,6 +139,7 @@ class MainActivity : AppCompatActivity() {
                 settingsController = settingsController,
                 statusController = statusController,
                 historyController = historyController,
+                transferController = transferController,
                 resumeCount = resumes,
                 themeMode = mode,
                 onThemeModeChange = { newMode -> scope.launch { app.settingsRepository.setThemeMode(newMode) } },
@@ -129,6 +149,9 @@ class MainActivity : AppCompatActivity() {
                 startedFromShare = startedFromShare,
                 sharedText = shared,
                 onSharedTextConsumed = { sharedText.value = null },
+                startedFromFile = startedFromFile,
+                openFileUri = fileToOpen,
+                onOpenFileConsumed = { openFile.value = null },
             )
         }
     }

@@ -252,7 +252,6 @@
     </string-array>
 
     <!-- まだ作っていない画面 -->
-    <string name="placeholder_body">この画面は後のステップで作ります。</string>
 
     <!-- アプリの確認状態（管理者） -->
     <string name="status_search_hint">アプリ名・パッケージ名</string>
@@ -435,7 +434,7 @@
     <string name="history_detected">%1$s 検出</string>
     <string name="history_row_time">MM/dd HH:mm</string>
     <string name="history_row_time_with_year">yyyy/MM/dd HH:mm</string>
-    <string name="history_signature_note">削除→再インストールの可能性</string>
+    <string name="history_signature_note">別の作り手のアプリに入れ替わった可能性</string>
     <string name="history_reset_text">記録を取り直しました</string>
     <string name="history_reset_detail">端末の初期化・復元のため</string>
     <string name="history_open_detail">アプリの詳細を開く</string>
@@ -463,4 +462,103 @@
     <string name="history_type_disabled">無効化</string>
     <string name="history_type_signature">署名が変わった</string>
     <string name="history_type_reset">初期化</string>
+
+    <!-- データの切り替え・閲覧中（仕様書 7章、13_app_status_viewing.png） -->
+    <string name="data_this_device">この端末</string>
+    <string name="data_label">データ：</string>
+    <string name="data_switch">データを切り替える</string>
+    <plurals name="data_imported_count">
+        <item quantity="other">（取り込んだデータ %1$d件）</item>
+    </plurals>
+    <string name="data_snapshot_time">yyyy/MM/dd HH:mm</string>
+    <string name="data_viewing_band">閲覧中：%1$s（%2$s 時点）</string>
+    <string name="data_viewing_read_only">閲覧中のデータは変更できません</string>
+    <string name="detail_memo_none">（管理者メモなし）</string>
+    <string name="history_quick_since_last">前回以降</string>
+    <string name="history_share_device">端末：%1$s（%2$s 時点）</string>
+
+    <!-- 書き出し・取り込み（10_export_import.png） -->
+    <string name="transfer_title">書き出し・取り込み</string>
+    <string name="transfer_export_section">書き出し</string>
+    <string name="transfer_export_title">この端末のデータを書き出す</string>
+    <string name="transfer_export_desc">記録・確認状態・設定をまとめた .appwatch ファイルを作ります</string>
+    <string name="transfer_export_button">書き出す</string>
+    <string name="transfer_exporting">書き出しています…</string>
+    <string name="transfer_note">「ファイルとして保存」で保存場所を選びます。ファイルは暗号化されないので、対面での近距離共有など、本人と管理者だけが使う方法で受け渡して下さい。</string>
+    <string name="transfer_import_section">取り込み</string>
+    <string name="transfer_import_title">ファイルを取り込む</string>
+    <string name="transfer_import_desc">開くと「閲覧のみ」か「この端末に復元」を選びます</string>
+    <string name="transfer_import_button">選ぶ</string>
+    <string name="transfer_recent_section">最近の書き出し</string>
+    <string name="transfer_recent_empty">まだ書き出していません</string>
+    <string name="transfer_recent_line">%1$s ・ %2$s</string>
+    <string name="transfer_size_kb">%1$sKB</string>
+    <string name="transfer_size_mb">%1$sMB</string>
+    <string name="transfer_exported">書き出しました</string>
+    <string name="transfer_export_failed">書き出せませんでした</string>
+    <string name="transfer_reading">ファイルを読んでいます…</string>
+
+    <!-- 取り込みの選択（11_import_choice.png） -->
+    <string name="import_error_title">ファイルを取り込めません</string>
+    <string name="import_error_not_appwatch">AppWatch のファイルではありません</string>
+    <string name="import_error_too_new">新しいアプリで書き出されたファイルです。アプリを更新して下さい</string>
+    <string name="import_error_cannot_open">ファイルを開けませんでした</string>
+    <string name="import_error_close">閉じる</string>
+    <string name="import_title">データを取り込みます</string>
+    <string name="import_info_device">機種：%1$s ・ %2$s</string>
+    <string name="import_info_exported">書き出し：%1$s</string>
+    <string name="import_info_counts">アプリ %1$d件 ・ 要注意 %2$d件</string>
+    <string name="import_name_label">端末の名前（この端末の画面に表示）</string>
+    <string name="import_view_only">閲覧のみ</string>
+    <string name="import_view_only_desc">「取り込んだデータ」に追加します。この端末の記録は変わりません。前回取り込んだ同じ端末のデータは上書きします。</string>
+    <string name="import_view_only_own">この端末のデータです。閲覧のみでは取り込めません。</string>
+    <string name="import_restore">この端末に復元</string>
+    <string name="import_restore_desc">この端末のデータを、ファイルの内容で置き換えます。機種変更や初期化の後に使います。</string>
+    <string name="import_restore_view_only">閲覧専用の端末では復元できません。</string>
+    <string name="import_cancel">中止</string>
+    <string name="import_confirm">取り込む</string>
+    <string name="import_working">取り込んでいます…</string>
+    <string name="import_done">%1$sを取り込みました</string>
+    <string name="import_failed">取り込めませんでした</string>
+
+    <!-- 復元（14_restore_confirm.png） -->
+    <string name="restore_title">端末を初期化（または機種変更）しましたか？</string>
+    <string name="restore_exported">復元するデータ：%1$s に書き出したもの</string>
+    <string name="restore_yes">はい、初期化しました</string>
+    <string name="restore_yes_desc">確認状態と経緯は引き継ぎ、今の端末のアプリを新しい基準にします。履歴に「初期化」を1件記録します。</string>
+    <string name="restore_no">いいえ</string>
+    <string name="restore_no_desc">データをそのまま戻し、次のチェックで差分を記録します。</string>
+    <string name="restore_cancel">中止</string>
+    <string name="restore_working">復元しています…</string>
+    <string name="restore_done">復元しました</string>
+    <string name="restore_failed">復元できませんでした。この端末のデータは元のままです。</string>
+    <string name="restore_bulk_title">まとめて「問題なし」にしますか？</string>
+    <plurals name="restore_bulk_body">
+        <item quantity="other">新しく見つかったプリインストールとシステムのアプリが %1$d件あります（ファイルに確認状態がないもの）。まとめて「問題なし」にしますか？</item>
+    </plurals>
+    <string name="restore_bulk_yes">問題なしにする</string>
+    <string name="restore_bulk_no">そのままにする</string>
+
+    <!-- 取り込んだデータ（12_imported_data.png） -->
+    <plurals name="imported_caution">
+        <item quantity="other">要注意 %1$d件</item>
+    </plurals>
+    <string name="imported_no_caution">要注意なし</string>
+    <string name="imported_device">%1$s ・ %2$s</string>
+    <string name="imported_times">%1$s 時点 ・ 取り込み %2$s</string>
+    <string name="imported_time_short">MM/dd HH:mm</string>
+    <string name="imported_open_status">確認状態</string>
+    <string name="imported_open_history">履歴と比較</string>
+    <string name="imported_more">…</string>
+    <string name="imported_more_desc">%1$sのその他の操作</string>
+    <string name="imported_rename">名前の変更</string>
+    <string name="imported_delete">削除</string>
+    <string name="imported_rename_ok">変更する</string>
+    <string name="imported_delete_title">「%1$s」を削除しますか？</string>
+    <string name="imported_delete_body">取り込んだデータを削除します。この端末の記録と、元の端末の記録は変わりません。</string>
+    <string name="imported_delete_ok">削除する</string>
+    <string name="imported_deleted">%1$sを削除しました</string>
+    <string name="imported_note">「…」から名前の変更と削除ができます。新しいファイルを取り込むと、同じ端末のデータは上書きされます。</string>
+    <string name="imported_howto">見守る端末の「設定」→「データの書き出し・取り込み」で書き出したファイルをこの端末に送り、下の「ファイルを取り込む」から開いて下さい。</string>
+    <string name="imported_import_button">ファイルを取り込む</string>
 </resources>

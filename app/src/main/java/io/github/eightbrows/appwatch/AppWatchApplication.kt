@@ -11,6 +11,8 @@ import io.github.eightbrows.appwatch.data.record.DeviceEnvironment
 import io.github.eightbrows.appwatch.data.record.RecordOutcome
 import io.github.eightbrows.appwatch.data.record.RecordRepository
 import io.github.eightbrows.appwatch.data.settings.SettingsRepository
+import io.github.eightbrows.appwatch.data.transfer.DataSelector
+import io.github.eightbrows.appwatch.data.transfer.TransferRepository
 import io.github.eightbrows.appwatch.widget.AppWatchWidget
 import io.github.eightbrows.appwatch.work.MonitoringEffects
 import io.github.eightbrows.appwatch.work.MonitoringPolicy
@@ -32,18 +34,27 @@ class AppWatchApplication : Application() {
 
     val database: AppWatchDatabase by lazy { AppWatchDatabase.create(this) }
 
-    val recordRepository: RecordRepository by lazy {
-        RecordRepository(
-            db = database,
-            environment = DeviceEnvironment(
-                deviceModel = Build.MODEL,
-                osVersion = "Android ${Build.VERSION.RELEASE}",
-                sdkInt = Build.VERSION.SDK_INT,
-                appVersion = BuildConfig.VERSION_NAME,
-            ),
-            selfPackageName = packageName,
+    /** この端末の情報（dataset と書き出しファイルに書く）。 */
+    val deviceEnvironment: DeviceEnvironment by lazy {
+        DeviceEnvironment(
+            deviceModel = Build.MODEL,
+            osVersion = "Android ${Build.VERSION.RELEASE}",
+            sdkInt = Build.VERSION.SDK_INT,
+            appVersion = BuildConfig.VERSION_NAME,
         )
     }
+
+    val recordRepository: RecordRepository by lazy {
+        RecordRepository(db = database, environment = deviceEnvironment, selfPackageName = packageName)
+    }
+
+    /** 書き出し・取り込み・復元（仕様書 7章）。 */
+    val transferRepository: TransferRepository by lazy {
+        TransferRepository(db = database, records = recordRepository, environment = deviceEnvironment)
+    }
+
+    /** 選択中のデータ（確認状態・履歴と比較・アプリの詳細で共通）。 */
+    val dataSelector: DataSelector by lazy { DataSelector(settingsRepository, recordRepository, transferRepository) }
 
     val checkRunner: CheckRunner by lazy {
         val scanner = PackageScanner(this)

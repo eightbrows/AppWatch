@@ -15,8 +15,25 @@ import java.time.format.DateTimeFormatter
 /** 件数ボタンの種類。有効化は「無効化」に含める。初期化は件数ボタンに含めない。 */
 enum class HistoryKind { ADDED, REMOVED, UPDATED, DISABLED, SIGNATURE }
 
-/** すぐ選べる期間。「前回以降」は取り込んだデータを見ているときだけ出す（ステップ10で足す）。 */
-enum class QuickRange { LAST_7_DAYS, LAST_30_DAYS, ALL }
+/**
+ * すぐ選べる期間（画面の並び順。短いものから）。
+ * 「前回以降」は、取り込んだデータを見ていて、同じ端末の前回の書き出し日時があるときだけ出す。
+ */
+enum class QuickRange { LAST_7_DAYS, LAST_30_DAYS, SINCE_LAST, ALL }
+
+/**
+ * 期間を数える基準の日。この端末のデータでは今日、取り込んだデータではファイルの書き出し日を「今日」とする。
+ * @param previousExportDate 同じ端末の前回取り込んだファイルの書き出し日（「前回以降」に使う）。なければ null
+ */
+data class HistoryClock(
+    val today: LocalDate,
+    val firstCheckDate: LocalDate?,
+    val previousExportDate: LocalDate? = null,
+) {
+    /** 出すボタン。「前回以降」は前回の書き出し日があるときだけ。 */
+    val quickButtons: List<QuickRange>
+        get() = QuickRange.entries.filter { it != QuickRange.SINCE_LAST || previousExportDate != null }
+}
 
 /** 期間（両端の日を含む）。 */
 data class DateRange(val start: LocalDate, val end: LocalDate) {
@@ -147,19 +164,34 @@ object HistoryRules {
      * すぐ選べる期間。直近7日は今日を含む7日、直近30日は今日を含む30日、全期間は最初のチェックの日から。
      * どれも最初のチェックの日より前には広げない。まだチェックがなければ今日だけ。
      */
-    fun quickRange(quick: QuickRange, firstCheckDate: LocalDate?, today: LocalDate): DateRange {
+    fun quickRange(quick: QuickRange, firstCheckDate: LocalDate?, today: LocalDate, previousExportDate: LocalDate? = null): DateRange {
         val first = firstCheckDate?.takeIf { !it.isAfter(today) } ?: today
         val start = when (quick) {
             QuickRange.LAST_7_DAYS -> today.minusDays(6)
             QuickRange.LAST_30_DAYS -> today.minusDays(29)
+            // 前回の書き出し日から今回の書き出し日まで（前回の日がなければ全期間と同じ）
+            QuickRange.SINCE_LAST -> previousExportDate?.coerceAtMost(today) ?: first
             QuickRange.ALL -> first
         }
         return DateRange(maxOf(start, first), today)
     }
 
-    /** 今の期間と同じになる、すぐ選べるボタン（青で強調する）。 */
+    fun quickRange(quick: QuickRange, clock: HistoryClock): DateRange =
+        quickRange(quick, clock.firstCheckDate, clock.today, clock.previousExportDate)
+
+    /** 今の期間と同じになる、すぐ選べるボタン（出しているボタンの中で）。 */
     fun matchingQuick(range: DateRange, firstCheckDate: LocalDate?, today: LocalDate): Set<QuickRange> =
-        QuickRange.entries.filterTo(LinkedHashSet()) { quickRange(it, firstCheckDate, today) == range }
+        matchingQuick(range, HistoryClock(today, firstCheckDate))
+
+    fun matchingQuick(range: DateRange, clock: HistoryClock): Set<QuickRange> =
+        clock.quickButtons.filterTo(LinkedHashSet()) { quickRange(it, clock) == range }
+
+    /**
+     * 青で強調するボタン（1つだけ）。
+     * ボタンで選んだときは、最後に押したボタン。カレンダーで選んだときは、同じ期間のボタンのうち最も短いもの（並び順で最初）。
+     */
+    fun highlighted(pressed: QuickRange?, range: DateRange, clock: HistoryClock): QuickRange? =
+        pressed?.takeIf { it in clock.quickButtons } ?: matchingQuick(range, clock).firstOrNull()
 
     /** カレンダーで選んだ期間を、選べる範囲（最初のチェックの日から今日まで）に収める。 */
     fun clamp(range: DateRange, firstCheckDate: LocalDate?, today: LocalDate): DateRange {
@@ -221,8 +253,9 @@ object HistoryRules {
     /**
      * 表示中の一覧を共有する文字にする。
      * 1行目に題名、2行目に期間、3行目に表示中の種類の件数（非表示の種類があれば「（更新は除く）」のように）、その後に1行ずつ変化。
+     * 取り込んだデータでは、題名の次に [deviceLine]（例：「端末：端末A（2026/10/28 21:00 時点）」）を入れる。
      */
-    fun shareText(result: HistoryResult, texts: HistoryShareTexts, zone: ZoneId): String {
+    fun shareText(result: HistoryResult, texts: HistoryShareTexts, zone: ZoneId, deviceLine: String? = null): String {
         val dateFormatter = DateTimeFormatter.ofPattern(texts.datePattern)
         val sameYear = result.range.start.year == result.range.end.year
         val rowFormatter = DateTimeFormatter.ofPattern(if (sameYear) texts.rowTimePattern else texts.rowTimeWithYearPattern)
@@ -242,6 +275,7 @@ object HistoryRules {
 
         return buildList {
             add(texts.title)
+            deviceLine?.let { add(it) }
             add(texts.periodFormat.format(result.range.start.format(dateFormatter), result.range.end.format(dateFormatter)))
             add(countLine)
             result.rows.forEach { add(rowText(it, texts, rowFormatter, zone)) }
