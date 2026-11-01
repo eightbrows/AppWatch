@@ -12,8 +12,11 @@ import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.PermissionState
 import io.github.eightbrows.appwatch.model.ReviewStatus
+import io.github.eightbrows.appwatch.data.status.FilterChip
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -54,6 +57,39 @@ fun AppKind.labelRes(): Int = when (this) {
     AppKind.USER_INSTALLED -> R.string.kind_user_installed
     AppKind.PREINSTALLED -> R.string.kind_preinstalled
     AppKind.SYSTEM -> R.string.kind_system
+}
+
+@StringRes
+fun FilterChip.labelRes(): Int = when (this) {
+    FilterChip.STATUS_UNCONFIRMED -> R.string.status_unconfirmed
+    FilterChip.STATUS_CAUTION -> R.string.status_caution
+    FilterChip.STATUS_OK -> R.string.status_ok
+    FilterChip.KIND_USER -> R.string.kind_user_installed
+    FilterChip.KIND_PREINSTALLED -> R.string.filter_kind_preinstalled
+    FilterChip.KIND_SYSTEM -> R.string.kind_system
+    FilterChip.SOURCE_PLAY -> R.string.filter_source_play
+    FilterChip.SOURCE_OTHER -> R.string.filter_source_other
+    FilterChip.SOURCE_UNKNOWN -> R.string.filter_source_unknown
+    FilterChip.WARNING_NONE -> R.string.filter_warning_none
+    FilterChip.WARNING_DEBUG -> R.string.filter_warning_debug
+    FilterChip.WARNING_SIGNATURE -> R.string.filter_warning_signature
+    FilterChip.WARNING_REINSTALL -> R.string.filter_warning_reinstall
+    FilterChip.DEVICE_PRESENT -> R.string.filter_device_present
+    FilterChip.DEVICE_ABSENT -> R.string.filter_device_absent
+    FilterChip.REGISTERED -> R.string.filter_registered
+    FilterChip.DISABLED -> R.string.filter_disabled
+}
+
+/** エポックミリ秒を端末の時間帯の日時にする。 */
+fun Long.toLocalDateTime(): LocalDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
+
+/** 短い日付（今年なら「10/02」、それより前なら「2025/10/02」）。これまでの経緯・警告の説明に使う。 */
+@Composable
+fun formatShortDate(dateTime: LocalDateTime): String {
+    val sameYear = dateTime.year == LocalDate.now().year
+    val pattern = stringResource(if (sameYear) R.string.format_short_date else R.string.format_short_date_with_year)
+    val formatter = remember(pattern) { DateTimeFormatter.ofPattern(pattern) }
+    return formatter.format(dateTime)
 }
 
 /**

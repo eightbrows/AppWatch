@@ -49,8 +49,36 @@ interface AppRecordDao {
     )
     suspend fun clearRecordedWarnings(datasetId: String, packageNames: List<String>, now: Long)
 
+    /** 「問題なし」を取り消したときに、消した警告を戻す。 */
+    @Query(
+        "UPDATE app_current SET reinstalled_at = :reinstalledAt, signature_changed_at = :signatureChangedAt, " +
+            "updated_at = :now WHERE dataset_id = :datasetId AND package_name = :packageName",
+    )
+    suspend fun restoreRecordedWarnings(
+        datasetId: String,
+        packageName: String,
+        reinstalledAt: Long?,
+        signatureChangedAt: Long?,
+        now: Long,
+    )
+
+    /** 端末にないアプリも含めた全行（アプリの確認状態の画面）。 */
+    @Query("SELECT * FROM app_current WHERE dataset_id = :datasetId")
+    fun observeCurrent(datasetId: String): Flow<List<AppCurrentEntity>>
+
+    @Query("SELECT * FROM app_current WHERE dataset_id = :datasetId AND package_name = :packageName")
+    fun observeCurrentOne(datasetId: String, packageName: String): Flow<AppCurrentEntity?>
+
     @Query("SELECT * FROM app_event WHERE dataset_id = :datasetId ORDER BY occurred_at, id")
     suspend fun getEvents(datasetId: String): List<AppEventEntity>
+
+    /** 1つのアプリの変化（古い順）。アプリの詳細の「これまでの経緯」。 */
+    @Query("SELECT * FROM app_event WHERE dataset_id = :datasetId AND package_name = :packageName ORDER BY occurred_at, id")
+    fun observeEventsFor(datasetId: String, packageName: String): Flow<List<AppEventEntity>>
+
+    /** 1回の操作で記録した変化（「元に戻す」）。 */
+    @Query("SELECT * FROM app_event WHERE dataset_id = :datasetId AND operation_id = :operationId ORDER BY id")
+    suspend fun getEventsByOperation(datasetId: String, operationId: String): List<AppEventEntity>
 }
 
 @Dao
@@ -63,6 +91,9 @@ interface PolicyDao {
 
     @Query("SELECT * FROM app_policy WHERE dataset_id = :datasetId AND package_name = :packageName")
     suspend fun get(datasetId: String, packageName: String): AppPolicyEntity?
+
+    @Query("SELECT * FROM app_policy WHERE dataset_id = :datasetId AND package_name = :packageName")
+    fun observe(datasetId: String, packageName: String): Flow<AppPolicyEntity?>
 
     @Upsert
     suspend fun upsert(policies: List<AppPolicyEntity>)

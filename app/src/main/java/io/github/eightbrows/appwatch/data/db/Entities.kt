@@ -141,6 +141,11 @@ data class AppEventEntity(
     @ColumnInfo(name = "old_status") val oldStatus: ReviewStatus?,
     @ColumnInfo(name = "new_status") val newStatus: ReviewStatus?,
     @ColumnInfo(name = "reason") val reason: StatusChangeReason?,
+    @ColumnInfo(name = "old_admin_memo") val oldAdminMemo: String?,
+    @ColumnInfo(name = "new_admin_memo") val newAdminMemo: String?,
+    /** 「問題なし」にしたときに消した警告の時刻（元に戻すときに戻す） */
+    @ColumnInfo(name = "old_reinstalled_at") val oldReinstalledAt: Long?,
+    @ColumnInfo(name = "old_signature_changed_at") val oldSignatureChangedAt: Long?,
     @ColumnInfo(name = "operation_id") val operationId: String?,
 )
 

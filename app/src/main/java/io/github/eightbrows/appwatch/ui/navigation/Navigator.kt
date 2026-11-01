@@ -16,9 +16,10 @@ enum class Screen {
     // 設定メニューから開く画面
     HEALTH_CHECK,
     LICENSES,
+    APP_STATUS,
+    APP_DETAIL,
 
     // 後のステップで作る画面（今は仮の画面）
-    APP_STATUS,
     PRE_REGISTER,
     HISTORY,
     EXPORT_IMPORT,

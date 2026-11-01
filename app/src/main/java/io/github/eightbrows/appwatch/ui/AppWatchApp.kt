@@ -27,6 +27,9 @@ import io.github.eightbrows.appwatch.ui.settings.SettingsDestination
 import io.github.eightbrows.appwatch.ui.settings.SettingsMenuRoute
 import io.github.eightbrows.appwatch.ui.setup.SetupController
 import io.github.eightbrows.appwatch.ui.setup.SetupScreen
+import io.github.eightbrows.appwatch.ui.status.AdminAppDetailRoute
+import io.github.eightbrows.appwatch.ui.status.AppStatusController
+import io.github.eightbrows.appwatch.ui.status.AppStatusRoute
 import io.github.eightbrows.appwatch.ui.top.SelfDeleteWarningDialog
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.ui.top.TopActions
@@ -68,6 +71,7 @@ fun AppWatchApp(
     startDestination: StartDestination,
     setupController: SetupController,
     settingsController: SettingsController,
+    statusController: AppStatusController,
     /** アプリに戻ってくるたびに増える数（初回設定で、設定画面から戻ったときに状態を読み直す） */
     resumeCount: Int,
     themeMode: ThemeMode,
@@ -101,6 +105,9 @@ fun AppWatchApp(
     // 本アプリの削除警告を出しているときは、そのパッケージ名（画面の回転でも消えないように保存する）
     var selfDeleteTarget by rememberSaveable { mutableStateOf<String?>(null) }
 
+    // アプリの詳細（管理者）で開いているアプリのパッケージ名
+    var detailPackage by rememberSaveable { mutableStateOf<String?>(null) }
+
     val screen = navigator.current
     stateHolder.SaveableStateProvider(screen.name) {
         when (screen) {
@@ -124,7 +131,40 @@ fun AppWatchApp(
 
             Screen.LICENSES -> LicenseRoute(settingsController, onBack = goBack)
 
-            Screen.APP_STATUS -> PlaceholderScreen(stringResource(R.string.settings_app_status), onBack = goBack)
+            Screen.APP_STATUS -> AppStatusRoute(
+                controller = statusController,
+                onBack = goBack,
+                onOpenDetail = { packageName ->
+                    detailPackage = packageName
+                    navigator.navigate(Screen.APP_DETAIL)
+                },
+                onPreRegister = { navigator.navigate(Screen.PRE_REGISTER) },
+            )
+
+            Screen.APP_DETAIL -> {
+                val packageName = detailPackage
+                if (packageName == null) {
+                    LaunchedEffect(Unit) { goBack() }
+                } else {
+                    AdminAppDetailRoute(
+                        controller = statusController,
+                        packageName = packageName,
+                        onBack = goBack,
+                        onUninstall = { entry ->
+                            if (entry.isSelf) {
+                                selfDeleteTarget = entry.packageName
+                            } else {
+                                onOpenSystemScreen()
+                                AppActions.uninstall(context, entry.packageName)
+                            }
+                        },
+                        onOpenAppInfo = { entry ->
+                            onOpenSystemScreen()
+                            AppActions.openAppInfo(context, entry.packageName)
+                        },
+                    )
+                }
+            }
 
             Screen.PRE_REGISTER -> PlaceholderScreen(stringResource(R.string.settings_pre_register), onBack = goBack)
 

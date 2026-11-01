@@ -7,11 +7,14 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import io.github.eightbrows.appwatch.model.UsageMode
+import io.github.eightbrows.appwatch.data.status.AppStatusRules
+import io.github.eightbrows.appwatch.data.status.FilterChip
 
 /** DataStore のファイル名。自動バックアップの対象（res/xml の backup_rules・data_extraction_rules）にも書いてある。 */
 internal const val SETTINGS_DATASTORE_NAME = "settings"
@@ -96,6 +99,23 @@ class SettingsRepository(context: Context) {
         }
     }
 
+    /** アプリの確認状態の画面の絞り込み。オフにした選択肢を保存する（保存がなければ「システム」だけオフ）。 */
+    val statusFilterEnabled: Flow<Set<FilterChip>> = dataStore.data
+        .map { prefs ->
+            val off = prefs[KEY_STATUS_FILTER_OFF]
+                ?.mapNotNull { saved -> FilterChip.entries.firstOrNull { it.name == saved } }
+                ?.toSet()
+                ?: AppStatusRules.DEFAULT_OFF
+            AppStatusRules.enabledFrom(off)
+        }
+        .distinctUntilChanged()
+
+    suspend fun setStatusFilterEnabled(enabled: Set<FilterChip>) {
+        dataStore.edit { prefs ->
+            prefs[KEY_STATUS_FILTER_OFF] = (FilterChip.entries.toSet() - enabled).mapTo(HashSet()) { it.name }
+        }
+    }
+
     companion object {
         val CHECK_INTERVALS: List<Int> = CheckInterval.entries.map { it.minutes }
         val DEFAULT_CHECK_INTERVAL: Int = CheckInterval.DEFAULT.minutes
@@ -107,5 +127,6 @@ class SettingsRepository(context: Context) {
         private val KEY_CHECK_INTERVAL = intPreferencesKey("check_interval_minutes")
         private val KEY_SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
         private val KEY_USAGE_MODE = stringPreferencesKey("usage_mode")
+        private val KEY_STATUS_FILTER_OFF = stringSetPreferencesKey("status_filter_off")
     }
 }

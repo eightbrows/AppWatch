@@ -9,7 +9,10 @@ import io.github.eightbrows.appwatch.data.db.toBaselineEntity
 import io.github.eightbrows.appwatch.data.db.toCurrentEntity
 import io.github.eightbrows.appwatch.data.db.toEntity
 import io.github.eightbrows.appwatch.data.db.toPolicy
+import io.github.eightbrows.appwatch.data.db.toChange
 import io.github.eightbrows.appwatch.data.db.toTracked
+import io.github.eightbrows.appwatch.data.status.AppStatusEntry
+import io.github.eightbrows.appwatch.data.status.AppStatusRules
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.InstalledApp
 import io.github.eightbrows.appwatch.model.ReviewStatus
@@ -24,6 +27,20 @@ import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
+
+/** 1つのアプリへの管理者の変更。[status] が null なら確認状態は変えない。[setsMemo] が false なら管理者メモは変えない。 */
+data class PolicyEdit(
+    val packageName: String,
+    val status: ReviewStatus? = null,
+    val memo: String? = null,
+    val setsMemo: Boolean = false,
+)
+
+/** 操作の結果。[operationId] を「元に戻す」に渡す。 */
+data class OperationResult(val operationId: String, val changedApps: Int)
+
+/** アプリの詳細（管理者用）の中身。 */
+data class AppDetail(val entry: AppStatusEntry?, val events: List<AppChange>)
 
 /** この端末の情報（dataset に書く）。 */
 data class DeviceEnvironment(
@@ -149,64 +166,185 @@ class RecordRepository(
         emitAll(scanDailyDao.observeLastCheckAt(localDatasetId()))
     }
 
-    // ---- 管理者の設定（画面からの変更は後のステップ） ----
+    /** アプリの確認状態の画面の行（端末にないアプリは、確認状態・管理者メモ・事前登録が残っているものだけ）。 */
+    fun observeStatusEntries(): Flow<List<AppStatusEntry>> = flow {
+        val datasetId = localDatasetId()
+        emitAll(
+            combine(recordDao.observeCurrent(datasetId), policyDao.observeAll(datasetId)) { current, policies ->
+                AppStatusRules.buildEntries(
+                    tracked = current.map { it.toTracked() },
+                    policies = policies.associate { it.packageName to it.toPolicy() },
+                    selfPackageName = selfPackageName,
+                )
+            },
+        )
+    }
+
+    /** アプリの詳細（管理者用）。記録も設定もないアプリなら entry は null。 */
+    fun observeAppDetail(packageName: String): Flow<AppDetail> = flow {
+        val datasetId = localDatasetId()
+        emitAll(
+            combine(
+                recordDao.observeCurrentOne(datasetId, packageName),
+                policyDao.observe(datasetId, packageName),
+                recordDao.observeEventsFor(datasetId, packageName),
+            ) { current, policy, events ->
+                val policyState = policy?.toPolicy()
+                val entry = when {
+                    current != null -> AppStatusRules.entryOf(current.toTracked(), policyState, selfPackageName)
+                    policyState != null -> AppStatusRules.entryOf(policyState, selfPackageName)
+                    else -> null
+                }
+                AppDetail(entry = entry, events = events.map { it.toChange() })
+            },
+        )
+    }
+
+    // ---- 管理者の設定 ----
 
     /**
-     * 確認状態を変える。変更前の値を持つ変化（STATUS_CHANGED）を記録する（「元に戻す」に使う）。
-     * 複数のアプリをまとめて変えたときは、同じ [operationId] を付ける。
+     * 確認状態を変える（一括操作・初回設定）。[applyOperation] の簡単な形。
      * @return 実際に変わったアプリの数
      */
     suspend fun setReviewStatus(
         packageNames: Collection<String>,
         status: ReviewStatus,
         operationId: String = newId(),
-    ): Int {
+    ): Int = applyOperation(packageNames.distinct().map { PolicyEdit(it, status = status) }, operationId).changedApps
+
+    /** 管理者メモを保存する（空ならメモなし）。 */
+    suspend fun setAdminMemo(packageName: String, memo: String?) {
+        applyOperation(listOf(PolicyEdit(packageName, memo = memo, setsMemo = true)))
+    }
+
+    /**
+     * 確認状態・管理者メモの変更を、1つの操作として行う（仕様書 6章）。
+     * 変更前の値（確認状態・管理者メモ・消した警告）を変化として記録し、同じ [operationId] を付ける（「元に戻す」に使う）。
+     * 「問題なし」にしたときは、「以前に削除したアプリ」「署名が変わった」の警告を消す（仕様書 4章）。
+     * 変化の記録（app_event）はそのまま残るので、「これまでの経緯」には出る。
+     */
+    suspend fun applyOperation(edits: List<PolicyEdit>, operationId: String = newId()): OperationResult {
         val datasetId = localDatasetId()
         val now = clock()
         return db.withTransaction {
             val current = recordDao.getCurrent(datasetId).associateBy { it.packageName }
             val policies = policyDao.getAll(datasetId).associateBy { it.packageName }
-            val changed = packageNames.distinct().mapNotNull { packageName ->
-                val before = policies[packageName]?.toPolicy()
+            val newPolicies = mutableListOf<PolicyState>()
+            val events = mutableListOf<AppChange>()
+            val cleared = mutableListOf<String>()
+            for (edit in edits) {
+                val before = policies[edit.packageName]?.toPolicy()
+                var after = before ?: emptyPolicy(edit.packageName, now)
+                val row = current[edit.packageName]
+                val name = row?.name ?: before?.provisionalName ?: edit.packageName
                 val oldStatus = before?.status ?: ReviewStatus.UNCONFIRMED
-                if (oldStatus == status) return@mapNotNull null
-                val after = (before ?: emptyPolicy(packageName, now)).copy(
-                    status = status,
-                    statusReason = StatusChangeReason.ADMIN,
-                    updatedAt = now,
-                )
-                val name = current[packageName]?.name ?: before?.provisionalName ?: packageName
-                after to AppChange(
-                    type = ChangeType.STATUS_CHANGED,
-                    packageName = packageName,
-                    name = name,
-                    occurredAt = now,
-                    oldStatus = oldStatus,
-                    newStatus = status,
-                    reason = StatusChangeReason.ADMIN,
-                    operationId = operationId,
-                )
-            }
-            if (changed.isNotEmpty()) {
-                policyDao.upsert(changed.map { it.first.toEntity(datasetId) })
-                recordDao.insertEvents(changed.map { it.second.toEntity(datasetId) })
-                // 「問題なし」にした時点で、「以前に削除したアプリ」「署名が変わった」の警告を消す（仕様書 4章）。
-                // 変化の記録（app_event）はそのまま残るので、「これまでの経緯」には出る
-                if (status == ReviewStatus.OK) {
-                    recordDao.clearRecordedWarnings(datasetId, changed.map { it.first.packageName }, now)
+                val hasRecordedWarnings = row != null && (row.reinstalledAt != null || row.signatureChangedAt != null)
+                // すでに「問題なし」でも、後から再導入の警告が付いたアプリは、「問題なし」にし直すと警告を消す
+                val newStatus = edit.status
+                if (newStatus != null &&
+                    (newStatus != oldStatus || (newStatus == ReviewStatus.OK && hasRecordedWarnings))
+                ) {
+                    val clears = newStatus == ReviewStatus.OK && hasRecordedWarnings
+                    after = after.copy(status = newStatus, statusReason = StatusChangeReason.ADMIN)
+                    events += AppChange(
+                        type = ChangeType.STATUS_CHANGED,
+                        packageName = edit.packageName,
+                        name = name,
+                        occurredAt = now,
+                        oldStatus = oldStatus,
+                        newStatus = newStatus,
+                        reason = StatusChangeReason.ADMIN,
+                        oldReinstalledAt = if (clears) row?.reinstalledAt else null,
+                        oldSignatureChangedAt = if (clears) row?.signatureChangedAt else null,
+                        operationId = operationId,
+                    )
+                    if (clears) cleared += edit.packageName
                 }
+                val newMemo = edit.memo?.takeIf { it.isNotBlank() }
+                if (edit.setsMemo && newMemo != before?.adminMemo) {
+                    after = after.copy(adminMemo = newMemo)
+                    events += AppChange(
+                        type = ChangeType.MEMO_CHANGED,
+                        packageName = edit.packageName,
+                        name = name,
+                        occurredAt = now,
+                        oldAdminMemo = before?.adminMemo,
+                        newAdminMemo = newMemo,
+                        reason = StatusChangeReason.ADMIN,
+                        operationId = operationId,
+                    )
+                }
+                if (after != (before ?: emptyPolicy(edit.packageName, now))) newPolicies += after.copy(updatedAt = now)
             }
-            changed.size
+            if (newPolicies.isNotEmpty()) policyDao.upsert(newPolicies.map { it.toEntity(datasetId) })
+            if (events.isNotEmpty()) recordDao.insertEvents(events.map { it.toEntity(datasetId) })
+            if (cleared.isNotEmpty()) recordDao.clearRecordedWarnings(datasetId, cleared, now)
+            OperationResult(
+                operationId = operationId,
+                changedApps = events.mapTo(HashSet()) { it.packageName }.size,
+            )
         }
     }
 
-    /** 管理者メモを保存する（空ならメモなし）。 */
-    suspend fun setAdminMemo(packageName: String, memo: String?) {
+    /**
+     * 操作を取り消す（「元に戻す」）。変更前の確認状態・管理者メモに戻し、消した警告も戻す。
+     * 取り消しも変化として記録する（理由は「元に戻す」、新しい操作の番号）。
+     * @return 戻したアプリの数
+     */
+    suspend fun undoOperation(operationId: String): Int {
         val datasetId = localDatasetId()
         val now = clock()
-        db.withTransaction {
-            val before = policyDao.get(datasetId, packageName)?.toPolicy() ?: emptyPolicy(packageName, now)
-            policyDao.upsert(listOf(before.copy(adminMemo = memo?.takeIf { it.isNotBlank() }, updatedAt = now).toEntity(datasetId)))
+        val undoId = newId()
+        return db.withTransaction {
+            val done = recordDao.getEventsByOperation(datasetId, operationId).map { it.toChange() }
+            val policies = policyDao.getAll(datasetId).associateBy { it.packageName }
+            val newPolicies = LinkedHashMap<String, PolicyState>()
+            val events = mutableListOf<AppChange>()
+            // 後に記録したものから戻す
+            for (change in done.asReversed()) {
+                val before = newPolicies[change.packageName]
+                    ?: policies[change.packageName]?.toPolicy()
+                    ?: emptyPolicy(change.packageName, now)
+                when (change.type) {
+                    ChangeType.STATUS_CHANGED -> {
+                        val restored = change.oldStatus ?: continue
+                        newPolicies[change.packageName] =
+                            before.copy(status = restored, statusReason = StatusChangeReason.UNDO, updatedAt = now)
+                        events += change.copy(
+                            occurredAt = now,
+                            oldStatus = before.status,
+                            newStatus = restored,
+                            reason = StatusChangeReason.UNDO,
+                            oldReinstalledAt = null,
+                            oldSignatureChangedAt = null,
+                            operationId = undoId,
+                        )
+                        if (change.oldReinstalledAt != null || change.oldSignatureChangedAt != null) {
+                            recordDao.restoreRecordedWarnings(
+                                datasetId,
+                                change.packageName,
+                                reinstalledAt = change.oldReinstalledAt,
+                                signatureChangedAt = change.oldSignatureChangedAt,
+                                now = now,
+                            )
+                        }
+                    }
+                    ChangeType.MEMO_CHANGED -> {
+                        newPolicies[change.packageName] = before.copy(adminMemo = change.oldAdminMemo, updatedAt = now)
+                        events += change.copy(
+                            occurredAt = now,
+                            oldAdminMemo = before.adminMemo,
+                            newAdminMemo = change.oldAdminMemo,
+                            reason = StatusChangeReason.UNDO,
+                            operationId = undoId,
+                        )
+                    }
+                    else -> Unit
+                }
+            }
+            if (newPolicies.isNotEmpty()) policyDao.upsert(newPolicies.values.map { it.toEntity(datasetId) })
+            if (events.isNotEmpty()) recordDao.insertEvents(events.map { it.toEntity(datasetId) })
+            newPolicies.size
         }
     }
 

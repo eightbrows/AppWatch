@@ -7,8 +7,10 @@ import io.github.eightbrows.appwatch.data.db.AppWatchDatabase
 import io.github.eightbrows.appwatch.data.db.DatasetKind
 import io.github.eightbrows.appwatch.data.record.ChangeType
 import io.github.eightbrows.appwatch.data.record.DeviceEnvironment
+import io.github.eightbrows.appwatch.data.record.PolicyEdit
 import io.github.eightbrows.appwatch.data.record.RecordRepository
 import io.github.eightbrows.appwatch.data.record.StatusChangeReason
+import io.github.eightbrows.appwatch.data.status.AppStatusRules
 import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.InstallSource
@@ -268,6 +270,124 @@ class RecordRepositoryInstrumentedTest {
         assertEquals("入れないで", bad.adminMemo)
         assertEquals("COM.BAD.APP", bad.name) // 実際に入ったら端末上の名前
         assertEquals(listOf("com.bad.app"), TopLists.from(listOf(bad)).cards.map { it.packageName })
+    }
+
+    // ---- アプリの確認状態・アプリの詳細の「元に戻す」（ステップ7） ----
+
+    /** 要注意・管理者メモあり・再インストールの警告ありの qr と、警告のない a・b を用意する。 */
+    private suspend fun prepareForUndo(repo: RecordRepository) {
+        repo.record(listOf(app("qr"), app("a"), app("b")), now)
+        repo.applyOperation(listOf(PolicyEdit("qr", status = ReviewStatus.CAUTION, memo = "広告が多い", setsMemo = true)))
+        now += HOUR
+        repo.record(listOf(app("a"), app("b")), now) // qr を削除
+        now += HOUR
+        repo.record(listOf(app("qr", firstInstall = 900), app("a"), app("b")), now) // qr を再インストール
+        now += HOUR
+    }
+
+    private fun clean(pkg: String) = app(pkg).copy(warnings = emptySet())
+
+    @Test
+    fun bulkOk_skipsWarnedApps_andUndoRestoresEverything() = runBlocking {
+        val repo = repository()
+        repo.record(listOf(app("qr"), clean("a"), clean("b")), now)
+        repo.applyOperation(listOf(PolicyEdit("a", memo = "メモ", setsMemo = true)))
+        now += HOUR
+
+        // 確認状態の画面と同じ流れ：選んだ3件をまとめて「問題なし」。警告（Google Play 以外）のある qr は変えない
+        val selected = repo.observeStatusEntries().first()
+        val plan = AppStatusRules.bulkOkPlan(selected)
+        assertEquals(listOf("a", "b"), plan.targets.sorted())
+        assertEquals(1, plan.skippedWithWarnings)
+        val result = repo.applyOperation(plan.targets.map { PolicyEdit(it, status = ReviewStatus.OK) })
+        assertEquals(2, result.changedApps)
+        val okNow = repo.observeStatusEntries().first().associateBy { it.packageName }
+        assertEquals(ReviewStatus.OK, okNow.getValue("a").status)
+        assertEquals(ReviewStatus.UNCONFIRMED, okNow.getValue("qr").status)
+
+        // 元に戻す：1回で2件とも戻る。管理者メモはそのまま
+        now += HOUR
+        assertEquals(2, repo.undoOperation(result.operationId))
+        val undone = repo.observeStatusEntries().first().associateBy { it.packageName }
+        assertEquals(ReviewStatus.UNCONFIRMED, undone.getValue("a").status)
+        assertEquals(ReviewStatus.UNCONFIRMED, undone.getValue("b").status)
+        assertEquals("メモ", undone.getValue("a").adminMemo)
+
+        // 取り消しも変化として記録される（新しい操作の番号、理由は「元に戻す」）
+        val undoEvents = db.appRecordDao().getEvents(repo.localDatasetId()).filter { it.reason == StatusChangeReason.UNDO }
+        assertEquals(setOf("a", "b"), undoEvents.map { it.packageName }.toSet())
+        assertTrue(undoEvents.all { it.type == ChangeType.STATUS_CHANGED && it.oldStatus == ReviewStatus.OK && it.newStatus == ReviewStatus.UNCONFIRMED })
+        assertEquals(1, undoEvents.map { it.operationId }.distinct().size)
+        assertFalse(undoEvents.any { it.operationId == result.operationId })
+    }
+
+    @Test
+    fun bulkCaution_undo_restoresEachPreviousStatus() = runBlocking {
+        val repo = repository()
+        repo.record(listOf(clean("a"), clean("b")), now)
+        repo.applyOperation(listOf(PolicyEdit("b", status = ReviewStatus.OK)))
+        val result = repo.applyOperation(listOf("a", "b").map { PolicyEdit(it, status = ReviewStatus.CAUTION) })
+        assertEquals(2, result.changedApps)
+        repo.undoOperation(result.operationId)
+        val after = repo.observeStatusEntries().first().associateBy { it.packageName }
+        assertEquals(ReviewStatus.UNCONFIRMED, after.getValue("a").status)
+        assertEquals(ReviewStatus.OK, after.getValue("b").status) // それぞれ変更前の値に戻る
+    }
+
+    @Test
+    fun detailSave_thenUndo_restoresStatusMemoAndClearedWarnings() = runBlocking {
+        val repo = repository()
+        prepareForUndo(repo)
+        val before = repo.observeAppDetail("qr").first().entry!!
+        assertEquals(ReviewStatus.CAUTION, before.status)
+        assertTrue(AppWarning.REINSTALLED in before.warnings)
+        val reinstalledAt = before.reinstalledAt
+
+        // 詳細の画面で「問題なし」とメモを保存（警告があっても詳細では問題なしにできる）
+        val result = repo.applyOperation(
+            listOf(PolicyEdit("qr", status = ReviewStatus.OK, memo = "確認しました", setsMemo = true)),
+        )
+        assertEquals(1, result.changedApps)
+        val saved = repo.observeAppDetail("qr").first()
+        assertEquals(ReviewStatus.OK, saved.entry!!.status)
+        assertEquals("確認しました", saved.entry!!.adminMemo)
+        assertFalse(AppWarning.REINSTALLED in saved.entry!!.warnings) // 「問題なし」で警告を消す
+        val savedEvents = saved.events.filter { it.operationId == result.operationId }
+        assertEquals(listOf(ChangeType.STATUS_CHANGED, ChangeType.MEMO_CHANGED), savedEvents.map { it.type })
+        assertEquals(reinstalledAt, savedEvents.first().oldReinstalledAt) // 消した警告の時刻を持つ
+
+        // 元に戻す
+        now += HOUR
+        assertEquals(1, repo.undoOperation(result.operationId))
+        val undone = repo.observeAppDetail("qr").first()
+        assertEquals(ReviewStatus.CAUTION, undone.entry!!.status)
+        assertEquals("広告が多い", undone.entry!!.adminMemo)
+        assertTrue(AppWarning.REINSTALLED in undone.entry!!.warnings) // 消した警告も戻る
+        assertEquals(reinstalledAt, undone.entry!!.reinstalledAt)
+
+        // これまでの経緯に、取り消しが記録される（古い順の最後）
+        val last = undone.events.takeLast(2)
+        assertTrue(last.all { it.reason == StatusChangeReason.UNDO && it.occurredAt == now })
+        val statusUndo = last.single { it.type == ChangeType.STATUS_CHANGED }
+        assertEquals(ReviewStatus.OK, statusUndo.oldStatus)
+        assertEquals(ReviewStatus.CAUTION, statusUndo.newStatus)
+        val memoUndo = last.single { it.type == ChangeType.MEMO_CHANGED }
+        assertEquals("確認しました", memoUndo.oldAdminMemo)
+        assertEquals("広告が多い", memoUndo.newAdminMemo)
+    }
+
+    @Test
+    fun removedAppWithPolicy_staysInStatusList_asAbsent() = runBlocking {
+        val repo = repository()
+        repo.record(listOf(clean("keep"), clean("gone_caution"), clean("gone_plain")), now)
+        repo.applyOperation(listOf(PolicyEdit("gone_caution", status = ReviewStatus.CAUTION)))
+        now += HOUR
+        repo.record(listOf(clean("keep")), now)
+
+        val entries = repo.observeStatusEntries().first().associateBy { it.packageName }
+        assertEquals(setOf("keep", "gone_caution"), entries.keys)
+        assertFalse(entries.getValue("gone_caution").isPresent)
+        assertEquals(now, entries.getValue("gone_caution").removedAt)
     }
 
     private companion object {

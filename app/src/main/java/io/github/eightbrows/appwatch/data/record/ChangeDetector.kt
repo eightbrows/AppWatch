@@ -208,5 +208,6 @@ object ChangeDetector {
         ChangeType.ENABLED, ChangeType.DISABLED -> 4
         ChangeType.SIGNATURE_CHANGED -> 5
         ChangeType.STATUS_CHANGED -> 6
+        ChangeType.MEMO_CHANGED -> 7
     }
 }

@@ -23,7 +23,7 @@ class WidgetDataSource(context: Context) {
         app.recordRepository.observeLastCheckAt(),
         app.settingsRepository.checkIntervalMinutes,
         app.settingsRepository.setupCompleted,
-        WidgetDebugOverride.status,
+        WidgetDebugOverride.override,
     ) { apps, lastCheckAt, interval, setupCompleted, override ->
         val (caution, needsReview) = WidgetStatusDecider.countApps(apps)
         val state = WidgetStatusDecider.decide(
@@ -41,25 +41,32 @@ class WidgetDataSource(context: Context) {
     }
 }
 
+/** 開発版だけの上書きの中身。[lastCheckAt] を渡すと「最終チェック」もその時刻にする（見本の画像を撮るため）。 */
+data class WidgetOverride(val status: WidgetStatus, val lastCheckAt: Long? = null)
+
 /**
  * 【開発版だけ】ウィジェットの6つの状態を、データを変えずに表示して確かめるための上書き。
  * 開発版にだけ入る DebugWidgetReceiver（app/src/debug）から adb で切り替える。正式版では使われない。
  */
 object WidgetDebugOverride {
-    private val _status = MutableStateFlow<WidgetStatus?>(null)
-    val status: StateFlow<WidgetStatus?> = _status.asStateFlow()
+    private val _override = MutableStateFlow<WidgetOverride?>(null)
+    val override: StateFlow<WidgetOverride?> = _override.asStateFlow()
 
-    fun set(status: WidgetStatus?) {
-        _status.value = status
+    fun set(override: WidgetOverride?) {
+        _override.value = override
     }
 
-    internal fun apply(state: WidgetState, override: WidgetStatus): WidgetState = state.copy(
-        status = override,
-        count = when (override) {
+    internal fun apply(state: WidgetState, override: WidgetOverride): WidgetState = state.copy(
+        status = override.status,
+        count = when (override.status) {
             WidgetStatus.CAUTION_APPS -> 1
             WidgetStatus.NEEDS_REVIEW -> 2
             else -> 0
         },
-        lastCheckAt = if (override == WidgetStatus.SETUP_REQUIRED) null else state.lastCheckAt,
+        lastCheckAt = when {
+            override.status == WidgetStatus.SETUP_REQUIRED -> null
+            override.lastCheckAt != null -> override.lastCheckAt
+            else -> state.lastCheckAt
+        },
     )
 }

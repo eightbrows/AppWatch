@@ -253,4 +253,109 @@
 
     <!-- まだ作っていない画面 -->
     <string name="placeholder_body">この画面は後のステップで作ります。</string>
+
+    <!-- アプリの確認状態（管理者） -->
+    <string name="status_search_hint">アプリ名・パッケージ名</string>
+    <string name="status_search_clear">検索の文字を消す</string>
+    <string name="status_pre_register">事前登録</string>
+    <string name="filter_label_status">確認：</string>
+    <string name="filter_label_kind">種類：</string>
+    <string name="filter_label_source">入手：</string>
+    <string name="filter_label_warning">警告：</string>
+    <string name="filter_label_device">端末：</string>
+    <string name="filter_label_registered">登録：</string>
+    <string name="filter_label_state">状態：</string>
+    <string name="filter_kind_preinstalled">プリイン</string>
+    <string name="filter_source_play">Play</string>
+    <string name="filter_source_other">Play外</string>
+    <string name="filter_source_unknown">不明</string>
+    <string name="filter_warning_none">警告なし</string>
+    <string name="filter_warning_debug">開発署名</string>
+    <string name="filter_warning_signature">署名変更</string>
+    <string name="filter_warning_reinstall">再導入</string>
+    <string name="filter_device_present">あり</string>
+    <string name="filter_device_absent">なし</string>
+    <string name="filter_registered">事前登録</string>
+    <string name="filter_disabled">無効</string>
+    <plurals name="status_selected_count">
+        <item quantity="other">%1$d件選択中</item>
+    </plurals>
+    <plurals name="status_visible_count">
+        <item quantity="other">表示中 %1$d件</item>
+    </plurals>
+    <string name="status_select_all_visible">表示中をすべて選択</string>
+    <string name="status_clear_selection">選択を外す</string>
+    <string name="status_select_app">%1$s を選ぶ</string>
+    <string name="status_action_unconfirmed">未確認に戻す</string>
+    <string name="status_empty">当てはまるアプリはありません。絞り込みや検索を変えて下さい。</string>
+    <string name="format_version">v%1$s</string>
+    <string name="status_row_source_date">%1$s ・ %2$s</string>
+    <string name="status_row_removed">端末にありません（%1$s に削除）</string>
+    <string name="status_row_not_installed">端末に入っていません</string>
+    <string name="status_row_memo">管理者メモ：%1$s</string>
+    <string name="badge_reinstalled">再インストール</string>
+    <string name="badge_signature_changed">署名変更</string>
+    <string name="status_reinstalled_at">%1$s に再検出</string>
+    <string name="status_signature_changed_at">%1$s に検出</string>
+    <!-- お知らせ（「元に戻す」付き） -->
+    <string name="notice_undo">元に戻す</string>
+    <string name="notice_undone">元に戻しました</string>
+    <plurals name="notice_bulk_ok">
+        <item quantity="other">%1$d件を問題なしにしました</item>
+    </plurals>
+    <plurals name="notice_bulk_ok_skipped">
+        <item quantity="other">%1$d件を問題なしにしました（警告のある%2$d件は変えていません）</item>
+    </plurals>
+    <plurals name="notice_bulk_all_warned">
+        <item quantity="other">警告のあるアプリは、まとめて問題なしにできません（%1$d件）。詳細の画面で1件ずつ確認して下さい</item>
+    </plurals>
+    <plurals name="notice_bulk_caution">
+        <item quantity="other">%1$d件を要注意にしました</item>
+    </plurals>
+    <plurals name="notice_bulk_unconfirmed">
+        <item quantity="other">%1$d件を未確認に戻しました</item>
+    </plurals>
+    <string name="notice_no_change">変更はありませんでした（すでに同じ確認状態です）</string>
+    <string name="notice_saved_status">%1$sを『%2$s』にしました</string>
+    <string name="notice_saved_memo">%1$sの管理者メモを保存しました</string>
+    <string name="notice_saved_both">%1$sを『%2$s』にし、管理者メモを保存しました</string>
+
+    <!-- アプリの詳細 -->
+    <string name="detail_title">アプリの詳細</string>
+    <string name="detail_installed">%1$s ・ %2$s にインストール</string>
+    <string name="detail_absent_mark">端末にないアプリ</string>
+    <string name="detail_caution_title">注意が必要なアプリです</string>
+    <string name="detail_warning_title">確認が必要なアプリです</string>
+    <string name="detail_warning_item">・%1$s</string>
+    <string name="detail_reinstalled_dates">以前に削除したアプリです（%1$s 削除 → %2$s 再検出）</string>
+    <string name="detail_reinstalled_date">以前に削除したアプリです（%1$s に再検出）</string>
+    <string name="detail_signature_changed_date">署名が変わりました（%1$s に検出）</string>
+    <string name="detail_status">確認の状態</string>
+    <string name="detail_memo_hint">本人にも表示されます</string>
+    <string name="detail_history">これまでの経緯</string>
+    <string name="detail_history_empty">記録はまだありません</string>
+    <string name="detail_save">保存</string>
+    <string name="detail_uninstall">アンインストール</string>
+    <string name="detail_discard_title">変更を保存しないで戻りますか？</string>
+    <string name="detail_discard_body">確認の状態と管理者メモの変更は保存されません。</string>
+    <string name="detail_discard_confirm">保存しないで戻る</string>
+    <string name="detail_discard_cancel">編集を続ける</string>
+    <string name="format_short_date">M/d</string>
+    <string name="format_short_date_with_year">yyyy/M/d</string>
+    <!-- これまでの経緯の1行 -->
+    <string name="history_added">追加を検出</string>
+    <string name="history_reinstalled_same">再インストールを検出（署名は前回と同じ）</string>
+    <string name="history_reinstalled_changed">再インストールを検出（署名が変わりました）</string>
+    <string name="history_removed">削除を検出</string>
+    <string name="history_updated">更新を検出（%1$s → %2$s）</string>
+    <string name="history_enabled">有効化を検出</string>
+    <string name="history_disabled">無効化を検出</string>
+    <string name="history_signature_changed">署名の変更を検出</string>
+    <string name="history_reset">記録を初期化</string>
+    <string name="history_status_set">『%1$s』に設定</string>
+    <string name="history_status_signature">署名が変わったため『%1$s』に戻した</string>
+    <string name="history_status_undo">取り消し：『%1$s』→『%2$s』</string>
+    <string name="history_memo_changed">管理者メモを変更</string>
+    <string name="history_memo_removed">管理者メモを削除</string>
+    <string name="history_memo_undo">取り消し：管理者メモを元に戻した</string>
 </resources>

@@ -58,8 +58,10 @@ data class TrackedApp(
     val isAddedAfterBaseline: Boolean get() = addedAt != null
 }
 
-/** 変化の種類（仕様書 5章）。確認状態の変更も「元に戻す」のために変化として記録する（仕様書 8章）。 */
-enum class ChangeType { ADDED, REMOVED, UPDATED, ENABLED, DISABLED, SIGNATURE_CHANGED, RESET, STATUS_CHANGED }
+/**
+ * 変化の種類（仕様書 5章）。確認状態・管理者メモの変更も「元に戻す」のために変化として記録する（仕様書 8章）。
+ */
+enum class ChangeType { ADDED, REMOVED, UPDATED, ENABLED, DISABLED, SIGNATURE_CHANGED, RESET, STATUS_CHANGED, MEMO_CHANGED }
 
 /** 確認状態が変わった理由。 */
 enum class StatusChangeReason {
@@ -68,6 +70,9 @@ enum class StatusChangeReason {
 
     /** 管理者が変更した */
     ADMIN,
+
+    /** 「元に戻す」で取り消した */
+    UNDO,
 }
 
 /** 変化1件（app_event の1行に相当）。 */
@@ -90,6 +95,15 @@ data class AppChange(
     val oldStatus: ReviewStatus? = null,
     val newStatus: ReviewStatus? = null,
     val reason: StatusChangeReason? = null,
+    /** 管理者メモの変更（MEMO_CHANGED）の前後 */
+    val oldAdminMemo: String? = null,
+    val newAdminMemo: String? = null,
+    /**
+     * 「問題なし」にしたときに消した「以前に削除したアプリ」「署名が変わった」の警告の時刻（STATUS_CHANGED）。
+     * 「元に戻す」で警告を戻すのに使う。消していなければ null
+     */
+    val oldReinstalledAt: Long? = null,
+    val oldSignatureChangedAt: Long? = null,
     /** まとめて行った操作の番号（「元に戻す」で一括操作を1回として扱うため）。なければ null */
     val operationId: String? = null,
 )
