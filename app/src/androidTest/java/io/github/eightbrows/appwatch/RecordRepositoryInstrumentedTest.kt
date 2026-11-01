@@ -390,6 +390,93 @@ class RecordRepositoryInstrumentedTest {
         assertEquals(now, entries.getValue("gone_caution").removedAt)
     }
 
+    // ---- 注意アプリの事前登録（ステップ8） ----
+
+    @Test
+    fun preRegister_thenUndo_removesRegistration_andRecordsUndo() = runBlocking {
+        val repo = repository()
+        repo.record(listOf(clean("a")), now)
+        val result = repo.preRegister("com.bad.app", provisionalName = "悪いアプリ", memo = "入れないで")
+        assertEquals(1, result.changedApps)
+
+        val registered = repo.observeStatusEntries().first().single { it.packageName == "com.bad.app" }
+        assertEquals(ReviewStatus.CAUTION, registered.status)
+        assertEquals("悪いアプリ", registered.name)
+        assertEquals("入れないで", registered.adminMemo)
+        assertTrue(registered.isPreRegistered)
+        assertFalse(registered.isPresent)
+        val event = repo.observeAppDetail("com.bad.app").first().events.single()
+        assertEquals(ChangeType.PRE_REGISTERED, event.type)
+        assertEquals(result.operationId, event.operationId)
+
+        now += HOUR
+        assertEquals(1, repo.undoOperation(result.operationId))
+        assertFalse(repo.observeStatusEntries().first().any { it.packageName == "com.bad.app" }) // 一覧から消える
+        val policy = db.policyDao().get(repo.localDatasetId(), "com.bad.app")!!
+        assertEquals(ReviewStatus.UNCONFIRMED, policy.reviewStatus)
+        assertFalse(policy.isPreRegistered)
+        assertEquals(null, policy.adminMemo)
+        assertEquals(null, policy.provisionalName)
+        val undo = repo.observeAppDetail("com.bad.app").first().events.last()
+        assertEquals(ChangeType.PRE_REGISTERED, undo.type)
+        assertEquals(StatusChangeReason.UNDO, undo.reason)
+    }
+
+    @Test
+    fun preRegisterAgain_keepsOldMemoAndName_whenEmpty() = runBlocking {
+        val repo = repository()
+        repo.preRegister("com.bad.app", provisionalName = "悪いアプリ", memo = "入れないで")
+        repo.preRegister("com.bad.app", provisionalName = " ", memo = "")
+        val entry = repo.observeAppDetail("com.bad.app").first().entry!!
+        assertEquals("悪いアプリ", entry.name)
+        assertEquals("入れないで", entry.adminMemo)
+    }
+
+    @Test
+    fun unregister_thenUndo_restoresRegistration() = runBlocking {
+        val repo = repository()
+        repo.preRegister("com.bad.app", provisionalName = "悪いアプリ", memo = "入れないで")
+        now += HOUR
+        val result = repo.unregister("com.bad.app")
+        assertEquals(1, result.changedApps)
+        assertFalse(repo.observeStatusEntries().first().any { it.packageName == "com.bad.app" })
+        assertEquals(ChangeType.UNREGISTERED, repo.observeAppDetail("com.bad.app").first().events.last().type)
+
+        now += HOUR
+        repo.undoOperation(result.operationId)
+        val restored = repo.observeStatusEntries().first().single { it.packageName == "com.bad.app" }
+        assertEquals(ReviewStatus.CAUTION, restored.status)
+        assertEquals("悪いアプリ", restored.name)
+        assertEquals("入れないで", restored.adminMemo)
+        assertTrue(restored.isPreRegistered)
+        val undo = repo.observeAppDetail("com.bad.app").first().events.last()
+        assertEquals(ChangeType.UNREGISTERED, undo.type)
+        assertEquals(StatusChangeReason.UNDO, undo.reason)
+        // 登録していないアプリの解除は何もしない
+        assertEquals(0, repo.unregister("com.not.registered").changedApps)
+    }
+
+    @Test
+    fun registeredAppInstalled_overwritesName_andStaysCaution() = runBlocking {
+        val repo = repository()
+        repo.record(listOf(clean("a")), now)
+        repo.preRegister("com.bad.app", provisionalName = "悪いアプリ", memo = "入れないで")
+        now += HOUR
+        repo.record(listOf(clean("a"), clean("com.bad.app")), now)
+
+        val policy = db.policyDao().get(repo.localDatasetId(), "com.bad.app")!!
+        assertEquals("COM.BAD.APP", policy.provisionalName) // 端末上の名前で上書き
+        assertEquals(ReviewStatus.CAUTION, policy.reviewStatus)
+        assertEquals("入れないで", policy.adminMemo)
+        val detail = repo.observeAppDetail("com.bad.app").first()
+        assertEquals("COM.BAD.APP", detail.entry!!.name)
+        assertTrue(detail.entry!!.isPresent)
+        assertEquals(listOf(ChangeType.PRE_REGISTERED, ChangeType.ADDED), detail.events.map { it.type })
+        val card = TopLists.from(repo.observePresentApps().first()).cards.single()
+        assertEquals("com.bad.app", card.packageName)
+        assertEquals("入れないで", card.adminMemo)
+    }
+
     private companion object {
         const val HOUR = 3_600_000L
         const val DAY1 = 1_793_404_800_000L // 2026-10-31 00:00 UTC

@@ -18,9 +18,12 @@ enum class Screen {
     LICENSES,
     APP_STATUS,
     APP_DETAIL,
+    USER_DETAIL,
+
+    // 注意アプリの事前登録（設定メニュー・確認状態の画面・共有から開く）
+    PRE_REGISTER,
 
     // 後のステップで作る画面（今は仮の画面）
-    PRE_REGISTER,
     HISTORY,
     EXPORT_IMPORT,
 }

@@ -96,38 +96,12 @@ fun AppStatusRoute(
 ) {
     val entries by remember { controller.entries }.collectAsState(initial = null)
     val enabled by remember { controller.filterEnabled }.collectAsState(initial = null)
-    val pendingNotice by controller.pendingNotice.collectAsState()
     var query by rememberSaveable { mutableStateOf("") }
     // 選んだアプリ（パッケージ名）。画面の回転でも消えないように保存する
     var selected by rememberSaveable { mutableStateOf(listOf<String>()) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val resources = LocalResources.current
-
-    // お知らせを出す。「元に戻す」が押されたら取り消し、その結果も短く知らせる
-    fun showNotice(notice: StatusNotice) {
-        scope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            val operationId = notice.operationId
-            val result = snackbarHostState.showSnackbar(
-                message = noticeText(resources, notice),
-                actionLabel = if (operationId != null) resources.getString(R.string.notice_undo) else null,
-                duration = SnackbarDuration.Long,
-            )
-            if (result == SnackbarResult.ActionPerformed && operationId != null) {
-                val undone = controller.undo(operationId)
-                snackbarHostState.showSnackbar(noticeText(resources, undone), duration = SnackbarDuration.Short)
-            }
-        }
-    }
-
-    // アプリの詳細で保存して戻ってきたときのお知らせ
-    LaunchedEffect(pendingNotice) {
-        pendingNotice?.let {
-            controller.consumePendingNotice()
-            showNotice(it)
-        }
-    }
+    val showNotice = rememberNoticePresenter(controller, snackbarHostState)
 
     val currentEntries = entries
     val currentEnabled = enabled
@@ -195,6 +169,44 @@ fun AppStatusRoute(
     }
 }
 
+/**
+ * 「元に戻す」付きのお知らせを出す関数を返す。押されたら取り消し、その結果も短く知らせる。
+ * アプリの詳細で保存・解除して戻ってきたときのお知らせ（[AppStatusController.pendingNotice]）も、ここで出す。
+ */
+@Composable
+internal fun rememberNoticePresenter(
+    controller: AppStatusController,
+    snackbarHostState: SnackbarHostState,
+): (StatusNotice) -> Unit {
+    val scope = rememberCoroutineScope()
+    val resources = LocalResources.current
+    val show: (StatusNotice) -> Unit = remember(controller, snackbarHostState, resources) {
+        { notice ->
+            scope.launch {
+                snackbarHostState.currentSnackbarData?.dismiss()
+                val operationId = notice.operationId
+                val result = snackbarHostState.showSnackbar(
+                    message = noticeText(resources, notice),
+                    actionLabel = if (operationId != null) resources.getString(R.string.notice_undo) else null,
+                    duration = SnackbarDuration.Long,
+                )
+                if (result == SnackbarResult.ActionPerformed && operationId != null) {
+                    val undone = controller.undo(operationId)
+                    snackbarHostState.showSnackbar(noticeText(resources, undone), duration = SnackbarDuration.Short)
+                }
+            }
+        }
+    }
+    val pendingNotice by controller.pendingNotice.collectAsState()
+    LaunchedEffect(pendingNotice) {
+        pendingNotice?.let {
+            controller.consumePendingNotice()
+            show(it)
+        }
+    }
+    return show
+}
+
 /** お知らせの文。 */
 internal fun noticeText(resources: Resources, notice: StatusNotice): String = when (notice) {
     is StatusNotice.BulkOk -> if (notice.skipped > 0) {
@@ -219,6 +231,8 @@ internal fun noticeText(resources: Resources, notice: StatusNotice): String = wh
             else -> resources.getString(R.string.notice_saved_memo, notice.name)
         }
     }
+    is StatusNotice.PreRegistered -> resources.getString(R.string.notice_pre_registered, notice.name)
+    is StatusNotice.Unregistered -> resources.getString(R.string.notice_unregistered, notice.name)
     StatusNotice.Undone -> resources.getString(R.string.notice_undone)
 }
 

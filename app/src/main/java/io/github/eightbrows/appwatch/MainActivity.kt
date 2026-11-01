@@ -1,5 +1,6 @@
 package io.github.eightbrows.appwatch
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
@@ -21,6 +22,7 @@ import io.github.eightbrows.appwatch.ui.TopData
 import io.github.eightbrows.appwatch.ui.settings.SettingsController
 import io.github.eightbrows.appwatch.ui.setup.SetupController
 import io.github.eightbrows.appwatch.ui.status.AppStatusController
+import io.github.eightbrows.appwatch.ui.status.SharedText
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -40,9 +42,19 @@ class MainActivity : AppCompatActivity() {
     /** アプリに戻ってくるたびに増える数（初回設定で、設定画面から戻ったときに状態を読み直すのに使う）。 */
     private val resumeCount = MutableStateFlow(0)
 
+    /** 共有で受け取った文面（注意アプリの事前登録の画面に入れる）。入れ終わったら null に戻す。 */
+    private val sharedText = MutableStateFlow<SharedText?>(null)
+
+    /**
+     * 共有（ACTION_SEND）で開いたか。Google Play から共有すると、共有元のタスクの上にこの画面が開くので、
+     * 事前登録の画面だけを最初の画面にし、戻ると共有元（Google Play）に戻る。
+     */
+    private val startedFromShare: Boolean by lazy { intent?.action == Intent.ACTION_SEND }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (savedInstanceState == null) receiveShare(intent)
         setContent {
             // 保存済みのテーマと初回設定の状態を読み終えるまでは何も描かない
             // （一瞬違う色や違う画面が出るのを防ぐ）
@@ -52,6 +64,20 @@ class MainActivity : AppCompatActivity() {
             val setup = setupState
             if (mode != null && setup != null) ThemedContent(mode, setup)
         }
+    }
+
+    /** singleTop で、開いているこの画面に共有が届いたとき（同じ画面を重ねない）。 */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        receiveShare(intent)
+    }
+
+    private fun receiveShare(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_SEND) return
+        if (intent.type?.startsWith("text/") != true) return
+        val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
+        sharedText.value = SharedText(text = text, subject = intent.getStringExtra(Intent.EXTRA_SUBJECT), id = System.nanoTime())
     }
 
     /**
@@ -74,6 +100,7 @@ class MainActivity : AppCompatActivity() {
         val lastCheckAt by remember { app.recordRepository.observeLastCheckAt() }.collectAsState(initial = null)
         val checkState by app.checkRunner.state.collectAsState()
         val resumes by resumeCount.collectAsState()
+        val shared by sharedText.collectAsState()
 
         // ステータスバー・ナビゲーションバーの文字の色を、選んだテーマに合わせる
         DisposableEffect(darkTheme) {
@@ -96,6 +123,9 @@ class MainActivity : AppCompatActivity() {
                 top = TopData(apps = apps, lastCheckAt = lastCheckAt, check = checkState),
                 onRetryCheck = { app.checkRunner.request() },
                 onOpenSystemScreen = app.checkRunner::forceNextRequest,
+                startedFromShare = startedFromShare,
+                sharedText = shared,
+                onSharedTextConsumed = { sharedText.value = null },
             )
         }
     }

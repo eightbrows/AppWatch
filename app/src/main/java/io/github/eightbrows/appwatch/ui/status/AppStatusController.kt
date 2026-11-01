@@ -8,6 +8,7 @@ import io.github.eightbrows.appwatch.data.status.AppStatusEntry
 import io.github.eightbrows.appwatch.data.status.AppStatusRules
 import io.github.eightbrows.appwatch.data.status.FilterChip
 import io.github.eightbrows.appwatch.model.ReviewStatus
+import io.github.eightbrows.appwatch.model.UsageMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +44,12 @@ sealed interface StatusNotice {
         val memoChanged: Boolean,
         override val operationId: String,
     ) : StatusNotice
+
+    /** 注意アプリとして事前登録した */
+    data class PreRegistered(val name: String, override val operationId: String) : StatusNotice
+
+    /** 事前登録を解除した */
+    data class Unregistered(val name: String, override val operationId: String) : StatusNotice
 
     /** 元に戻した */
     data object Undone : StatusNotice {
@@ -118,6 +125,30 @@ class AppStatusController(context: Context) {
                     memoChanged = memoChanged,
                     operationId = result.operationId,
                 )
+                app.refreshWidget()
+            }
+        }
+    }
+
+    /** 使い方（閲覧専用では事前登録できない）。 */
+    val usageMode: Flow<UsageMode?> = app.settingsRepository.usageMode
+
+    /**
+     * 注意アプリの事前登録（仕様書 6章）。1つの操作として記録し、「元に戻す」付きのお知らせを返す。
+     * @param displayName お知らせに出す名前（仮のアプリ名、端末上の名前、パッケージ名のどれか）
+     */
+    suspend fun preRegister(packageName: String, provisionalName: String, memo: String, displayName: String): StatusNotice =
+        persist {
+            val result = repository.preRegister(packageName, provisionalName, memo)
+            StatusNotice.PreRegistered(displayName, result.operationId)
+        }
+
+    /** 事前登録の解除（管理者用の詳細）。前の画面に戻ってから「元に戻す」付きのお知らせを出す。 */
+    fun unregister(entry: AppStatusEntry) {
+        app.appScope.launch {
+            val result = repository.unregister(entry.packageName)
+            if (result.changedApps > 0) {
+                _pendingNotice.value = StatusNotice.Unregistered(entry.name, result.operationId)
                 app.refreshWidget()
             }
         }

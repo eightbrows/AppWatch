@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f21f22edf11c376136d00359c0db8303",
+    "identityHash": "dd36c52bb5f31a2068ef761344cb63e0",
     "entities": [
       {
         "tableName": "dataset",
@@ -334,7 +334,7 @@
       },
       {
         "tableName": "app_event",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dataset_id` TEXT NOT NULL, `occurred_at` INTEGER NOT NULL, `type` TEXT NOT NULL, `package_name` TEXT NOT NULL, `name` TEXT NOT NULL, `version_name` TEXT, `version_code` INTEGER, `old_version_name` TEXT, `old_version_code` INTEGER, `source` TEXT, `is_reinstall` INTEGER NOT NULL, `old_status` TEXT, `new_status` TEXT, `reason` TEXT, `old_admin_memo` TEXT, `new_admin_memo` TEXT, `old_reinstalled_at` INTEGER, `old_signature_changed_at` INTEGER, `operation_id` TEXT, FOREIGN KEY(`dataset_id`) REFERENCES `dataset`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dataset_id` TEXT NOT NULL, `occurred_at` INTEGER NOT NULL, `type` TEXT NOT NULL, `package_name` TEXT NOT NULL, `name` TEXT NOT NULL, `version_name` TEXT, `version_code` INTEGER, `old_version_name` TEXT, `old_version_code` INTEGER, `source` TEXT, `is_reinstall` INTEGER NOT NULL, `old_status` TEXT, `new_status` TEXT, `reason` TEXT, `old_admin_memo` TEXT, `new_admin_memo` TEXT, `old_reinstalled_at` INTEGER, `old_signature_changed_at` INTEGER, `old_pre_registered` INTEGER, `old_provisional_name` TEXT, `new_provisional_name` TEXT, `operation_id` TEXT, FOREIGN KEY(`dataset_id`) REFERENCES `dataset`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -437,6 +437,21 @@
             "fieldPath": "oldSignatureChangedAt",
             "columnName": "old_signature_changed_at",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "oldPreRegistered",
+            "columnName": "old_pre_registered",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "oldProvisionalName",
+            "columnName": "old_provisional_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "newProvisionalName",
+            "columnName": "new_provisional_name",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "operationId",
@@ -610,7 +625,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f21f22edf11c376136d00359c0db8303')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dd36c52bb5f31a2068ef761344cb63e0')"
     ]
   }
 }

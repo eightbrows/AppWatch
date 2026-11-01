@@ -358,4 +358,43 @@
     <string name="history_memo_changed">管理者メモを変更</string>
     <string name="history_memo_removed">管理者メモを削除</string>
     <string name="history_memo_undo">取り消し：管理者メモを元に戻した</string>
+
+    <!-- アプリの詳細（本人） -->
+    <string name="detail_status_by_admin">（管理者が設定）</string>
+
+    <!-- アプリの詳細（管理者）の登録の解除 -->
+    <string name="detail_unregister">登録を解除</string>
+    <string name="detail_unregister_title">事前登録を解除しますか？</string>
+    <string name="detail_unregister_body">確認状態・管理者メモ・仮のアプリ名を外し、一覧から消えます。お知らせの「元に戻す」で取り消せます。</string>
+    <string name="detail_unregister_confirm">解除する</string>
+    <string name="detail_unregister_cancel">やめる</string>
+    <string name="history_pre_registered">事前登録</string>
+    <string name="history_unregistered">事前登録を解除</string>
+    <string name="history_pre_registered_undo">取り消し：事前登録</string>
+    <string name="history_unregistered_undo">取り消し：事前登録の解除</string>
+
+    <!-- 注意アプリの事前登録（管理者） -->
+    <string name="prereg_howto_title">登録のしかた</string>
+    <string name="prereg_howto_1">1. Google Play で対象のアプリを開く</string>
+    <string name="prereg_howto_2">2. 右上の「⋮」→「共有」→「%1$s」を選ぶ</string>
+    <string name="prereg_howto_3">Google Play の URL やパッケージ名を下に直接入力することもできます</string>
+    <string name="prereg_input_label">Google Play の URL またはパッケージ名</string>
+    <string name="prereg_input_hint">https://play.google.com/store/apps/details?id=…</string>
+    <string name="prereg_package_found">パッケージ名：%1$s</string>
+    <string name="prereg_package_not_found">パッケージ名が見つかりません</string>
+    <string name="prereg_name_label">アプリ名</string>
+    <string name="prereg_name_note">共有された文面から自動で入力します。取り出せない場合は手入力して下さい（空でも登録できます）</string>
+    <string name="prereg_memo_hint">任意。本人にも表示されます</string>
+    <string name="prereg_already_registered">すでに登録されています</string>
+    <string name="prereg_installed">この端末に入っています（今の確認状態：%1$s）</string>
+    <string name="prereg_installed_before">以前この端末に入っていました（今の確認状態：%1$s）</string>
+    <string name="prereg_register">「要注意」として登録</string>
+    <plurals name="prereg_registered_list">
+        <item quantity="other">登録済み（端末にない）%1$d件</item>
+    </plurals>
+    <string name="prereg_registered_empty">まだありません</string>
+    <string name="prereg_view_only_title">閲覧専用の端末では登録できません</string>
+    <string name="prereg_view_only_body">この端末は閲覧専用です。注意アプリの事前登録は、見守る端末で行って下さい。</string>
+    <string name="notice_pre_registered">%1$sを『要注意』として登録しました</string>
+    <string name="notice_unregistered">%1$sの登録を解除しました</string>
 </resources>

@@ -59,9 +59,17 @@ data class TrackedApp(
 }
 
 /**
- * 変化の種類（仕様書 5章）。確認状態・管理者メモの変更も「元に戻す」のために変化として記録する（仕様書 8章）。
+ * 変化の種類（仕様書 5章）。確認状態・管理者メモの変更と事前登録も「元に戻す」のために変化として記録する（仕様書 8章）。
  */
-enum class ChangeType { ADDED, REMOVED, UPDATED, ENABLED, DISABLED, SIGNATURE_CHANGED, RESET, STATUS_CHANGED, MEMO_CHANGED }
+enum class ChangeType {
+    ADDED, REMOVED, UPDATED, ENABLED, DISABLED, SIGNATURE_CHANGED, RESET, STATUS_CHANGED, MEMO_CHANGED,
+
+    /** 注意アプリの事前登録（確認状態・管理者メモ・仮のアプリ名をまとめて変える） */
+    PRE_REGISTERED,
+
+    /** 事前登録の解除（事前登録の印・確認状態・管理者メモ・仮のアプリ名を外す） */
+    UNREGISTERED,
+}
 
 /** 確認状態が変わった理由。 */
 enum class StatusChangeReason {
@@ -104,6 +112,10 @@ data class AppChange(
      */
     val oldReinstalledAt: Long? = null,
     val oldSignatureChangedAt: Long? = null,
+    /** 事前登録・解除（PRE_REGISTERED・UNREGISTERED）の前の事前登録の印と、前後の仮のアプリ名 */
+    val oldPreRegistered: Boolean? = null,
+    val oldProvisionalName: String? = null,
+    val newProvisionalName: String? = null,
     /** まとめて行った操作の番号（「元に戻す」で一括操作を1回として扱うため）。なければ null */
     val operationId: String? = null,
 )

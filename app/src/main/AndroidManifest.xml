@@ -36,6 +36,14 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Google Play ストアの「共有」で本アプリを選んだとき（注意アプリの事前登録）。共有の一覧の名前はアプリ名 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter>
         </activity>
 
         <!-- ホーム画面のウィジェット（Glance） -->

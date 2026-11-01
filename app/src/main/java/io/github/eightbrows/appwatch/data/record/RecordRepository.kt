@@ -339,6 +339,29 @@ class RecordRepository(
                             operationId = undoId,
                         )
                     }
+                    ChangeType.PRE_REGISTERED, ChangeType.UNREGISTERED -> {
+                        val restored = before.copy(
+                            status = change.oldStatus ?: ReviewStatus.UNCONFIRMED,
+                            adminMemo = change.oldAdminMemo,
+                            isPreRegistered = change.oldPreRegistered ?: false,
+                            provisionalName = change.oldProvisionalName,
+                            statusReason = StatusChangeReason.UNDO,
+                            updatedAt = now,
+                        )
+                        newPolicies[change.packageName] = restored
+                        events += change.copy(
+                            occurredAt = now,
+                            oldStatus = before.status,
+                            newStatus = restored.status,
+                            oldAdminMemo = before.adminMemo,
+                            newAdminMemo = restored.adminMemo,
+                            oldPreRegistered = before.isPreRegistered,
+                            oldProvisionalName = before.provisionalName,
+                            newProvisionalName = restored.provisionalName,
+                            reason = StatusChangeReason.UNDO,
+                            operationId = undoId,
+                        )
+                    }
                     else -> Unit
                 }
             }
@@ -348,38 +371,95 @@ class RecordRepository(
         }
     }
 
-    /** 注意アプリの事前登録（仕様書 6章）。確認状態は「要注意」で登録する。 */
-    suspend fun preRegister(packageName: String, provisionalName: String?, memo: String?) {
+    /**
+     * 注意アプリの事前登録（仕様書 6章）。確認状態「要注意」、管理者メモ、事前登録の印、仮のアプリ名を書く。
+     * メモ・アプリ名が空なら、前の値を残す（登録し直しのとき）。
+     * 1つの操作として、前の値を持つ変化（PRE_REGISTERED）を記録する（「元に戻す」に使う）。
+     */
+    suspend fun preRegister(
+        packageName: String,
+        provisionalName: String?,
+        memo: String?,
+        operationId: String = newId(),
+    ): OperationResult {
         val datasetId = localDatasetId()
         val now = clock()
-        db.withTransaction {
+        return db.withTransaction {
             val before = policyDao.get(datasetId, packageName)?.toPolicy()
             val after = (before ?: emptyPolicy(packageName, now)).copy(
                 status = ReviewStatus.CAUTION,
-                adminMemo = memo?.takeIf { it.isNotBlank() } ?: before?.adminMemo,
+                adminMemo = memo?.trim()?.takeIf { it.isNotEmpty() } ?: before?.adminMemo,
                 isPreRegistered = true,
-                provisionalName = provisionalName?.takeIf { it.isNotBlank() } ?: before?.provisionalName,
+                provisionalName = provisionalName?.trim()?.takeIf { it.isNotEmpty() } ?: before?.provisionalName,
                 statusReason = StatusChangeReason.ADMIN,
                 updatedAt = now,
             )
             policyDao.upsert(listOf(after.toEntity(datasetId)))
-            val oldStatus = before?.status ?: ReviewStatus.UNCONFIRMED
-            if (oldStatus != ReviewStatus.CAUTION) {
-                recordDao.insertEvents(
-                    listOf(
-                        AppChange(
-                            type = ChangeType.STATUS_CHANGED,
-                            packageName = packageName,
-                            name = after.provisionalName ?: packageName,
-                            occurredAt = now,
-                            oldStatus = oldStatus,
-                            newStatus = ReviewStatus.CAUTION,
-                            reason = StatusChangeReason.ADMIN,
-                            operationId = newId(),
-                        ).toEntity(datasetId),
-                    ),
-                )
-            }
+            val row = recordDao.getCurrent(datasetId).firstOrNull { it.packageName == packageName }
+            recordDao.insertEvents(
+                listOf(
+                    AppChange(
+                        type = ChangeType.PRE_REGISTERED,
+                        packageName = packageName,
+                        name = row?.name ?: after.provisionalName ?: packageName,
+                        occurredAt = now,
+                        oldStatus = before?.status ?: ReviewStatus.UNCONFIRMED,
+                        newStatus = ReviewStatus.CAUTION,
+                        reason = StatusChangeReason.ADMIN,
+                        oldAdminMemo = before?.adminMemo,
+                        newAdminMemo = after.adminMemo,
+                        oldPreRegistered = before?.isPreRegistered ?: false,
+                        oldProvisionalName = before?.provisionalName,
+                        newProvisionalName = after.provisionalName,
+                        operationId = operationId,
+                    ).toEntity(datasetId),
+                ),
+            )
+            OperationResult(operationId = operationId, changedApps = 1)
+        }
+    }
+
+    /**
+     * 事前登録を解除する（端末にない登録済みのアプリ。管理者用の詳細の「登録を解除」）。
+     * 事前登録の印・確認状態・管理者メモ・仮のアプリ名を外し、確認状態の画面・事前登録の一覧から消える。
+     * 1つの操作として、前の値を持つ変化（UNREGISTERED）を記録する。登録されていなければ何もしない（changedApps = 0）。
+     */
+    suspend fun unregister(packageName: String, operationId: String = newId()): OperationResult {
+        val datasetId = localDatasetId()
+        val now = clock()
+        return db.withTransaction {
+            val before = policyDao.get(datasetId, packageName)?.toPolicy()
+            if (before == null || !before.isPreRegistered) return@withTransaction OperationResult(operationId, 0)
+            val after = before.copy(
+                status = ReviewStatus.UNCONFIRMED,
+                adminMemo = null,
+                isPreRegistered = false,
+                provisionalName = null,
+                statusReason = StatusChangeReason.ADMIN,
+                updatedAt = now,
+            )
+            policyDao.upsert(listOf(after.toEntity(datasetId)))
+            val row = recordDao.getCurrent(datasetId).firstOrNull { it.packageName == packageName }
+            recordDao.insertEvents(
+                listOf(
+                    AppChange(
+                        type = ChangeType.UNREGISTERED,
+                        packageName = packageName,
+                        name = row?.name ?: before.provisionalName ?: packageName,
+                        occurredAt = now,
+                        oldStatus = before.status,
+                        newStatus = ReviewStatus.UNCONFIRMED,
+                        reason = StatusChangeReason.ADMIN,
+                        oldAdminMemo = before.adminMemo,
+                        newAdminMemo = null,
+                        oldPreRegistered = true,
+                        oldProvisionalName = before.provisionalName,
+                        newProvisionalName = null,
+                        operationId = operationId,
+                    ).toEntity(datasetId),
+                ),
+            )
+            OperationResult(operationId = operationId, changedApps = 1)
         }
     }
 

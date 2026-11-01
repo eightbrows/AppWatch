@@ -80,11 +80,32 @@ object ChangeDetector {
             }
         }
 
+        renameProvisional(changes, policies, changedPolicies, now)
+
         return DiffResult(
             changedApps = changedApps,
             changes = changes.sortedWith(compareBy<AppChange> { it.type.order() }.thenBy { it.packageName }),
             changedPolicies = changedPolicies,
         )
+    }
+
+    /**
+     * 事前登録したアプリが実際に入ったら、仮のアプリ名を端末上の名前で上書きする（仕様書 6章）。
+     * 確認状態（要注意）と管理者メモはそのまま。
+     */
+    private fun renameProvisional(
+        changes: List<AppChange>,
+        policies: Map<String, PolicyState>,
+        changedPolicies: MutableList<PolicyState>,
+        now: Long,
+    ) {
+        for (added in changes.filter { it.type == ChangeType.ADDED }) {
+            val index = changedPolicies.indexOfFirst { it.packageName == added.packageName }
+            val policy = if (index >= 0) changedPolicies[index] else policies[added.packageName]
+            if (policy == null || !policy.isPreRegistered || policy.provisionalName == added.name) continue
+            val renamed = policy.copy(provisionalName = added.name, updatedAt = now)
+            if (index >= 0) changedPolicies[index] = renamed else changedPolicies += renamed
+        }
     }
 
     private fun compareInstalled(
@@ -208,6 +229,6 @@ object ChangeDetector {
         ChangeType.ENABLED, ChangeType.DISABLED -> 4
         ChangeType.SIGNATURE_CHANGED -> 5
         ChangeType.STATUS_CHANGED -> 6
-        ChangeType.MEMO_CHANGED -> 7
+        ChangeType.MEMO_CHANGED, ChangeType.PRE_REGISTERED, ChangeType.UNREGISTERED -> 7
     }
 }

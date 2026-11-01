@@ -90,6 +90,9 @@ fun AppChange.toEntity(datasetId: String) = AppEventEntity(
     newAdminMemo = newAdminMemo,
     oldReinstalledAt = oldReinstalledAt,
     oldSignatureChangedAt = oldSignatureChangedAt,
+    oldPreRegistered = oldPreRegistered,
+    oldProvisionalName = oldProvisionalName,
+    newProvisionalName = newProvisionalName,
     operationId = operationId,
 )
 
@@ -111,6 +114,9 @@ fun AppEventEntity.toChange() = AppChange(
     newAdminMemo = newAdminMemo,
     oldReinstalledAt = oldReinstalledAt,
     oldSignatureChangedAt = oldSignatureChangedAt,
+    oldPreRegistered = oldPreRegistered,
+    oldProvisionalName = oldProvisionalName,
+    newProvisionalName = newProvisionalName,
     operationId = operationId,
 )
 

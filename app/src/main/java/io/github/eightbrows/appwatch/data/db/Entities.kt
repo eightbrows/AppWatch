@@ -146,6 +146,10 @@ data class AppEventEntity(
     /** 「問題なし」にしたときに消した警告の時刻（元に戻すときに戻す） */
     @ColumnInfo(name = "old_reinstalled_at") val oldReinstalledAt: Long?,
     @ColumnInfo(name = "old_signature_changed_at") val oldSignatureChangedAt: Long?,
+    /** 事前登録・解除の前の事前登録の印と、前後の仮のアプリ名（元に戻すときに戻す） */
+    @ColumnInfo(name = "old_pre_registered") val oldPreRegistered: Boolean?,
+    @ColumnInfo(name = "old_provisional_name") val oldProvisionalName: String?,
+    @ColumnInfo(name = "new_provisional_name") val newProvisionalName: String?,
     @ColumnInfo(name = "operation_id") val operationId: String?,
 )
 

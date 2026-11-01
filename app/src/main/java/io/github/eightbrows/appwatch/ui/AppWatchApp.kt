@@ -30,6 +30,9 @@ import io.github.eightbrows.appwatch.ui.setup.SetupScreen
 import io.github.eightbrows.appwatch.ui.status.AdminAppDetailRoute
 import io.github.eightbrows.appwatch.ui.status.AppStatusController
 import io.github.eightbrows.appwatch.ui.status.AppStatusRoute
+import io.github.eightbrows.appwatch.ui.status.PreRegisterRoute
+import io.github.eightbrows.appwatch.ui.status.SharedText
+import io.github.eightbrows.appwatch.ui.status.UserAppDetailRoute
 import io.github.eightbrows.appwatch.ui.top.SelfDeleteWarningDialog
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.ui.top.TopActions
@@ -80,9 +83,14 @@ fun AppWatchApp(
     onRetryCheck: () -> Unit,
     /** Android の削除・アプリ情報の画面を開く直前に呼ぶ（戻ったときに必ずチェックし直すため） */
     onOpenSystemScreen: () -> Unit,
+    /** 共有で開いたか（このときは事前登録の画面を最初の画面にする） */
+    startedFromShare: Boolean = false,
+    /** 共有で受け取った文面。事前登録の画面に入れたら [onSharedTextConsumed] を呼ぶ */
+    sharedText: SharedText? = null,
+    onSharedTextConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
-    val navigator = rememberNavigator(start = startDestination.toScreen())
+    val navigator = rememberNavigator(start = if (startedFromShare) Screen.PRE_REGISTER else startDestination.toScreen())
     // 画面ごとの状態（選んでいるタブ、スクロール位置など）を、別の画面から戻ったときにも保つ
     val stateHolder = rememberSaveableStateHolder()
     // 最初の画面を切り替える。それまでの画面の状態（初回設定の途中の画面など）は捨てる
@@ -92,7 +100,8 @@ fun AppWatchApp(
     }
     // 初回設定の完了・使い方の変更・開発版のやり直しで行き先が変わったら、最初の画面を切り替える
     LaunchedEffect(startDestination) {
-        if (navigator.root != startDestination.toScreen()) resetTo(startDestination.toScreen())
+        // 共有で開いた画面は、事前登録だけのための画面なので切り替えない
+        if (!startedFromShare && navigator.root != startDestination.toScreen()) resetTo(startDestination.toScreen())
     }
     // 見守る端末に戻すときは、初回設定を2の画面から始める（アプリを閉じて開き直したら1から）
     var setupInitialStep by rememberSaveable { mutableIntStateOf(1) }
@@ -101,12 +110,39 @@ fun AppWatchApp(
         if (navigator.back()) stateHolder.removeState(leaving.name)
     }
     BackHandler(enabled = navigator.canGoBack, onBack = goBack)
+    // この画面（Activity）を閉じる。共有で開いた事前登録の画面から戻るときに使い、共有元のアプリに戻る
+    val onFinish: () -> Unit = {
+        var current: android.content.Context? = context
+        while (current is android.content.ContextWrapper && current !is android.app.Activity) current = current.baseContext
+        (current as? android.app.Activity)?.finish()
+    }
+    /** 1つ前の画面に戻る。最初の画面で戻れなければ false。 */
+    val goBackOrFalse: () -> Boolean = {
+        val leaving = navigator.current
+        navigator.back().also { moved -> if (moved) stateHolder.removeState(leaving.name) }
+    }
+    // 共有を受け取ったら、事前登録の画面を開く（開いているこの画面の上に重ねず、同じ画面なら入れ直すだけ）
+    LaunchedEffect(sharedText) {
+        if (sharedText != null && navigator.current != Screen.PRE_REGISTER) navigator.navigate(Screen.PRE_REGISTER)
+    }
 
     // 本アプリの削除警告を出しているときは、そのパッケージ名（画面の回転でも消えないように保存する）
     var selfDeleteTarget by rememberSaveable { mutableStateOf<String?>(null) }
 
     // アプリの詳細（管理者）で開いているアプリのパッケージ名
     var detailPackage by rememberSaveable { mutableStateOf<String?>(null) }
+    // アプリの詳細（本人）で開いているアプリのパッケージ名
+    var userDetailPackage by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // Android のアンインストール画面を開く。本アプリなら先に削除警告を出す
+    val uninstall: (String, Boolean) -> Unit = { packageName, isSelf ->
+        if (isSelf) {
+            selfDeleteTarget = packageName
+        } else {
+            onOpenSystemScreen()
+            AppActions.uninstall(context, packageName)
+        }
+    }
 
     val screen = navigator.current
     stateHolder.SaveableStateProvider(screen.name) {
@@ -166,7 +202,35 @@ fun AppWatchApp(
                 }
             }
 
-            Screen.PRE_REGISTER -> PlaceholderScreen(stringResource(R.string.settings_pre_register), onBack = goBack)
+            Screen.PRE_REGISTER -> PreRegisterRoute(
+                controller = statusController,
+                sharedText = sharedText,
+                onSharedTextConsumed = onSharedTextConsumed,
+                // 共有で開いたとき（最初の画面）は、戻ると画面を閉じて共有元に戻る
+                onBack = { if (!goBackOrFalse()) onFinish() },
+                onOpenDetail = { packageName ->
+                    detailPackage = packageName
+                    navigator.navigate(Screen.APP_DETAIL)
+                },
+            )
+
+            Screen.USER_DETAIL -> {
+                val packageName = userDetailPackage
+                if (packageName == null) {
+                    LaunchedEffect(Unit) { goBack() }
+                } else {
+                    UserAppDetailRoute(
+                        controller = statusController,
+                        packageName = packageName,
+                        onBack = goBack,
+                        onUninstall = { entry -> uninstall(entry.packageName, entry.isSelf) },
+                        onOpenAppInfo = { entry ->
+                            onOpenSystemScreen()
+                            AppActions.openAppInfo(context, entry.packageName)
+                        },
+                    )
+                }
+            }
 
             Screen.HISTORY -> PlaceholderScreen(stringResource(R.string.settings_history), onBack = goBack)
 
@@ -199,7 +263,10 @@ fun AppWatchApp(
                             onOpenSystemScreen()
                             AppActions.openAppInfo(context, app.packageName)
                         },
-                        onShowDetails = { /* アプリの詳細は後のステップ */ },
+                        onShowDetails = { app ->
+                            userDetailPackage = app.packageName
+                            navigator.navigate(Screen.USER_DETAIL)
+                        },
                         onRetry = onRetryCheck,
                     ),
                 )

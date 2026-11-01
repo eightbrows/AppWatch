@@ -98,6 +98,7 @@ fun AdminAppDetailRoute(
     // 「問題なし」のボタンを押したか（すでに問題なしでも、後から付いた再導入の警告を消せるように）
     var pressedOk by rememberSaveable { mutableStateOf(false) }
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    var confirmUnregister by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(entry) {
         if (!initialized && entry != null) {
             status = entry.status
@@ -171,6 +172,25 @@ fun AdminAppDetailRoute(
             },
             onOpenAppInfo = { onOpenAppInfo(entry) },
             onUninstall = { onUninstall(entry) },
+            onUnregister = { confirmUnregister = true },
+        )
+    }
+
+    if (confirmUnregister && entry != null) {
+        AlertDialog(
+            onDismissRequest = { confirmUnregister = false },
+            title = { Text(stringResource(R.string.detail_unregister_title)) },
+            text = { Text(stringResource(R.string.detail_unregister_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmUnregister = false
+                    controller.unregister(entry)
+                    onBack()
+                }) { Text(stringResource(R.string.detail_unregister_confirm), color = AppWatchTheme.colors.danger) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmUnregister = false }) { Text(stringResource(R.string.detail_unregister_cancel)) }
+            },
         )
     }
 
@@ -193,7 +213,7 @@ fun AdminAppDetailRoute(
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+internal fun SectionLabel(text: String) {
     Text(
         text = text,
         modifier = Modifier
@@ -207,7 +227,7 @@ private fun SectionLabel(text: String) {
 
 /** アイコン、アプリ名、バージョン、入手元・インストール日、パッケージ名。端末にないアプリは灰色の印。 */
 @Composable
-private fun Header(entry: AppStatusEntry) {
+internal fun Header(entry: AppStatusEntry) {
     Row(verticalAlignment = Alignment.Top) {
         if (entry.isPresent) {
             AppIcon(name = entry.name, packageName = entry.packageName, size = 56.dp, versionKey = entry.versionName.orEmpty())
@@ -257,7 +277,7 @@ private fun Header(entry: AppStatusEntry) {
 }
 
 @Composable
-private fun DetailText(text: String) {
+internal fun DetailText(text: String) {
     Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
@@ -279,7 +299,7 @@ private fun AbsentMark(name: String) {
 
 /** 警告の欄。要注意は赤、それ以外で警告があれば橙。 */
 @Composable
-private fun WarningBox(entry: AppStatusEntry, events: List<AppChange>) {
+internal fun WarningBox(entry: AppStatusEntry, events: List<AppChange>) {
     val colors = AppWatchTheme.colors
     val isCaution = entry.status == ReviewStatus.CAUTION
     if (!isCaution && entry.warnings.isEmpty()) return
@@ -375,7 +395,7 @@ private fun StatusButtons(selected: ReviewStatus, onSelect: (ReviewStatus) -> Un
 
 /** これまでの経緯（古い順）。 */
 @Composable
-private fun History(events: List<AppChange>) {
+internal fun History(events: List<AppChange>) {
     Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (events.isEmpty()) {
@@ -441,6 +461,12 @@ private fun historyText(event: AppChange, all: List<AppChange>): String = when (
         event.newAdminMemo == null -> stringResource(R.string.history_memo_removed)
         else -> stringResource(R.string.history_memo_changed)
     }
+    ChangeType.PRE_REGISTERED -> stringResource(
+        if (event.reason == StatusChangeReason.UNDO) R.string.history_pre_registered_undo else R.string.history_pre_registered,
+    )
+    ChangeType.UNREGISTERED -> stringResource(
+        if (event.reason == StatusChangeReason.UNDO) R.string.history_unregistered_undo else R.string.history_unregistered,
+    )
 }
 
 /** 下部の「保存」「Android のアプリ情報」「アンインストール」。端末にないアプリは、アプリ情報とアンインストールを押せない。 */
@@ -451,6 +477,7 @@ private fun BottomButtons(
     onSave: () -> Unit,
     onOpenAppInfo: () -> Unit,
     onUninstall: () -> Unit,
+    onUnregister: () -> Unit,
 ) {
     val colors = AppWatchTheme.colors
     Column {
@@ -471,6 +498,21 @@ private fun BottomButtons(
                 shape = RoundedCornerShape(12.dp),
             ) {
                 Text(stringResource(R.string.detail_save), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            // 端末にない登録済みのアプリは、アプリ情報・アンインストールの代わりに「登録を解除」
+            if (entry.isPreRegistered && !entry.isPresent) {
+                OutlinedButton(
+                    onClick = onUnregister,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, colors.danger),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.danger),
+                ) {
+                    Text(stringResource(R.string.detail_unregister), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                }
+                return@Column
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
