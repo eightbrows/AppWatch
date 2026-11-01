@@ -18,6 +18,8 @@ import io.github.eightbrows.appwatch.data.settings.StartDestination
 import io.github.eightbrows.appwatch.data.settings.ThemeMode
 import io.github.eightbrows.appwatch.ui.navigation.Screen
 import io.github.eightbrows.appwatch.ui.navigation.rememberNavigator
+import io.github.eightbrows.appwatch.ui.history.HistoryController
+import io.github.eightbrows.appwatch.ui.history.HistoryRoute
 import io.github.eightbrows.appwatch.ui.imported.ImportedDataScreen
 import io.github.eightbrows.appwatch.ui.settings.HealthCheckRoute
 import io.github.eightbrows.appwatch.ui.settings.LicenseRoute
@@ -75,6 +77,7 @@ fun AppWatchApp(
     setupController: SetupController,
     settingsController: SettingsController,
     statusController: AppStatusController,
+    historyController: HistoryController,
     /** アプリに戻ってくるたびに増える数（初回設定で、設定画面から戻ったときに状態を読み直す） */
     resumeCount: Int,
     themeMode: ThemeMode,
@@ -232,7 +235,15 @@ fun AppWatchApp(
                 }
             }
 
-            Screen.HISTORY -> PlaceholderScreen(stringResource(R.string.settings_history), onBack = goBack)
+            Screen.HISTORY -> HistoryRoute(
+                controller = historyController,
+                statusController = statusController,
+                onBack = goBack,
+                onOpenDetail = { packageName ->
+                    detailPackage = packageName
+                    navigator.navigate(Screen.APP_DETAIL)
+                },
+            )
 
             Screen.EXPORT_IMPORT -> PlaceholderScreen(stringResource(R.string.settings_export_import), onBack = goBack)
 

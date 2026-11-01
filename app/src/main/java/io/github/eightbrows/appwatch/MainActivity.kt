@@ -19,6 +19,7 @@ import io.github.eightbrows.appwatch.data.settings.ThemeMode
 import io.github.eightbrows.appwatch.data.settings.isDark
 import io.github.eightbrows.appwatch.ui.AppWatchApp
 import io.github.eightbrows.appwatch.ui.TopData
+import io.github.eightbrows.appwatch.ui.history.HistoryController
 import io.github.eightbrows.appwatch.ui.settings.SettingsController
 import io.github.eightbrows.appwatch.ui.setup.SetupController
 import io.github.eightbrows.appwatch.ui.status.AppStatusController
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity() {
     private val setupController by lazy { SetupController(this) }
     private val settingsController by lazy { SettingsController(this) }
     private val statusController by lazy { AppStatusController(this) }
+    private val historyController by lazy { HistoryController(this) }
 
     /** アプリに戻ってくるたびに増える数（初回設定で、設定画面から戻ったときに状態を読み直すのに使う）。 */
     private val resumeCount = MutableStateFlow(0)
@@ -117,6 +119,7 @@ class MainActivity : AppCompatActivity() {
                 setupController = setupController,
                 settingsController = settingsController,
                 statusController = statusController,
+                historyController = historyController,
                 resumeCount = resumes,
                 themeMode = mode,
                 onThemeModeChange = { newMode -> scope.launch { app.settingsRepository.setThemeMode(newMode) } },

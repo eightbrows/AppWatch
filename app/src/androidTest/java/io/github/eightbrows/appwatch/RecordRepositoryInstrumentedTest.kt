@@ -5,6 +5,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.eightbrows.appwatch.data.db.AppWatchDatabase
 import io.github.eightbrows.appwatch.data.db.DatasetKind
+import io.github.eightbrows.appwatch.data.history.DateRange
+import io.github.eightbrows.appwatch.data.history.HistoryKind
+import io.github.eightbrows.appwatch.data.history.HistoryRules
 import io.github.eightbrows.appwatch.data.record.ChangeType
 import io.github.eightbrows.appwatch.data.record.DeviceEnvironment
 import io.github.eightbrows.appwatch.data.record.PolicyEdit
@@ -29,6 +32,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalDate
 import java.time.ZoneOffset
 
 /**
@@ -475,6 +479,49 @@ class RecordRepositoryInstrumentedTest {
         val card = TopLists.from(repo.observePresentApps().first()).cards.single()
         assertEquals("com.bad.app", card.packageName)
         assertEquals("入れないで", card.adminMemo)
+    }
+
+    @Test
+    fun history_listsDeviceChangesInRange_andCountsMatch() = runBlocking {
+        val repo = repository()
+        // 1日目 0:00 最初のチェック（基準）
+        repo.record(listOf(clean("keep"), clean("upd"), clean("dis"), clean("gone"), clean("sig")), now)
+        // 1日目 1:00 入れる・更新する・無効にする・削除する。管理者が「問題なし」にする（一覧には出さない）
+        now += HOUR
+        repo.record(listOf(clean("keep"), clean("upd").copy(versionCode = 2, versionName = "v2"), clean("dis").copy(isEnabled = false), clean("sig"), clean("new")), now)
+        repo.setReviewStatus(listOf("keep", "sig"), ReviewStatus.OK)
+        // 2日目 1:00 有効に戻す・署名が変わる
+        now = DAY2 + HOUR
+        repo.record(listOf(clean("keep"), clean("upd").copy(versionCode = 2, versionName = "v2"), clean("dis"), app("sig", signer = "bbbb").copy(warnings = emptySet()), clean("new")), now)
+
+        val records = repo.observeHistory(repo.localDatasetId()).first()
+        val zone = ZoneOffset.UTC
+        val day1 = LocalDate.of(2026, 10, 31)
+        val day2 = LocalDate.of(2026, 11, 1)
+
+        val first = HistoryRules.build(records.changes, records.scanDays, DateRange(day1, day1), emptySet(), zone)
+        assertEquals(
+            mapOf(HistoryKind.ADDED to 1, HistoryKind.REMOVED to 1, HistoryKind.UPDATED to 1, HistoryKind.DISABLED to 1, HistoryKind.SIGNATURE to 0),
+            first.counts,
+        )
+        assertEquals(
+            listOf(ChangeType.REMOVED to "gone", ChangeType.ADDED to "new", ChangeType.UPDATED to "upd", ChangeType.DISABLED to "dis"),
+            first.rows.map { it.type to it.packageName },
+        )
+        assertEquals("v1", first.rows.single { it.type == ChangeType.UPDATED }.oldVersionName)
+        assertEquals(2, first.checkCount)
+
+        val both = HistoryRules.build(records.changes, records.scanDays, DateRange(day1, day2), emptySet(), zone)
+        assertEquals(2, both.counts[HistoryKind.DISABLED]) // 有効化も「無効化」に数える
+        assertEquals(1, both.counts[HistoryKind.SIGNATURE])
+        assertEquals(3, both.checkCount)
+        assertTrue(both.rows.none { it.type == ChangeType.STATUS_CHANGED })
+        // 署名が変わったときに「問題なし」を「未確認」に戻した記録も、一覧には出さない
+        assertEquals(6, both.rows.size)
+
+        val secondHidden = HistoryRules.build(records.changes, records.scanDays, DateRange(day2, day2), setOf(HistoryKind.DISABLED), zone)
+        assertEquals(listOf(ChangeType.SIGNATURE_CHANGED), secondHidden.rows.map { it.type })
+        assertEquals(1, secondHidden.counts[HistoryKind.DISABLED])
     }
 
     private companion object {

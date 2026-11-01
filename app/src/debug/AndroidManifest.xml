@@ -14,6 +14,12 @@
             android:name=".ui.setup.DebugSetupReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
+
+        <!-- 記録をまとめて n 日前にずらす（履歴と比較の確認用）。DUMP の権限が要るので adb からしか呼べない -->
+        <receiver
+            android:name=".data.record.DebugShiftRecordsReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
     </application>
 
 </manifest>

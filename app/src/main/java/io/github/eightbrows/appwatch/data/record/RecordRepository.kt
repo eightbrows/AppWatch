@@ -42,6 +42,9 @@ data class OperationResult(val operationId: String, val changedApps: Int)
 /** アプリの詳細（管理者用）の中身。 */
 data class AppDetail(val entry: AppStatusEntry?, val events: List<AppChange>)
 
+/** 履歴と比較で使う記録（1つのデータの、端末の変化とチェックの実行記録）。 */
+data class HistoryRecords(val changes: List<AppChange>, val scanDays: List<ScanDay>)
+
 /** この端末の情報（dataset に書く）。 */
 data class DeviceEnvironment(
     val deviceModel: String,
@@ -199,6 +202,18 @@ class RecordRepository(
             },
         )
     }
+
+    /**
+     * 履歴と比較で使う記録（端末の変化とチェックの実行記録）。
+     * [datasetId] で読むデータを選ぶ（今はこの端末のデータ。取り込んだデータもこの形で読む）。
+     */
+    fun observeHistory(datasetId: String): Flow<HistoryRecords> =
+        combine(recordDao.observeDeviceEvents(datasetId), scanDailyDao.observeAll(datasetId)) { events, days ->
+            HistoryRecords(
+                changes = events.map { it.toChange() },
+                scanDays = days.map { ScanDay(date = it.date, count = it.count, lastAt = it.lastAt) },
+            )
+        }
 
     // ---- 管理者の設定 ----
 

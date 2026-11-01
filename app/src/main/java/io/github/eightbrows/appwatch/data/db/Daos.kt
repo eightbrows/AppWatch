@@ -76,6 +76,16 @@ interface AppRecordDao {
     @Query("SELECT * FROM app_event WHERE dataset_id = :datasetId AND package_name = :packageName ORDER BY occurred_at, id")
     fun observeEventsFor(datasetId: String, packageName: String): Flow<List<AppEventEntity>>
 
+    /**
+     * 端末の変化（履歴と比較）。確認状態・管理者メモ・事前登録の記録は読まない。
+     * 種類の一覧は HistoryRules.deviceChangeTypes と同じ（画面に出す前に、そちらでも絞り込む）。
+     */
+    @Query(
+        "SELECT * FROM app_event WHERE dataset_id = :datasetId AND type IN " +
+            "('ADDED', 'REMOVED', 'UPDATED', 'ENABLED', 'DISABLED', 'SIGNATURE_CHANGED', 'RESET') ORDER BY occurred_at, id",
+    )
+    fun observeDeviceEvents(datasetId: String): Flow<List<AppEventEntity>>
+
     /** 1回の操作で記録した変化（「元に戻す」）。 */
     @Query("SELECT * FROM app_event WHERE dataset_id = :datasetId AND operation_id = :operationId ORDER BY id")
     suspend fun getEventsByOperation(datasetId: String, operationId: String): List<AppEventEntity>

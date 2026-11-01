@@ -397,4 +397,70 @@
     <string name="prereg_view_only_body">この端末は閲覧専用です。注意アプリの事前登録は、見守る端末で行って下さい。</string>
     <string name="notice_pre_registered">%1$sを『要注意』として登録しました</string>
     <string name="notice_unregistered">%1$sの登録を解除しました</string>
+
+    <!-- 履歴と比較（仕様書 6章、09_history_compare.png） -->
+    <string name="history_from_label">比較元（この日から）</string>
+    <string name="history_to_label">比較先（この日まで）</string>
+    <string name="history_choose_period">期間を選ぶ</string>
+    <string name="history_date">yyyy/MM/dd</string>
+    <string name="history_quick_7">直近7日</string>
+    <string name="history_quick_30">直近30日</string>
+    <string name="history_quick_all">全期間</string>
+    <string name="history_kind_added">追加</string>
+    <string name="history_kind_removed">削除</string>
+    <string name="history_kind_updated">更新</string>
+    <string name="history_kind_disabled">無効化</string>
+    <string name="history_kind_signature">署名</string>
+    <string name="history_kind_joiner">・</string>
+    <string name="history_kind_desc">%1$s %2$d件</string>
+    <string name="history_kind_shown">表示中</string>
+    <string name="history_kind_hidden">非表示</string>
+    <string name="history_list_title">変化の一覧（新しい順）</string>
+    <plurals name="history_list_count">
+        <item quantity="other">%1$d件</item>
+    </plurals>
+    <plurals name="history_list_count_hidden">
+        <item quantity="other">%1$sを除いて表示中 ・ %2$d件</item>
+    </plurals>
+    <string name="history_mark_added">＋追加</string>
+    <string name="history_mark_removed">－削除</string>
+    <string name="history_mark_updated">更新</string>
+    <string name="history_mark_enabled">有効化</string>
+    <string name="history_mark_disabled">無効化</string>
+    <string name="history_mark_signature">署名が\n変わった</string>
+    <string name="history_mark_reset">初期化</string>
+    <string name="history_reinstall">再インストール</string>
+    <string name="history_version_update">v%1$s → v%2$s</string>
+    <string name="history_version_removed">v%1$s（削除時）</string>
+    <string name="history_detected">%1$s 検出</string>
+    <string name="history_row_time">MM/dd HH:mm</string>
+    <string name="history_row_time_with_year">yyyy/MM/dd HH:mm</string>
+    <string name="history_signature_note">削除→再インストールの可能性</string>
+    <string name="history_reset_text">記録を取り直しました</string>
+    <string name="history_reset_detail">端末の初期化・復元のため</string>
+    <string name="history_open_detail">アプリの詳細を開く</string>
+    <plurals name="history_empty_no_changes">
+        <item quantity="other">この期間に変化はありません（チェック %1$d回）</item>
+    </plurals>
+    <string name="history_empty_no_checks">この期間はチェックが行われていません</string>
+    <string name="history_empty_all_hidden">表示する種類が選ばれていません</string>
+    <string name="history_picker_title">期間を選んで下さい</string>
+    <string name="history_picker_ok">決定</string>
+    <string name="history_share">この結果を共有</string>
+    <string name="history_share_chooser">結果を共有</string>
+    <string name="history_share_title">%1$s 履歴と比較</string>
+    <string name="history_share_period">期間：%1$s 〜 %2$s</string>
+    <string name="history_share_count">%1$s %2$d</string>
+    <string name="history_share_count_separator">"\u0020・\u0020"</string>
+    <string name="history_share_excluded">（%1$sは除く）</string>
+    <string name="history_share_mark">[%1$s]</string>
+    <string name="history_share_reinstall">（再インストール）</string>
+    <string name="history_share_package">(%1$s)</string>
+    <string name="history_type_added">追加</string>
+    <string name="history_type_removed">削除</string>
+    <string name="history_type_updated">更新</string>
+    <string name="history_type_enabled">有効化</string>
+    <string name="history_type_disabled">無効化</string>
+    <string name="history_type_signature">署名が変わった</string>
+    <string name="history_type_reset">初期化</string>
 </resources>
