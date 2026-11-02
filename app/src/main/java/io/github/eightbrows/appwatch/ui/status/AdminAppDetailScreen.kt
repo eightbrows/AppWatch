@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -57,6 +58,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.eightbrows.appwatch.R
@@ -145,9 +147,17 @@ fun AdminAppDetailRoute(
             Header(entry, loadIcon = !viewing)
             WarningBox(entry, current.events)
             SectionLabel(stringResource(R.string.detail_status))
+            if (viewing) {
+                // 取り込んだデータは見るだけ：選ばれた確認状態と管理者メモだけを示す（本人用の詳細と同じ形）
+                StatusView(entry.status, showsByAdmin = false)
+                SectionLabel(stringResource(R.string.app_admin_memo))
+                MemoView(entry.adminMemo?.takeIf { it.isNotBlank() } ?: stringResource(R.string.detail_memo_none))
+                SectionLabel(stringResource(R.string.detail_history))
+                History(current.events)
+                return@Column
+            }
             StatusButtons(
                 selected = status,
-                enabled = !viewing,
                 onSelect = {
                     status = it
                     if (it == ReviewStatus.OK) pressedOk = true
@@ -158,10 +168,9 @@ fun AdminAppDetailRoute(
                 value = memo,
                 onValueChange = { memo = it },
                 modifier = Modifier.fillMaxWidth(),
-                readOnly = viewing,
                 minLines = 2,
                 textStyle = MaterialTheme.typography.bodyLarge,
-                placeholder = { Text(stringResource(if (viewing) R.string.detail_memo_none else R.string.detail_memo_hint)) },
+                placeholder = { Text(stringResource(R.string.detail_memo_hint)) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -368,7 +377,7 @@ private fun warningText(warning: AppWarning, entry: AppStatusEntry, events: List
 
 /** 確認の状態の3つのボタン（問題なし／未確認／要注意）。 */
 @Composable
-private fun StatusButtons(selected: ReviewStatus, onSelect: (ReviewStatus) -> Unit, enabled: Boolean = true) {
+private fun StatusButtons(selected: ReviewStatus, onSelect: (ReviewStatus) -> Unit) {
     val colors = AppWatchTheme.colors
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf(ReviewStatus.OK, ReviewStatus.UNCONFIRMED, ReviewStatus.CAUTION).forEach { status ->
@@ -380,7 +389,6 @@ private fun StatusButtons(selected: ReviewStatus, onSelect: (ReviewStatus) -> Un
             }
             Surface(
                 onClick = { onSelect(status) },
-                enabled = enabled,
                 modifier = Modifier
                     .weight(1f)
                     .height(52.dp)
@@ -533,7 +541,7 @@ private fun BottomButtons(
                     enabled = entry.isPresent,
                     modifier = Modifier
                         .weight(1f)
-                        .height(52.dp),
+                        .heightIn(min = 52.dp),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     contentPadding = PaddingValues(horizontal = 6.dp),
@@ -542,7 +550,8 @@ private fun BottomButtons(
                         stringResource(R.string.action_app_info),
                         style = MaterialTheme.typography.labelMedium,
                         color = if (entry.isPresent) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
-                        maxLines = 1,
+                        maxLines = 2,
+                        textAlign = TextAlign.Center,
                     )
                 }
                 // 削除できるのは後から導入したアプリだけ（プリインストール・システムは Android のアプリ情報から）
@@ -552,7 +561,7 @@ private fun BottomButtons(
                     enabled = canUninstall,
                     modifier = Modifier
                         .weight(1f)
-                        .height(52.dp),
+                        .heightIn(min = 52.dp),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(
                         1.dp,
@@ -565,7 +574,8 @@ private fun BottomButtons(
                         stringResource(R.string.detail_uninstall),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1,
+                        maxLines = 2,
+                        textAlign = TextAlign.Center,
                     )
                 }
             }

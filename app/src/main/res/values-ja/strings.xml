@@ -534,7 +534,7 @@
     <string name="restore_failed">復元できませんでした。この端末のデータは元のままです。</string>
     <string name="restore_bulk_title">まとめて「問題なし」にしますか？</string>
     <plurals name="restore_bulk_body">
-        <item quantity="other">新しく見つかったプリインストールとシステムのアプリが %1$d件あります（ファイルに確認状態がないもの）。まとめて「問題なし」にしますか？</item>
+        <item quantity="other">新しく見つかったプリインストールとシステムのアプリが %1$d件あります（前の端末の記録になく、確認状態もないもの）。まとめて「問題なし」にしますか？</item>
     </plurals>
     <string name="restore_bulk_yes">問題なしにする</string>
     <string name="restore_bulk_no">そのままにする</string>

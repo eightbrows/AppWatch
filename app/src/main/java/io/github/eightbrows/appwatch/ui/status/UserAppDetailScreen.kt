@@ -98,14 +98,7 @@ fun UserAppDetailRoute(
             StatusView(entry.status)
             entry.adminMemo?.takeIf { it.isNotBlank() }?.let { memo ->
                 SectionLabel(stringResource(R.string.app_admin_memo))
-                Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = memo,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
+                MemoView(memo)
             }
             SectionLabel(stringResource(R.string.detail_history))
             History(current.events)
@@ -149,7 +142,7 @@ private fun UserTopBar(onBack: () -> Unit) {
 
 /** 確認の状態（見るだけ）。「未確認」以外は「（管理者が設定）」を添える。 */
 @Composable
-private fun StatusView(status: ReviewStatus) {
+internal fun StatusView(status: ReviewStatus, showsByAdmin: Boolean = true) {
     val colors = AppWatchTheme.colors
     val color = when (status) {
         ReviewStatus.CAUTION -> colors.danger
@@ -171,7 +164,7 @@ private fun StatusView(status: ReviewStatus) {
                 fontWeight = FontWeight.Bold,
                 color = color,
             )
-            if (status != ReviewStatus.UNCONFIRMED) {
+            if (showsByAdmin && status != ReviewStatus.UNCONFIRMED) {
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.detail_status_by_admin),
@@ -224,5 +217,18 @@ private fun UserBottomButtons(entry: AppStatusEntry, onUninstall: () -> Unit, on
                 )
             }
         }
+    }
+}
+
+/** 管理者メモ（見るだけ）。本人用の詳細と、取り込んだデータを見ているときの管理者用の詳細で使う。 */
+@Composable
+internal fun MemoView(memo: String) {
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = memo,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }

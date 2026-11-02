@@ -15,13 +15,18 @@ import io.github.eightbrows.appwatch.model.ReviewStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.time.LocalDateTime
 import java.util.zip.GZIPOutputStream
 
-/** 書き出しファイルの読み書き（往復・新しすぎる版・壊れたファイル・AppWatch でないファイル）。 */
-class AppWatchFileCodecTest {
+/**
+ * 書き出しファイルの読み書き（往復・新しすぎる版・壊れたファイル・AppWatch でないファイル）。
+ * JSON は android.util.JsonReader／JsonWriter を使うので、端末上で確かめる。
+ */
+@RunWith(AndroidJUnit4::class)
+class AppWatchFileCodecInstrumentedTest {
 
     private fun baseline(pkg: String, kind: AppKind = AppKind.USER_INSTALLED) = BaselineAppEntity(
         datasetId = "",
@@ -128,12 +133,6 @@ class AppWatchFileCodecTest {
         assertTrue(json, json.startsWith("""{"format":"appwatch","version":1,"exported_at":1793532965000,"device":{"id":"device-1""""))
     }
 
-    @Test
-    fun 件数() {
-        assertEquals(1, sample.content.presentAppCount)
-        // 要注意は2件あるが、端末にあるアプリは1件だけ
-        assertEquals(1, sample.content.cautionCount)
-    }
 
     @Test
     fun 新しすぎる版は取り込まない() {
@@ -180,18 +179,5 @@ class AppWatchFileCodecTest {
         assertEquals(ReadResult.Success(sample), read(gzip(extended)))
     }
 
-    @Test
-    fun ファイル名() {
-        assertEquals("appwatch_20261028_2100.appwatch", AppWatchFile.fileName(LocalDateTime.of(2026, 10, 28, 21, 0, 59)))
-    }
 
-    @Test
-    fun 入れる先のデータの番号に書き換える() {
-        val content = sample.content.copy(events = sample.content.events.map { it.copy(id = 99) }).withDataset("ds")
-        assertTrue(content.baseline.all { it.datasetId == "ds" })
-        assertTrue(content.current.all { it.datasetId == "ds" })
-        assertTrue(content.events.all { it.datasetId == "ds" && it.id == 0L })
-        assertTrue(content.policies.all { it.datasetId == "ds" })
-        assertTrue(content.scanDays.all { it.datasetId == "ds" })
-    }
 }

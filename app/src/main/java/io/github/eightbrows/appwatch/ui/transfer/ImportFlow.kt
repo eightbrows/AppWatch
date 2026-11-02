@@ -239,7 +239,28 @@ private fun ImportChoiceDialog(
     // 初めは選べる方（閲覧のみ → 復元の順）
     var restoreSelected by remember(candidate) { mutableStateOf(!candidate.canViewOnly && candidate.canRestore) }
     val canConfirm = if (restoreSelected) candidate.canRestore else candidate.canViewOnly
-    DialogCard(onDismissRequest = onCancel) {
+    DialogCard(
+        onDismissRequest = onCancel,
+        bottom = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onCancel,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                ) { Text(stringResource(R.string.import_cancel)) }
+                Button(
+                    onClick = { if (restoreSelected) onRestore() else onViewOnly(name) },
+                    enabled = canConfirm,
+                    modifier = Modifier
+                        .weight(1.6f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                ) { Text(stringResource(R.string.import_confirm), fontWeight = FontWeight.Bold) }
+            }
+        },
+    ) {
         Text(
             text = stringResource(R.string.import_title),
             modifier = Modifier.fillMaxWidth(),
@@ -291,23 +312,6 @@ private fun ImportChoiceDialog(
             enabled = candidate.canRestore,
             onClick = { restoreSelected = true },
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-            ) { Text(stringResource(R.string.import_cancel)) }
-            Button(
-                onClick = { if (restoreSelected) onRestore() else onViewOnly(name) },
-                enabled = canConfirm,
-                modifier = Modifier
-                    .weight(1.6f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-            ) { Text(stringResource(R.string.import_confirm), fontWeight = FontWeight.Bold) }
-        }
     }
 }
 
@@ -319,7 +323,14 @@ private fun RestoreConfirmDialog(
     onNo: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    DialogCard(onDismissRequest = onCancel) {
+    DialogCard(
+        onDismissRequest = onCancel,
+        bottom = {
+            TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.restore_cancel), style = MaterialTheme.typography.bodyLarge)
+            }
+        },
+    ) {
         Text(
             text = stringResource(R.string.restore_title),
             modifier = Modifier.fillMaxWidth(),
@@ -347,29 +358,35 @@ private fun RestoreConfirmDialog(
             onClick = onNo,
             role = Role.Button,
         )
-        TextButton(onClick = onCancel, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            Text(stringResource(R.string.restore_cancel), style = MaterialTheme.typography.bodyLarge)
-        }
     }
 }
 
 @Composable
-private fun DialogCard(onDismissRequest: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+private fun DialogCard(
+    onDismissRequest: () -> Unit,
+    /** 下の操作（中止・取り込むなど）。中身が長くても切れずにいつも見えるように、スクロールの外に置く */
+    bottom: @Composable () -> Unit,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
+) {
     Dialog(onDismissRequest = onDismissRequest, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 24.dp)
                 .imePadding(),
         ) {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 18.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                content = content,
-            )
+            Column {
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = 18.dp, end = 18.dp, top = 20.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    content = content,
+                )
+                Column(Modifier.padding(start = 18.dp, end = 18.dp, bottom = 16.dp, top = 4.dp)) { bottom() }
+            }
         }
     }
 }

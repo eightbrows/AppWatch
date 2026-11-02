@@ -34,7 +34,7 @@ data class ImportedDataset(
 /** 復元の「はい」で、今の端末のアプリを新しい基準にした中身。 */
 data class ResetPlan(
     val content: DatasetContent,
-    /** 新しく見つかったプリインストールとシステムのアプリ（ファイルに確認状態がないもの）。まとめて「問題なし」にするか尋ねる */
+    /** 新しく見つかったプリインストールとシステムのアプリ（ファイルの最新の状態になく、確認状態もないもの）。まとめて「問題なし」にするか尋ねる */
     val newlyFound: List<String>,
 )
 
@@ -76,9 +76,10 @@ object ImportRules {
             policies = file.content.policies,
             scanDays = scanDays.sortedBy { it.date },
         )
-        val withPolicy = file.content.policies.mapTo(HashSet()) { it.packageName }
+        // 新しく見つかった：ファイルの最新の状態（app_current）になく、確認状態もないもの
+        val known = file.content.current.mapTo(HashSet()) { it.packageName } + file.content.policies.map { it.packageName }
         val newlyFound = scanned
-            .filter { (it.kind == AppKind.PREINSTALLED || it.kind == AppKind.SYSTEM) && it.packageName !in withPolicy }
+            .filter { (it.kind == AppKind.PREINSTALLED || it.kind == AppKind.SYSTEM) && it.packageName !in known }
             .map { it.packageName }
             .sorted()
         return ResetPlan(content, newlyFound)

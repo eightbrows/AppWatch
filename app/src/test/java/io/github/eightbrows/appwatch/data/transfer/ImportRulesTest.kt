@@ -43,6 +43,13 @@ class ImportRulesTest {
         firstInstallTime = 1, lastUpdateTime = 1, isEnabled = true, isSelf = false,
     )
 
+    private fun currentRow(pkg: String, kind: AppKind) = io.github.eightbrows.appwatch.data.db.AppCurrentEntity(
+        datasetId = "", packageName = pkg, name = pkg, versionName = "1", versionCode = 1, kind = kind, source = InstallSource.UNKNOWN,
+        installerPackage = null, initiatingPackage = null, isEnabled = true, warnings = emptySet(), signerSha256 = emptyList(),
+        firstInstallTime = 1, lastUpdateTime = 1, isPresent = true, firstSeenAt = 1, addedAt = null, removedAt = null,
+        reinstalledAt = null, signatureChangedAt = null, updatedAt = 1,
+    )
+
     private fun policy(pkg: String, status: ReviewStatus) =
         AppPolicyEntity("", pkg, status, adminMemo = null, isPreRegistered = false, provisionalName = null, statusReason = null, updatedAt = 1)
 
@@ -88,7 +95,8 @@ class ImportRulesTest {
         )
         val content = DatasetContent(
             baseline = emptyList(),
-            current = emptyList(),
+            // 前の端末の記録にあるが、確認状態がない（初回設定で未確認のまま残したプリインストールなど）
+            current = listOf(currentRow("pre.old", AppKind.PREINSTALLED)),
             events = listOf(oldEvent),
             policies = listOf(policy("sys.known", ReviewStatus.OK), policy("user.bad", ReviewStatus.CAUTION)),
             scanDays = listOf(ScanDailyEntity("", "2026-10-20", 5, 1), ScanDailyEntity("", "2026-11-01", 2, 2)),
@@ -97,6 +105,7 @@ class ImportRulesTest {
             installed("sys.known", AppKind.SYSTEM), // ファイルに確認状態がある
             installed("sys.new", AppKind.SYSTEM),
             installed("pre.new", AppKind.PREINSTALLED),
+            installed("pre.old", AppKind.PREINSTALLED), // ファイルの記録にあるので尋ねない
             installed("user.new", AppKind.USER_INSTALLED), // 後から導入は尋ねない
             installed("user.bad", AppKind.USER_INSTALLED),
         )
@@ -113,7 +122,7 @@ class ImportRulesTest {
         assertEquals(content.policies, plan.content.policies)
         // 取り直しも1回のチェックとして数える（今日の回数に足す）
         assertEquals(listOf("2026-10-20" to 5, "2026-11-01" to 3), plan.content.scanDays.map { it.date to it.count })
-        // 新しく見つかったプリインストール・システムで、ファイルに確認状態がないもの
+        // 新しく見つかったプリインストール・システム：ファイルの最新の状態になく、確認状態もないもの
         assertEquals(listOf("pre.new", "sys.new"), plan.newlyFound)
     }
 
