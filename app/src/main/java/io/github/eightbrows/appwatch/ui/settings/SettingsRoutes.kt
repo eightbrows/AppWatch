@@ -117,8 +117,9 @@ fun SettingsMenuRoute(
             onLanguageChange = { selected ->
                 if (selected != language) {
                     language = selected
-                    controller.refreshWidget()
                     AppLanguage.apply(selected)
+                    // 選んだ言語が保存されてから（Android 12 以下は AppCompat が裏で保存する）ウィジェットを作り直す
+                    controller.refreshWidgetAfterLanguageChange()
                 }
             },
             onOpenBatterySettings = { context.startSafely(controller.batteryOptimizationIntent()) },

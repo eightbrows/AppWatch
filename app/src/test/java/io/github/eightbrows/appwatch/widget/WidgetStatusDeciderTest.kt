@@ -29,6 +29,25 @@ class WidgetStatusDeciderTest {
 
     private fun decide(input: WidgetInput) = WidgetStatusDecider.decide(input)
 
+    // ---- 閲覧専用 ----
+
+    @Test
+    fun viewOnly_overridesEverything_andHasNoCount() {
+        val busy = clear.copy(
+            cautionCount = 3,
+            needsReviewCount = 2,
+            lastCheckAt = now - 1_000 * minute,
+            deviceSettingsOk = false,
+            setupCompleted = false,
+            viewOnly = true,
+        )
+        val state = decide(busy)
+        assertEquals(WidgetStatus.VIEW_ONLY, state.status)
+        assertEquals(0, state.count)
+        assertEquals(WidgetStatus.VIEW_ONLY, decide(clear.copy(viewOnly = true)).status)
+        assertEquals(WidgetStatus.ALL_CLEAR, decide(clear.copy(viewOnly = false)).status)
+    }
+
     // ---- 1つだけ当てはまるとき ----
 
     @Test

@@ -1,5 +1,6 @@
 package io.github.eightbrows.appwatch.widget
 
+import io.github.eightbrows.appwatch.model.UsageMode
 import android.content.Context
 import io.github.eightbrows.appwatch.AppWatchApplication
 import io.github.eightbrows.appwatch.BuildConfig
@@ -18,13 +19,18 @@ class WidgetDataSource(context: Context) {
     private val appContext = context.applicationContext
     private val app = appContext as AppWatchApplication
 
-    fun observe(): Flow<WidgetState> = combine(
+    fun observe(): Flow<WidgetState> = combine(observeState(), WidgetLocale.changes) { state, _ ->
+        // 言語を切り替えたら、状態が同じでも描き直すように、言語を状態に入れる
+        state.copy(languageTag = WidgetLocale.languageTag(appContext))
+    }
+
+    private fun observeState(): Flow<WidgetState> = combine(
         app.recordRepository.observePresentApps(),
         app.recordRepository.observeLastCheckAt(),
         app.settingsRepository.checkIntervalMinutes,
-        app.settingsRepository.setupCompleted,
+        app.settingsRepository.setupState,
         WidgetDebugOverride.override,
-    ) { apps, lastCheckAt, interval, setupCompleted, override ->
+    ) { apps, lastCheckAt, interval, setup, override ->
         val (caution, needsReview) = WidgetStatusDecider.countApps(apps)
         val state = WidgetStatusDecider.decide(
             WidgetInput(
@@ -34,7 +40,8 @@ class WidgetDataSource(context: Context) {
                 now = System.currentTimeMillis(),
                 checkIntervalMinutes = interval,
                 deviceSettingsOk = DeviceSettings.allOk(appContext),
-                setupCompleted = setupCompleted,
+                setupCompleted = setup.completed,
+                viewOnly = setup.usageMode == UsageMode.VIEW_ONLY,
             ),
         )
         if (BuildConfig.DEBUG && override != null) WidgetDebugOverride.apply(state, override) else state

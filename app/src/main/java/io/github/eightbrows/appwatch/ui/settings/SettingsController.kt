@@ -92,6 +92,9 @@ class SettingsController(context: Context) {
     /** ウィジェットを更新する（言語・テーマを切り替えた後）。 */
     fun refreshWidget() = app.refreshWidget()
 
+    /** 言語を切り替えた後のウィジェットの更新。言語の保存を待ってから行う。 */
+    fun refreshWidgetAfterLanguageChange() = app.refreshWidget(delayMillis = 1_500)
+
     fun websiteIntent(): Intent = viewIntent(appContext.getString(R.string.settings_website_url))
 
     fun repositoryIntent(): Intent = viewIntent(appContext.getString(R.string.repository_url))

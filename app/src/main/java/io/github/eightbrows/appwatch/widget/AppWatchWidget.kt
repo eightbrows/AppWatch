@@ -124,6 +124,10 @@ private fun styleOf(context: Context, status: WidgetStatus): WidgetStyle = when 
         R.drawable.widget_bg_ok, R.drawable.widget_circle_ok, R.drawable.ic_widget_check,
         "", WidgetColors.ok,
     )
+    WidgetStatus.VIEW_ONLY -> WidgetStyle(
+        R.drawable.widget_bg_neutral, R.drawable.widget_circle_neutral, R.drawable.ic_widget_list,
+        "", WidgetColors.neutral,
+    )
 }
 
 /** 見出し。2行になるときに言葉の途中で改行しないようにする（strings.xml の「|」の所でだけ改行）。 */
@@ -138,6 +142,7 @@ private fun rawTitleOf(context: Context, state: WidgetState): String {
         WidgetStatus.SETTINGS_NEEDED -> context.getString(R.string.widget_settings_title)
         WidgetStatus.SETUP_REQUIRED -> context.getString(R.string.widget_setup_title)
         WidgetStatus.ALL_CLEAR -> context.getString(R.string.widget_clear_title)
+        WidgetStatus.VIEW_ONLY -> context.getString(R.string.widget_view_only_title)
     }
 }
 
@@ -148,18 +153,20 @@ private fun noteOf(context: Context, status: WidgetStatus): String? = when (stat
     WidgetStatus.SETTINGS_NEEDED -> context.getString(R.string.widget_settings_note)
     WidgetStatus.SETUP_REQUIRED -> context.getString(R.string.widget_setup_note)
     WidgetStatus.ALL_CLEAR -> null
+    WidgetStatus.VIEW_ONLY -> context.getString(R.string.widget_view_only_note)
 }
 
 private fun lastCheckText(context: Context, lastCheckAt: Long?): String {
     if (lastCheckAt == null) return context.getString(R.string.widget_last_check_none)
-    val formatter = DateTimeFormatter.ofPattern(context.getString(R.string.format_widget_date_time))
+    val formatter = DateTimeFormatter.ofPattern(context.getString(R.string.format_widget_date_time), WidgetLocale.localeOf(context))
     val text = formatter.format(Instant.ofEpochMilli(lastCheckAt).atZone(ZoneId.systemDefault()))
     return context.getString(R.string.widget_last_check, text)
 }
 
 @Composable
 private fun WidgetContent(state: WidgetState) {
-    val context = LocalContext.current
+    // アプリで選んだ言語の文字にする（言語を切り替えたときは、アプリがウィジェットを更新する）
+    val context = WidgetLocale.localized(LocalContext.current)
     val style = styleOf(context, state.status)
     val secondary = WidgetColors.secondary
     Column(
@@ -201,11 +208,14 @@ private fun WidgetContent(state: WidgetState) {
                 }
             }
         }
-        Spacer(GlanceModifier.height(8.dp))
-        Text(
-            text = lastCheckText(context, state.lastCheckAt),
-            style = TextStyle(color = secondary, fontSize = 12.sp),
-            maxLines = 1,
-        )
+        // 閲覧専用の端末では、最終チェックの行を出さない
+        if (state.status != WidgetStatus.VIEW_ONLY) {
+            Spacer(GlanceModifier.height(8.dp))
+            Text(
+                text = lastCheckText(context, state.lastCheckAt),
+                style = TextStyle(color = secondary, fontSize = 12.sp),
+                maxLines = 1,
+            )
+        }
     }
 }

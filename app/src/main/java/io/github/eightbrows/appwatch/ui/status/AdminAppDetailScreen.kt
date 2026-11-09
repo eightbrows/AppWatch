@@ -391,7 +391,7 @@ private fun StatusButtons(selected: ReviewStatus, onSelect: (ReviewStatus) -> Un
                 onClick = { onSelect(status) },
                 modifier = Modifier
                     .weight(1f)
-                    .height(52.dp)
+                    .heightIn(min = 52.dp)
                     .semantics {
                         role = Role.RadioButton
                         this.selected = isSelected
@@ -400,13 +400,14 @@ private fun StatusButtons(selected: ReviewStatus, onSelect: (ReviewStatus) -> Un
                 color = if (isSelected) container else MaterialTheme.colorScheme.surface,
                 border = if (isSelected) BorderStroke(2.dp, accent) else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) {
                     Text(
                         text = stringResource(status.labelRes()),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) accent else MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
+                        maxLines = 2,
+                        textAlign = TextAlign.Center,
                     )
                 }
             }

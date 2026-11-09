@@ -61,12 +61,12 @@ fun AppKind.labelRes(): Int = when (this) {
 
 @StringRes
 fun FilterChip.labelRes(): Int = when (this) {
-    FilterChip.STATUS_UNCONFIRMED -> R.string.status_unconfirmed
-    FilterChip.STATUS_CAUTION -> R.string.status_caution
-    FilterChip.STATUS_OK -> R.string.status_ok
-    FilterChip.KIND_USER -> R.string.kind_user_installed
+    FilterChip.STATUS_UNCONFIRMED -> R.string.filter_status_unconfirmed
+    FilterChip.STATUS_CAUTION -> R.string.filter_status_caution
+    FilterChip.STATUS_OK -> R.string.filter_status_ok
+    FilterChip.KIND_USER -> R.string.filter_kind_user
     FilterChip.KIND_PREINSTALLED -> R.string.filter_kind_preinstalled
-    FilterChip.KIND_SYSTEM -> R.string.kind_system
+    FilterChip.KIND_SYSTEM -> R.string.filter_kind_system
     FilterChip.SOURCE_PLAY -> R.string.filter_source_play
     FilterChip.SOURCE_OTHER -> R.string.filter_source_other
     FilterChip.SOURCE_UNKNOWN -> R.string.filter_source_unknown

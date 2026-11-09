@@ -1,585 +1,590 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 英語（基本の言語）。英語訳は後のステップでまとめて行うため、今は日本語と同じ文を仮に入れている。 -->
+    <!-- 英語（基本の言語）。日本語は values-ja。本人は user、管理者は helper と呼ぶ（ステップ12の用語表）。 -->
     <string name="app_name">AppWatch</string>
 
     <!-- 共通 -->
-    <string name="common_back">戻る</string>
-    <string name="admin_badge">管理者用</string>
-    <!-- 日時の書式（java.time.format.DateTimeFormatter の形式） -->
-    <string name="format_date_time">M月d日 H:mm</string>
-    <string name="format_date_with_year">yyyy年M月d日</string>
+    <string name="common_back">Back</string>
+    <string name="admin_badge">For helper</string>
+    <!-- 日時の書式（java.time.format.DateTimeFormatter の形式。表示の言語の Locale で使う） -->
+    <string name="format_date_time">MMM d, H:mm</string>
+    <string name="format_date_with_year">MMM d, yyyy</string>
     <plurals name="count_apps">
-        <item quantity="one">%1$d件</item>
-        <item quantity="other">%1$d件</item>
+        <item quantity="one">%1$d app</item>
+        <item quantity="other">%1$d apps</item>
     </plurals>
 
     <!-- トップ -->
-    <string name="top_last_check">最終チェック %1$s</string>
-    <string name="top_tab_needs_review">確認が必要なアプリ</string>
-    <string name="top_tab_all">すべて</string>
-    <string name="top_new_apps">新しく入ったアプリ</string>
-    <string name="top_unconfirmed_apps">まだ確認していないアプリ</string>
-    <string name="top_all_apps">すべてのアプリ</string>
-    <string name="top_nothing_to_review">確認が必要なアプリはありません</string>
-    <string name="top_open_settings">設定（長押しで開きます）</string>
-    <string name="top_open_settings_action">設定を開く</string>
-    <string name="top_loading">アプリの一覧を取得しています</string>
-    <string name="top_load_failed">アプリの一覧を取得できませんでした</string>
-    <string name="action_retry">もう一度試す</string>
+    <string name="top_last_check">Last check %1$s</string>
+    <string name="top_tab_needs_review">Needs review</string>
+    <string name="top_tab_all">All</string>
+    <string name="top_new_apps">New apps</string>
+    <string name="top_unconfirmed_apps">Not reviewed yet</string>
+    <string name="top_all_apps">All apps</string>
+    <string name="top_nothing_to_review">No apps need review</string>
+    <string name="top_open_settings">Settings (press and hold to open)</string>
+    <string name="top_open_settings_action">Open settings</string>
+    <string name="top_loading">Getting the list of apps</string>
+    <string name="top_load_failed">Couldn\'t get the list of apps</string>
+    <string name="action_retry">Try again</string>
 
     <!-- アプリの表示 -->
-    <string name="app_added_at">%1$s に追加</string>
-    <string name="app_added_at_with_source">%1$s に追加 ・ %2$s</string>
-    <string name="app_self_label">本アプリ</string>
-    <string name="app_disabled_label">無効</string>
-    <string name="app_previously_deleted">以前に削除したアプリです</string>
-    <string name="app_admin_memo">管理者メモ</string>
-    <string name="action_delete_app">削除する</string>
-    <string name="action_details">詳しく</string>
-    <string name="action_delete">削除</string>
-    <string name="action_app_info">Android のアプリ情報</string>
-    <string name="action_app_info_short">アプリ情報</string>
-    <string name="error_cannot_open_screen">画面を開けませんでした</string>
+    <string name="app_added_at">Added %1$s</string>
+    <string name="app_added_at_with_source">Added %1$s · %2$s</string>
+    <string name="app_self_label">This app</string>
+    <string name="app_disabled_label">Disabled</string>
+    <string name="app_previously_deleted">You deleted this app before</string>
+    <string name="app_admin_memo">Helper\'s note</string>
+    <string name="action_delete_app">Delete</string>
+    <string name="action_details">Details</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_app_info">Android app info</string>
+    <string name="action_app_info_short">App info</string>
+    <string name="error_cannot_open_screen">Couldn\'t open the screen</string>
 
     <!-- 種類 -->
-    <string name="kind_user_installed">後から導入</string>
-    <string name="kind_preinstalled">プリインストール</string>
-    <string name="kind_system">システム</string>
+    <string name="kind_user_installed">Installed by user</string>
+    <string name="kind_preinstalled">Preinstalled</string>
+    <string name="kind_system">System</string>
 
     <!-- 本アプリの削除警告 -->
-    <string name="self_delete_title">このアプリを\n削除しますか？</string>
-    <string name="self_delete_body">このアプリを削除すると、見守りが止まり、これまでの記録も消えます。削除する前に管理者に相談して下さい。</string>
-    <string name="self_delete_cancel">やめる</string>
-    <string name="self_delete_confirm">削除する</string>
-    <string name="self_delete_note">「削除する」の後、Android の削除確認に進みます</string>
+    <string name="self_delete_title">Delete\nthis app?</string>
+    <string name="self_delete_body">If you delete this app, monitoring stops and all records are deleted. Please talk to your helper first.</string>
+    <string name="self_delete_cancel">Don\'t delete</string>
+    <string name="self_delete_confirm">Delete</string>
+    <string name="self_delete_note">After \"Delete\", Android asks you to confirm</string>
 
     <!-- 警告 -->
-    <string name="warning_not_from_play">Google Play 以外から入りました</string>
-    <string name="warning_unknown_source">入手元が分かりません</string>
-    <string name="warning_debug_signature">開発用の署名のアプリです</string>
-    <string name="warning_signature_changed">署名が変わりました</string>
-    <string name="warning_reinstalled">以前に削除したアプリです</string>
+    <string name="warning_not_from_play">Not from Google Play</string>
+    <string name="warning_unknown_source">Unknown source</string>
+    <string name="warning_debug_signature">Debug signature</string>
+    <string name="warning_signature_changed">Signature changed</string>
+    <string name="warning_reinstalled">You deleted this app before</string>
 
     <!-- 入手元 -->
     <string name="source_google_play">Google Play</string>
-    <string name="source_other">Google Play 以外</string>
-    <string name="source_unknown">入手元が分からない</string>
+    <string name="source_other">Not from Google Play</string>
+    <string name="source_unknown">Unknown source</string>
 
     <!-- 確認状態 -->
-    <string name="status_unconfirmed">未確認</string>
-    <string name="status_ok">問題なし</string>
-    <string name="status_caution">要注意</string>
+    <string name="status_unconfirmed">Not reviewed</string>
+    <string name="status_ok">OK</string>
+    <string name="status_caution">Caution</string>
 
     <!-- 設定メニュー -->
-    <string name="settings_title">設定</string>
-    <string name="settings_section_watch">見守り</string>
-    <string name="settings_app_status">アプリの確認状態</string>
-    <string name="settings_app_status_desc">問題なし・未確認・要注意の設定</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_watch">Monitoring</string>
+    <string name="settings_app_status">App status</string>
+    <string name="settings_app_status_desc">Set OK, Not reviewed or Caution</string>
     <plurals name="settings_caution_count">
-        <item quantity="one">要注意 %1$d件</item>
-        <item quantity="other">要注意 %1$d件</item>
+        <item quantity="one">%1$d Caution</item>
+        <item quantity="other">%1$d Caution</item>
     </plurals>
-    <string name="settings_pre_register">注意アプリの事前登録</string>
-    <string name="settings_pre_register_desc">入れたくないアプリを先に登録</string>
-    <string name="settings_history">履歴と比較</string>
-    <string name="settings_history_desc">期間を選んで変化を確認</string>
+    <string name="settings_pre_register">Pre-register apps</string>
+    <string name="settings_pre_register_desc">Register apps you don\'t want installed</string>
+    <string name="settings_history">History</string>
+    <string name="settings_history_desc">Choose a period and see the changes</string>
 
-    <string name="settings_section_data">データ</string>
-    <string name="settings_export_import">データの書き出し・取り込み</string>
-    <string name="settings_export_import_desc">この端末のデータをファイルにする／ファイルを開く</string>
-    <string name="settings_imported_data">取り込んだデータ</string>
-    <string name="settings_imported_data_none">なし</string>
-    <string name="settings_list_separator">、</string>
+    <string name="settings_section_data">Data</string>
+    <string name="settings_export_import">Export / Import</string>
+    <string name="settings_export_import_desc">Save this device\'s data to a file, or open a file</string>
+    <string name="settings_imported_data">Imported data</string>
+    <string name="settings_imported_data_none">None</string>
+    <string name="settings_list_separator">", "</string>
 
-    <string name="settings_section_behavior">動作</string>
-    <string name="settings_usage_mode">使い方</string>
-    <string name="usage_mode_monitor">見守る端末</string>
-    <string name="usage_mode_view_only">閲覧専用</string>
-    <string name="settings_check_interval">チェック間隔</string>
-    <string name="settings_health_check">動作チェック</string>
-    <string name="health_all_ok">すべて正常</string>
-    <string name="health_needs_attention">確認が必要</string>
+    <string name="settings_section_behavior">Behavior</string>
+    <string name="settings_usage_mode">Device use</string>
+    <string name="usage_mode_monitor">Monitored device</string>
+    <string name="usage_mode_view_only">View only</string>
+    <string name="settings_check_interval">Check interval</string>
+    <string name="settings_health_check">Status check</string>
+    <string name="health_all_ok">All OK</string>
+    <string name="health_needs_attention">Needs attention</string>
 
-    <string name="settings_section_display">表示</string>
-    <string name="settings_theme">テーマ</string>
-    <string name="settings_theme_desc">画面の明るさ</string>
-    <string name="theme_system">システムに従う</string>
-    <string name="theme_light">ライト</string>
-    <string name="theme_dark">ダーク</string>
-    <string name="settings_language">言語</string>
-    <string name="settings_language_desc">表示する言語（日本語以外の端末は英語）</string>
-    <string name="language_system">システムに従う</string>
+    <string name="settings_section_display">Display</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_desc">Light or dark screen</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_desc">English unless the device is set to Japanese</string>
+    <string name="language_system">System</string>
 
-    <string name="settings_section_permissions">権限</string>
-    <string name="perm_query_all">アプリ一覧の取得</string>
-    <string name="perm_query_all_desc">インストール済みアプリの確認に使用</string>
-    <string name="perm_delete">アプリの削除</string>
-    <string name="perm_delete_desc">削除時は毎回確認が表示されます</string>
-    <string name="perm_battery">電池の最適化から除外</string>
-    <string name="perm_battery_desc">定期チェックの停止を防ぎます</string>
-    <string name="perm_unused">未使用アプリの一時停止から除外</string>
-    <string name="perm_unused_desc">長期間開かなくても停止しないようにします</string>
-    <string name="state_granted">許可済み</string>
-    <string name="state_configured">設定済み</string>
-    <string name="state_not_configured">未設定</string>
+    <string name="settings_section_permissions">Permissions</string>
+    <string name="perm_query_all">See installed apps</string>
+    <string name="perm_query_all_desc">Used to check the apps on this device</string>
+    <string name="perm_delete">Delete apps</string>
+    <string name="perm_delete_desc">Android asks you every time</string>
+    <string name="perm_battery">No battery optimization</string>
+    <string name="perm_battery_desc">Keeps periodic checks from stopping</string>
+    <string name="perm_unused">Don\'t pause when unused</string>
+    <string name="perm_unused_desc">Keeps checks running even if the app isn\'t opened for a long time</string>
+    <string name="state_granted">Allowed</string>
+    <string name="state_configured">Set</string>
+    <string name="state_not_configured">Not set</string>
 
-    <string name="settings_section_info">情報</string>
-    <string name="settings_version">バージョン</string>
-    <string name="settings_license">ライセンス</string>
-    <string name="settings_license_desc">本アプリ Apache-2.0 ・ 使用部品</string>
-    <string name="settings_website">公式サイト</string>
+    <string name="settings_section_info">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_license">Licenses</string>
+    <string name="settings_license_desc">This app: Apache-2.0 · Components</string>
+    <string name="settings_website">Website</string>
 
     <!-- ホーム画面のウィジェット（仕様書 6章） -->
-    <string name="widget_description">確認が必要なアプリなど、大事なお知らせを1つ表示します</string>
+    <string name="widget_description">Shows one important notice, such as apps that need review</string>
     <!-- 日時の書式（ウィジェット用。java.time.format.DateTimeFormatter の形式） -->
     <string name="format_widget_date_time">M/d H:mm</string>
-    <string name="widget_last_check">最終チェック %1$s</string>
-    <string name="widget_last_check_none">最終チェック —</string>
-    <!-- ウィジェットの見出しは、2行になるときに言葉の途中で改行しないよう、改行してよい所に「|」を入れる（仕様書 6章）。
-         「|」以外の所では改行しない。表示するときに「|」は消える（WidgetText.keepWords） -->
+    <string name="widget_last_check">Last check %1$s</string>
+    <string name="widget_last_check_none">Last check —</string>
+    <!-- 英語の見出しには「|」を入れない（普通の空白で改行してよい。WidgetText.keepWords） -->
     <plurals name="widget_caution_title">
-        <item quantity="one">要注意の|アプリ %1$d件</item>
-        <item quantity="other">要注意の|アプリ %1$d件</item>
+        <item quantity="one">%1$d Caution app</item>
+        <item quantity="other">%1$d Caution apps</item>
     </plurals>
-    <string name="widget_caution_note">削除しない場合は、管理者に相談して下さい</string>
-    <string name="widget_stopped_title">チェックが|停止しています</string>
-    <string name="widget_stopped_note">アプリを起動しても改善しない場合は、管理者に連絡して下さい</string>
+    <string name="widget_caution_note">Not deleting? Please talk to your helper</string>
+    <string name="widget_stopped_title">Checks have stopped</string>
+    <string name="widget_stopped_note">If opening the app doesn\'t help, please contact your helper</string>
     <plurals name="widget_review_title">
-        <item quantity="one">確認が必要な|アプリ %1$d件</item>
-        <item quantity="other">確認が必要な|アプリ %1$d件</item>
+        <item quantity="one">%1$d app to review</item>
+        <item quantity="other">%1$d apps to review</item>
     </plurals>
-    <string name="widget_review_note">削除しない場合は、管理者に確認を依頼して下さい</string>
-    <string name="widget_settings_title">設定の確認が|必要です</string>
-    <string name="widget_settings_note">管理者に設定の確認を依頼して下さい</string>
-    <string name="widget_setup_title">管理者に|初期設定を|依頼して下さい</string>
-    <string name="widget_setup_note">初期設定が完了していません</string>
-    <string name="widget_clear_title">確認が必要な|アプリは0件</string>
+    <string name="widget_review_note">Not deleting? Ask your helper to review</string>
+    <string name="widget_settings_title">Settings need checking</string>
+    <string name="widget_settings_note">Ask your helper to check the settings</string>
+    <string name="widget_setup_title">Ask your helper to set up the app</string>
+    <string name="widget_setup_note">Setup isn\'t finished</string>
+    <string name="widget_clear_title">No apps to review</string>
+    <string name="widget_view_only_title">This is a view-only device</string>
+    <string name="widget_view_only_note">Please remove this widget</string>
 
     <!-- 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png） -->
-    <string name="setup_progress">初回設定　%1$d / %2$d</string>
-    <string name="setup_next">次へ</string>
-    <string name="setup_later">後で設定する</string>
-    <string name="setup_finish">設定を完了する</string>
+    <string name="setup_progress">Setup  %1$d / %2$d</string>
+    <string name="setup_next">Next</string>
+    <string name="setup_later">Set up later</string>
+    <string name="setup_finish">Finish setup</string>
 
-    <string name="setup_mode_title">アプリ見守当番へ\nようこそ</string>
-    <string name="setup_mode_body">この端末の使い方を選んで下さい。設定は管理者が行います。</string>
-    <string name="setup_mode_monitor_desc">インストールされたアプリを定期的に記録し、不要なアプリの削除を手伝います。本人が使う端末です。</string>
-    <string name="setup_mode_viewer_desc">書き出されたデータを取り込んで閲覧するだけです。この端末のアプリは記録しません。</string>
-    <string name="setup_mode_note">後から設定で変更できます。</string>
+    <string name="setup_mode_title">Welcome to\nAppWatch</string>
+    <string name="setup_mode_body">Choose how this device will be used. Your helper does the setup.</string>
+    <string name="setup_mode_monitor_desc">Regularly records the installed apps and helps remove ones that aren\'t needed. For the user\'s own device.</string>
+    <string name="setup_mode_viewer_desc">Only imports and views exported data. Doesn\'t record the apps on this device.</string>
+    <string name="setup_mode_note">You can change this later in Settings.</string>
 
-    <string name="setup_settings_title">見守りを続けるための\n設定</string>
-    <string name="setup_settings_body">定期チェックが Android に止められないように設定します。</string>
-    <string name="setup_battery_desc">チェックが止まるのを防ぎます</string>
-    <string name="setup_unused_desc">長く開かなくても止まらないようにします（Android 11 以上）</string>
-    <string name="setup_configure">設定する</string>
-    <string name="setup_configured">設定済み</string>
-    <string name="setup_permissions_note">アプリ一覧の取得と削除の権限は、インストール時に許可されています。削除するときは毎回、確認が表示されます。</string>
+    <string name="setup_settings_title">Keep monitoring\nrunning</string>
+    <string name="setup_settings_body">Set this device so Android doesn\'t stop the periodic checks.</string>
+    <string name="setup_battery_desc">Keeps checks from stopping</string>
+    <string name="setup_unused_desc">Keeps checks running even if the app isn\'t opened for a long time (Android 11 and later)</string>
+    <string name="setup_configure">Set up</string>
+    <string name="setup_configured">Done</string>
+    <string name="setup_permissions_note">Permission to see and delete apps was granted at install. Android asks you to confirm every time you delete an app.</string>
 
-    <string name="setup_check_running">アプリを記録しています</string>
-    <string name="setup_check_failed">アプリを記録できませんでした</string>
+    <string name="setup_check_running">Recording apps</string>
+    <string name="setup_check_failed">Couldn\'t record the apps</string>
     <plurals name="setup_check_title">
-        <item quantity="one">アプリ %1$d件を記録しました</item>
-        <item quantity="other">アプリ %1$d件を記録しました</item>
+        <item quantity="one">Recorded %1$d app</item>
+        <item quantity="other">Recorded %1$d apps</item>
     </plurals>
-    <string name="setup_check_body">アプリごとに、次の3つのどれかを設定します。</string>
-    <string name="setup_status_ok_desc">確認して、残してよいアプリ</string>
-    <string name="setup_status_unconfirmed_desc">まだ確認していないアプリ</string>
-    <string name="setup_status_caution_desc">削除してほしいアプリ</string>
-    <string name="setup_check_instruction">チェックを付けた項目のアプリを、まとめて「問題なし」にします。付けない項目は「未確認」になります。</string>
-    <string name="setup_category_system_desc">Android の動作に必要な組み込みアプリ</string>
-    <string name="setup_category_preinstalled_desc">端末の購入時から初期導入されているアプリ</string>
-    <string name="setup_category_play_desc">後から導入・Google Play から入手</string>
-    <string name="setup_category_other_desc">後から導入・Google Play 以外から入手</string>
-    <string name="setup_category_unknown_desc">後から導入・入手元が分からない</string>
-    <string name="setup_category_self">このアプリ（%1$s）</string>
-    <string name="setup_category_self_desc">Google Play 以外から入手・本アプリ自身</string>
-    <string name="setup_check_note">警告（開発用の署名など）のあるアプリは「未確認」のままです。後から個別に変更できます。</string>
+    <string name="setup_check_body">Each app gets one of these three statuses.</string>
+    <string name="setup_status_ok_desc">Checked and fine to keep</string>
+    <string name="setup_status_unconfirmed_desc">Not checked yet</string>
+    <string name="setup_status_caution_desc">Should be deleted</string>
+    <string name="setup_check_instruction">Apps in the checked groups are all set to \"OK\". Apps in unchecked groups stay \"Not reviewed\".</string>
+    <string name="setup_category_system_desc">Built-in apps that Android needs</string>
+    <string name="setup_category_preinstalled_desc">Apps that came with the device</string>
+    <string name="setup_category_play_desc">Installed by user · from Google Play</string>
+    <string name="setup_category_other_desc">Installed by user · not from Google Play</string>
+    <string name="setup_category_unknown_desc">Installed by user · unknown source</string>
+    <string name="setup_category_self">This app (%1$s)</string>
+    <string name="setup_category_self_desc">Not from Google Play · AppWatch itself</string>
+    <string name="setup_check_note">Apps with warnings (such as a debug signature) stay \"Not reviewed\". You can change them one by one later.</string>
 
-    <string name="setup_widget_title">ウィジェットの追加</string>
-    <string name="setup_widget_section">ホーム画面</string>
-    <string name="setup_widget_card_title">ウィジェットを追加</string>
-    <string name="setup_widget_card_desc">状態がひと目で分かります。タップで追加の確認が出ます</string>
-    <string name="setup_widget_add">追加する</string>
-    <string name="setup_widget_added">追加済み</string>
-    <string name="setup_widget_unsupported">このホーム画面では、ボタンで追加できません。ホーム画面の何もないところを長押しし、「ウィジェット」から「アプリ見守当番」を選んで置いて下さい。</string>
+    <string name="setup_widget_title">Add the widget</string>
+    <string name="setup_widget_section">Home screen</string>
+    <string name="setup_widget_card_title">Add widget</string>
+    <string name="setup_widget_card_desc">Shows the status at a glance. Tap to confirm adding it</string>
+    <string name="setup_widget_add">Add</string>
+    <string name="setup_widget_added">Added</string>
+    <string name="setup_widget_unsupported">This home screen can\'t add widgets with a button. Press and hold an empty spot on the home screen, choose \"Widgets\", and place \"AppWatch\".</string>
 
-    <!-- 取り込んだデータ（閲覧専用の最初の画面。取り込みは後のステップ） -->
-    <string name="imported_title">取り込んだデータ</string>
-    <string name="imported_badge">閲覧専用</string>
-    <string name="imported_empty">まだ取り込んだデータはありません</string>
+    <!-- 取り込んだデータ（閲覧専用の最初の画面） -->
+    <string name="imported_title">Imported data</string>
+    <string name="imported_badge">View only</string>
+    <string name="imported_empty">No imported data yet</string>
 
     <!-- 設定メニュー：チェック間隔の選択肢 -->
-    <string name="check_interval_30m">30分</string>
-    <string name="check_interval_1h">1時間</string>
-    <string name="check_interval_3h">3時間</string>
-    <string name="check_interval_6h">6時間</string>
+    <string name="check_interval_30m">30 min</string>
+    <string name="check_interval_1h">1 hour</string>
+    <string name="check_interval_3h">3 hours</string>
+    <string name="check_interval_6h">6 hours</string>
 
     <!-- 設定メニュー：ダイアログ -->
-    <string name="dialog_cancel">やめる</string>
-    <string name="viewonly_confirm_title">閲覧専用にしますか？</string>
-    <string name="viewonly_confirm_body">この端末のアプリのチェックとウィジェットが止まります。これまでの記録は残ります。</string>
-    <string name="viewonly_confirm_ok">閲覧専用にする</string>
-    <string name="unused_dialog_open">設定画面を開く</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="viewonly_confirm_title">Switch to view only?</string>
+    <string name="viewonly_confirm_body">Checks of the apps on this device and the widget will stop. Records so far are kept. Please remove the widget from the home screen.</string>
+    <string name="viewonly_confirm_ok">Switch</string>
+    <string name="unused_dialog_open">Open settings</string>
     <!-- 未使用アプリの一時停止の設定画面で、どのスイッチを切り替えるかの案内（Android 12 以上と 11 で名前が違う） -->
-    <string name="unused_hint_android12">開いた画面の下の方にある「使用していないアプリを一時停止」をオフにして下さい。</string>
-    <string name="unused_hint_android11">開いた画面で、使っていないときに権限を自動で削除する設定をオフにして下さい。</string>
+    <string name="unused_hint_android12">Near the bottom of the screen that opens, turn off \"Pause app activity if unused\".</string>
+    <string name="unused_hint_android11">On the screen that opens, turn off the setting that removes permissions when the app isn\'t used.</string>
 
     <!-- 動作チェック -->
-    <string name="health_section_settings">端末の設定</string>
-    <string name="health_section_check">チェック</string>
-    <string name="health_last_check">最終チェック</string>
-    <string name="health_never_checked">まだチェックしていません</string>
-    <string name="health_checks_7days">直近7日のチェック回数</string>
+    <string name="health_section_settings">Device settings</string>
+    <string name="health_section_check">Checks</string>
+    <string name="health_last_check">Last check</string>
+    <string name="health_never_checked">Not checked yet</string>
+    <string name="health_checks_7days">Checks in the last 7 days</string>
     <plurals name="health_check_count">
-        <item quantity="one">%1$d回</item>
-        <item quantity="other">%1$d回</item>
+        <item quantity="one">%1$d time</item>
+        <item quantity="other">%1$d times</item>
     </plurals>
-    <string name="health_periodic">定期チェック</string>
-    <string name="health_registered">登録済み</string>
-    <string name="health_not_registered">登録されていません</string>
-    <string name="health_stopped_note">最終チェックが、チェック間隔の3倍より前です。アプリを開いても改善しない場合は、電池の最適化などの設定を確認して下さい。</string>
+    <string name="health_periodic">Periodic check</string>
+    <string name="health_registered">Scheduled</string>
+    <string name="health_not_registered">Not scheduled</string>
+    <string name="health_stopped_note">The last check was more than 3 check intervals ago. If opening the app doesn\'t help, check settings such as battery optimization.</string>
 
     <!-- ライセンス（全文はアプリに入れず、名前の一覧だけ） -->
-    <string name="license_app_heading">本アプリ</string>
-    <string name="license_components_heading">使用部品</string>
-    <string name="license_note">各ライセンスの全文は、リポジトリで確認できます。</string>
-    <string name="license_open_repository">リポジトリを開く</string>
+    <string name="license_app_heading">This app</string>
+    <string name="license_components_heading">Components used</string>
+    <string name="license_note">The full text of each license is in the repository.</string>
+    <string name="license_open_repository">Open repository</string>
     <string-array name="license_component_names">
-        <item>Jetpack Compose（UI・Material 3）</item>
-        <item>AndroidX Activity・Core・Lifecycle</item>
+        <item>Jetpack Compose (UI, Material 3)</item>
+        <item>AndroidX Activity, Core, Lifecycle</item>
         <item>AndroidX AppCompat</item>
         <item>AndroidX Room</item>
         <item>AndroidX DataStore</item>
         <item>AndroidX WorkManager</item>
         <item>AndroidX Glance</item>
-        <item>Kotlin 標準ライブラリ</item>
+        <item>Kotlin standard library</item>
         <item>kotlinx.coroutines</item>
-        <item>Material Icons（アイコンの形）</item>
+        <item>Material Icons (icon shapes)</item>
     </string-array>
 
-    <!-- まだ作っていない画面 -->
-
     <!-- アプリの確認状態（管理者） -->
-    <string name="status_search_hint">アプリ名・パッケージ名</string>
-    <string name="status_search_clear">検索の文字を消す</string>
-    <string name="status_pre_register">事前登録</string>
-    <string name="filter_label_status">確認：</string>
-    <string name="filter_label_kind">種類：</string>
-    <string name="filter_label_source">入手：</string>
-    <string name="filter_label_warning">警告：</string>
-    <string name="filter_label_device">端末：</string>
-    <string name="filter_label_registered">登録：</string>
-    <string name="filter_label_state">状態：</string>
-    <string name="filter_kind_preinstalled">プリイン</string>
+    <string name="status_search_hint">App or package name</string>
+    <string name="status_search_clear">Clear search</string>
+    <string name="status_pre_register">Pre-register</string>
+    <!-- 絞り込みのラベルと選択肢は、360dp の幅で1行に収まる短い語にする -->
+    <string name="filter_label_status">Status:</string>
+    <string name="filter_label_kind">Type:</string>
+    <string name="filter_label_source">Source:</string>
+    <string name="filter_label_warning">Warning:</string>
+    <string name="filter_label_device">Device:</string>
+    <string name="filter_label_registered">Reg.:</string>
+    <string name="filter_label_state">State:</string>
+    <string name="filter_status_unconfirmed">New</string>
+    <string name="filter_status_caution">Caution</string>
+    <string name="filter_status_ok">OK</string>
+    <string name="filter_kind_user">User</string>
+    <string name="filter_kind_preinstalled">Preinst.</string>
+    <string name="filter_kind_system">System</string>
     <string name="filter_source_play">Play</string>
-    <string name="filter_source_other">Play外</string>
-    <string name="filter_source_unknown">不明</string>
-    <string name="filter_warning_none">警告なし</string>
-    <string name="filter_warning_debug">開発署名</string>
-    <string name="filter_warning_signature">署名変更</string>
-    <string name="filter_warning_reinstall">再導入</string>
-    <string name="filter_device_present">あり</string>
-    <string name="filter_device_absent">なし</string>
-    <string name="filter_registered">事前登録</string>
-    <string name="filter_disabled">無効</string>
+    <string name="filter_source_other">Non-Play</string>
+    <string name="filter_source_unknown">Unknown</string>
+    <string name="filter_warning_none">None</string>
+    <string name="filter_warning_debug">Debug</string>
+    <string name="filter_warning_signature">Sig.</string>
+    <string name="filter_warning_reinstall">Reinst.</string>
+    <string name="filter_device_present">Yes</string>
+    <string name="filter_device_absent">No</string>
+    <string name="filter_registered">Pre-reg.</string>
+    <string name="filter_disabled">Disabled</string>
     <plurals name="status_selected_count">
-        <item quantity="one">%1$d件選択中</item>
-        <item quantity="other">%1$d件選択中</item>
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
     </plurals>
     <plurals name="status_visible_count">
-        <item quantity="one">表示中 %1$d件</item>
-        <item quantity="other">表示中 %1$d件</item>
+        <item quantity="one">%1$d shown</item>
+        <item quantity="other">%1$d shown</item>
     </plurals>
-    <string name="status_select_all_visible">表示中をすべて選択</string>
-    <string name="status_clear_selection">選択を外す</string>
-    <string name="status_select_app">%1$s を選ぶ</string>
-    <string name="status_action_unconfirmed">未確認に戻す</string>
-    <string name="status_empty">当てはまるアプリはありません。絞り込みや検索を変えて下さい。</string>
+    <string name="status_select_all_visible">Select all</string>
+    <string name="status_clear_selection">Clear</string>
+    <string name="status_select_app">Select %1$s</string>
+    <string name="status_action_unconfirmed">Not reviewed</string>
+    <string name="status_empty">No matching apps. Change the filters or search.</string>
     <string name="format_version">v%1$s</string>
-    <string name="status_row_source_date">%1$s ・ %2$s</string>
-    <string name="status_row_removed">端末にありません（%1$s に削除）</string>
-    <string name="status_row_not_installed">端末に入っていません</string>
-    <string name="status_row_memo">管理者メモ：%1$s</string>
-    <string name="badge_reinstalled">再インストール</string>
-    <string name="badge_signature_changed">署名変更</string>
-    <string name="status_reinstalled_at">%1$s に再検出</string>
-    <string name="status_signature_changed_at">%1$s に検出</string>
+    <string name="status_row_source_date">%1$s · %2$s</string>
+    <string name="status_row_removed">Not on device (removed %1$s)</string>
+    <string name="status_row_not_installed">Not installed</string>
+    <string name="status_row_memo">Note: %1$s</string>
+    <string name="badge_reinstalled">Reinstalled</string>
+    <string name="badge_signature_changed">Signature changed</string>
+    <string name="status_reinstalled_at">Found again %1$s</string>
+    <string name="status_signature_changed_at">Found %1$s</string>
     <!-- お知らせ（「元に戻す」付き） -->
-    <string name="notice_undo">元に戻す</string>
-    <string name="notice_undone">元に戻しました</string>
+    <string name="notice_undo">Undo</string>
+    <string name="notice_undone">Undone</string>
     <plurals name="notice_bulk_ok">
-        <item quantity="one">%1$d件を問題なしにしました</item>
-        <item quantity="other">%1$d件を問題なしにしました</item>
+        <item quantity="one">Set %1$d app to OK</item>
+        <item quantity="other">Set %1$d apps to OK</item>
     </plurals>
     <plurals name="notice_bulk_ok_skipped">
-        <item quantity="one">%1$d件を問題なしにしました（警告のある%2$d件は変えていません）</item>
-        <item quantity="other">%1$d件を問題なしにしました（警告のある%2$d件は変えていません）</item>
+        <item quantity="one">Set %1$d app to OK (%2$d with warnings not changed)</item>
+        <item quantity="other">Set %1$d apps to OK (%2$d with warnings not changed)</item>
     </plurals>
     <plurals name="notice_bulk_all_warned">
-        <item quantity="one">警告のあるアプリは、まとめて問題なしにできません（%1$d件）。詳細の画面で1件ずつ確認して下さい</item>
-        <item quantity="other">警告のあるアプリは、まとめて問題なしにできません（%1$d件）。詳細の画面で1件ずつ確認して下さい</item>
+        <item quantity="one">Apps with warnings can\'t be set to OK together (%1$d app). Review each one on its details screen</item>
+        <item quantity="other">Apps with warnings can\'t be set to OK together (%1$d apps). Review each one on its details screen</item>
     </plurals>
     <plurals name="notice_bulk_caution">
-        <item quantity="one">%1$d件を要注意にしました</item>
-        <item quantity="other">%1$d件を要注意にしました</item>
+        <item quantity="one">Set %1$d app to Caution</item>
+        <item quantity="other">Set %1$d apps to Caution</item>
     </plurals>
     <plurals name="notice_bulk_unconfirmed">
-        <item quantity="one">%1$d件を未確認に戻しました</item>
-        <item quantity="other">%1$d件を未確認に戻しました</item>
+        <item quantity="one">Set %1$d app back to Not reviewed</item>
+        <item quantity="other">Set %1$d apps back to Not reviewed</item>
     </plurals>
-    <string name="notice_no_change">変更はありませんでした（すでに同じ確認状態です）</string>
-    <string name="notice_saved_status">%1$sを『%2$s』にしました</string>
-    <string name="notice_saved_memo">%1$sの管理者メモを保存しました</string>
-    <string name="notice_saved_both">%1$sを『%2$s』にし、管理者メモを保存しました</string>
+    <string name="notice_no_change">Nothing changed (already the same status)</string>
+    <string name="notice_saved_status">Set %1$s to \"%2$s\"</string>
+    <string name="notice_saved_memo">Saved the note for %1$s</string>
+    <string name="notice_saved_both">Set %1$s to \"%2$s\" and saved the note</string>
 
     <!-- アプリの詳細 -->
-    <string name="detail_title">アプリの詳細</string>
-    <string name="detail_installed">%1$s ・ %2$s にインストール</string>
-    <string name="detail_absent_mark">端末にないアプリ</string>
-    <string name="detail_caution_title">注意が必要なアプリです</string>
-    <string name="detail_warning_title">確認が必要なアプリです</string>
-    <string name="detail_warning_item">・%1$s</string>
-    <string name="detail_reinstalled_dates">以前に削除したアプリです（%1$s 削除 → %2$s 再検出）</string>
-    <string name="detail_reinstalled_date">以前に削除したアプリです（%1$s に再検出）</string>
-    <string name="detail_signature_changed_date">署名が変わりました（%1$s に検出）</string>
-    <string name="detail_status">確認の状態</string>
-    <string name="detail_memo_hint">本人にも表示されます</string>
-    <string name="detail_history">これまでの経緯</string>
-    <string name="detail_history_empty">記録はまだありません</string>
-    <string name="detail_save">保存</string>
-    <string name="detail_uninstall">アンインストール</string>
-    <string name="detail_discard_title">変更を保存しないで戻りますか？</string>
-    <string name="detail_discard_body">確認の状態と管理者メモの変更は保存されません。</string>
-    <string name="detail_discard_confirm">保存しないで戻る</string>
-    <string name="detail_discard_cancel">編集を続ける</string>
+    <string name="detail_title">App details</string>
+    <string name="detail_installed">%1$s · installed %2$s</string>
+    <string name="detail_absent_mark">App not on this device</string>
+    <string name="detail_caution_title">This app needs attention</string>
+    <string name="detail_warning_title">This app needs review</string>
+    <string name="detail_warning_item">• %1$s</string>
+    <string name="detail_reinstalled_dates">You deleted this app before (removed %1$s → found again %2$s)</string>
+    <string name="detail_reinstalled_date">You deleted this app before (found again %1$s)</string>
+    <string name="detail_signature_changed_date">Signature changed (found %1$s)</string>
+    <string name="detail_status">Review status</string>
+    <string name="detail_memo_hint">The user can see this too</string>
+    <string name="detail_history">Timeline</string>
+    <string name="detail_history_empty">No records yet</string>
+    <string name="detail_save">Save</string>
+    <string name="detail_uninstall">Uninstall</string>
+    <string name="detail_discard_title">Go back without saving?</string>
+    <string name="detail_discard_body">Changes to the status and the note won\'t be saved.</string>
+    <string name="detail_discard_confirm">Don\'t save</string>
+    <string name="detail_discard_cancel">Keep editing</string>
     <string name="format_short_date">M/d</string>
     <string name="format_short_date_with_year">yyyy/M/d</string>
     <!-- これまでの経緯の1行 -->
-    <string name="history_added">追加を検出</string>
-    <string name="history_reinstalled_same">再インストールを検出（署名は前回と同じ）</string>
-    <string name="history_reinstalled_changed">再インストールを検出（署名が変わりました）</string>
-    <string name="history_removed">削除を検出</string>
-    <string name="history_updated">更新を検出（%1$s → %2$s）</string>
-    <string name="history_enabled">有効化を検出</string>
-    <string name="history_disabled">無効化を検出</string>
-    <string name="history_signature_changed">署名の変更を検出</string>
-    <string name="history_reset">記録を初期化</string>
-    <string name="history_status_set">『%1$s』に設定</string>
-    <string name="history_status_signature">署名が変わったため『%1$s』に戻した</string>
-    <string name="history_status_undo">取り消し：『%1$s』→『%2$s』</string>
-    <string name="history_memo_changed">管理者メモを変更</string>
-    <string name="history_memo_removed">管理者メモを削除</string>
-    <string name="history_memo_undo">取り消し：管理者メモを元に戻した</string>
+    <string name="history_added">Added</string>
+    <string name="history_reinstalled_same">Reinstalled (same signature)</string>
+    <string name="history_reinstalled_changed">Reinstalled (signature changed)</string>
+    <string name="history_removed">Removed</string>
+    <string name="history_updated">Updated (%1$s → %2$s)</string>
+    <string name="history_enabled">Enabled</string>
+    <string name="history_disabled">Disabled</string>
+    <string name="history_signature_changed">Signature changed</string>
+    <string name="history_reset">Records reset</string>
+    <string name="history_status_set">Set to \"%1$s\"</string>
+    <string name="history_status_signature">Set back to \"%1$s\" because the signature changed</string>
+    <string name="history_status_undo">Undone: \"%1$s\" → \"%2$s\"</string>
+    <string name="history_memo_changed">Note changed</string>
+    <string name="history_memo_removed">Note deleted</string>
+    <string name="history_memo_undo">Undone: note restored</string>
 
     <!-- アプリの詳細（本人） -->
-    <string name="detail_status_by_admin">（管理者が設定）</string>
+    <string name="detail_status_by_admin">(set by your helper)</string>
 
     <!-- アプリの詳細（管理者）の登録の解除 -->
-    <string name="detail_unregister">登録を解除</string>
-    <string name="detail_unregister_title">事前登録を解除しますか？</string>
-    <string name="detail_unregister_body">確認状態・管理者メモ・仮のアプリ名を外し、一覧から消えます。お知らせの「元に戻す」で取り消せます。</string>
-    <string name="detail_unregister_confirm">解除する</string>
-    <string name="detail_unregister_cancel">やめる</string>
-    <string name="history_pre_registered">事前登録</string>
-    <string name="history_unregistered">事前登録を解除</string>
-    <string name="history_pre_registered_undo">取り消し：事前登録</string>
-    <string name="history_unregistered_undo">取り消し：事前登録の解除</string>
+    <string name="detail_unregister">Remove registration</string>
+    <string name="detail_unregister_title">Remove the pre-registration?</string>
+    <string name="detail_unregister_body">Removes the status, the note and the temporary name, and the app leaves the list. You can undo it from the notice.</string>
+    <string name="detail_unregister_confirm">Remove</string>
+    <string name="detail_unregister_cancel">Cancel</string>
+    <string name="history_pre_registered">Pre-registered</string>
+    <string name="history_unregistered">Pre-registration removed</string>
+    <string name="history_pre_registered_undo">Undone: pre-registration</string>
+    <string name="history_unregistered_undo">Undone: removal of pre-registration</string>
 
     <!-- 注意アプリの事前登録（管理者） -->
-    <string name="prereg_howto_title">登録のしかた</string>
-    <string name="prereg_howto_1">1. Google Play で対象のアプリを開く</string>
-    <string name="prereg_howto_2">2. 右上の「⋮」→「共有」→「%1$s」を選ぶ</string>
-    <string name="prereg_howto_3">Google Play の URL やパッケージ名を下に直接入力することもできます</string>
-    <string name="prereg_input_label">Google Play の URL またはパッケージ名</string>
+    <string name="prereg_howto_title">How to register</string>
+    <string name="prereg_howto_1">1. Open the app in Google Play</string>
+    <string name="prereg_howto_2">2. Tap \"⋮\" at the top right → \"Share\" → \"%1$s\"</string>
+    <string name="prereg_howto_3">You can also type a Google Play URL or package name below</string>
+    <string name="prereg_input_label">Google Play URL or package name</string>
     <string name="prereg_input_hint">https://play.google.com/store/apps/details?id=…</string>
-    <string name="prereg_package_found">パッケージ名：%1$s</string>
-    <string name="prereg_package_not_found">パッケージ名が見つかりません</string>
-    <string name="prereg_name_label">アプリ名</string>
-    <string name="prereg_name_note">共有された文面から自動で入力します。取り出せない場合は手入力して下さい（空でも登録できます）</string>
-    <string name="prereg_memo_hint">任意。本人にも表示されます</string>
-    <string name="prereg_already_registered">すでに登録されています</string>
-    <string name="prereg_installed">この端末に入っています（今の確認状態：%1$s）</string>
-    <string name="prereg_installed_before">以前この端末に入っていました（今の確認状態：%1$s）</string>
-    <string name="prereg_register">「要注意」として登録</string>
+    <string name="prereg_package_found">Package name: %1$s</string>
+    <string name="prereg_package_not_found">No package name found</string>
+    <string name="prereg_name_label">App name</string>
+    <string name="prereg_name_note">Filled in from the shared text. If it\'s missing, type it (it can be left empty)</string>
+    <string name="prereg_memo_hint">Optional. The user can see this too</string>
+    <string name="prereg_already_registered">Already registered</string>
+    <string name="prereg_installed">On this device now (status: %1$s)</string>
+    <string name="prereg_installed_before">Was on this device before (status: %1$s)</string>
+    <string name="prereg_register">Register as \"Caution\"</string>
     <plurals name="prereg_registered_list">
-        <item quantity="one">登録済み（端末にない）%1$d件</item>
-        <item quantity="other">登録済み（端末にない）%1$d件</item>
+        <item quantity="one">Registered, not on device: %1$d</item>
+        <item quantity="other">Registered, not on device: %1$d</item>
     </plurals>
-    <string name="prereg_registered_empty">まだありません</string>
-    <string name="prereg_view_only_title">閲覧専用の端末では登録できません</string>
-    <string name="prereg_view_only_body">この端末は閲覧専用です。注意アプリの事前登録は、見守る端末で行って下さい。</string>
-    <string name="notice_pre_registered">%1$sを『要注意』として登録しました</string>
-    <string name="notice_unregistered">%1$sの登録を解除しました</string>
+    <string name="prereg_registered_empty">None yet</string>
+    <string name="prereg_view_only_title">Can\'t register on a view-only device</string>
+    <string name="prereg_view_only_body">This device is view only. Pre-register apps on the monitored device.</string>
+    <string name="notice_pre_registered">Registered %1$s as \"Caution\"</string>
+    <string name="notice_unregistered">Removed the registration of %1$s</string>
 
     <!-- 履歴と比較（仕様書 6章、09_history_compare.png） -->
-    <string name="history_from_label">比較元（この日から）</string>
-    <string name="history_to_label">比較先（この日まで）</string>
-    <string name="history_choose_period">期間を選ぶ</string>
+    <string name="history_from_label">From</string>
+    <string name="history_to_label">To</string>
+    <string name="history_choose_period">Choose a period</string>
     <string name="history_date">yyyy/MM/dd</string>
-    <string name="history_quick_7">直近7日</string>
-    <string name="history_quick_30">直近30日</string>
-    <string name="history_quick_all">全期間</string>
-    <string name="history_kind_added">追加</string>
-    <string name="history_kind_removed">削除</string>
-    <string name="history_kind_updated">更新</string>
-    <string name="history_kind_disabled">無効化</string>
-    <string name="history_kind_signature">署名</string>
-    <string name="history_kind_joiner">・</string>
-    <string name="history_kind_desc">%1$s %2$d件</string>
-    <string name="history_kind_shown">表示中</string>
-    <string name="history_kind_hidden">非表示</string>
-    <string name="history_list_title">変化の一覧（新しい順）</string>
+    <string name="history_quick_7">Last 7 days</string>
+    <string name="history_quick_30">Last 30 days</string>
+    <string name="history_quick_all">All</string>
+    <string name="history_kind_added">Added</string>
+    <string name="history_kind_removed">Removed</string>
+    <string name="history_kind_updated">Updated</string>
+    <string name="history_kind_disabled">Disabled</string>
+    <string name="history_kind_signature">Signature</string>
+    <string name="history_kind_joiner">", "</string>
+    <string name="history_kind_desc">%1$s: %2$d</string>
+    <string name="history_kind_shown">Shown</string>
+    <string name="history_kind_hidden">Hidden</string>
+    <string name="history_list_title">Changes (newest first)</string>
     <plurals name="history_list_count">
-        <item quantity="one">%1$d件</item>
-        <item quantity="other">%1$d件</item>
+        <item quantity="one">%1$d change</item>
+        <item quantity="other">%1$d changes</item>
     </plurals>
     <plurals name="history_list_count_hidden">
-        <item quantity="one">%1$sを除いて表示中 ・ %2$d件</item>
-        <item quantity="other">%1$sを除いて表示中 ・ %2$d件</item>
+        <item quantity="one">Without %1$s · %2$d change</item>
+        <item quantity="other">Without %1$s · %2$d changes</item>
     </plurals>
-    <string name="history_mark_added">＋追加</string>
-    <string name="history_mark_removed">－削除</string>
-    <string name="history_mark_updated">更新</string>
-    <string name="history_mark_enabled">有効化</string>
-    <string name="history_mark_disabled">無効化</string>
-    <string name="history_mark_signature">署名が\n変わった</string>
-    <string name="history_mark_reset">初期化</string>
-    <string name="history_reinstall">再インストール</string>
+    <string name="history_mark_added">+ Added</string>
+    <string name="history_mark_removed">− Removed</string>
+    <string name="history_mark_updated">Updated</string>
+    <string name="history_mark_enabled">Enabled</string>
+    <string name="history_mark_disabled">Disabled</string>
+    <string name="history_mark_signature">Signature\nchanged</string>
+    <string name="history_mark_reset">Reset</string>
+    <string name="history_reinstall">Reinstalled</string>
     <string name="history_version_update">v%1$s → v%2$s</string>
-    <string name="history_version_removed">v%1$s（削除時）</string>
-    <string name="history_detected">%1$s 検出</string>
+    <string name="history_version_removed">v%1$s (when removed)</string>
+    <string name="history_detected">Found %1$s</string>
     <string name="history_row_time">MM/dd HH:mm</string>
     <string name="history_row_time_with_year">yyyy/MM/dd HH:mm</string>
-    <string name="history_signature_note">別の作り手のアプリに入れ替わった可能性</string>
-    <string name="history_reset_text">記録を取り直しました</string>
-    <string name="history_reset_detail">端末の初期化・復元のため</string>
-    <string name="history_open_detail">アプリの詳細を開く</string>
+    <string name="history_signature_note">May have been replaced by another developer\'s app</string>
+    <string name="history_reset_text">Records were started over</string>
+    <string name="history_reset_detail">The device was reset or restored</string>
+    <string name="history_open_detail">Open app details</string>
     <plurals name="history_empty_no_changes">
-        <item quantity="one">この期間に変化はありません（チェック %1$d回）</item>
-        <item quantity="other">この期間に変化はありません（チェック %1$d回）</item>
+        <item quantity="one">No changes in this period (%1$d check)</item>
+        <item quantity="other">No changes in this period (%1$d checks)</item>
     </plurals>
-    <string name="history_empty_no_checks">この期間はチェックが行われていません</string>
-    <string name="history_empty_all_hidden">表示する種類が選ばれていません</string>
-    <string name="history_picker_title">期間を選んで下さい</string>
-    <string name="history_picker_ok">決定</string>
-    <string name="history_share">この結果を共有</string>
-    <string name="history_share_chooser">結果を共有</string>
-    <string name="history_share_title">%1$s 履歴と比較</string>
-    <string name="history_share_period">期間：%1$s 〜 %2$s</string>
+    <string name="history_empty_no_checks">No checks were made in this period</string>
+    <string name="history_empty_all_hidden">No change types are selected</string>
+    <string name="history_picker_title">Choose a period</string>
+    <string name="history_picker_ok">OK</string>
+    <string name="history_share">Share this result</string>
+    <string name="history_share_chooser">Share the result</string>
+    <string name="history_share_title">%1$s History</string>
+    <string name="history_share_period">Period: %1$s – %2$s</string>
     <string name="history_share_count">%1$s %2$d</string>
-    <string name="history_share_count_separator">"\u0020・\u0020"</string>
-    <string name="history_share_excluded">（%1$sは除く）</string>
+    <string name="history_share_count_separator">" · "</string>
+    <string name="history_share_excluded">" (excluding %1$s)"</string>
     <string name="history_share_mark">[%1$s]</string>
-    <string name="history_share_reinstall">（再インストール）</string>
+    <string name="history_share_reinstall">" (reinstalled)"</string>
     <string name="history_share_package">(%1$s)</string>
-    <string name="history_type_added">追加</string>
-    <string name="history_type_removed">削除</string>
-    <string name="history_type_updated">更新</string>
-    <string name="history_type_enabled">有効化</string>
-    <string name="history_type_disabled">無効化</string>
-    <string name="history_type_signature">署名が変わった</string>
-    <string name="history_type_reset">初期化</string>
+    <string name="history_type_added">Added</string>
+    <string name="history_type_removed">Removed</string>
+    <string name="history_type_updated">Updated</string>
+    <string name="history_type_enabled">Enabled</string>
+    <string name="history_type_disabled">Disabled</string>
+    <string name="history_type_signature">Signature changed</string>
+    <string name="history_type_reset">Reset</string>
 
     <!-- データの切り替え・閲覧中（仕様書 7章、13_app_status_viewing.png） -->
-    <string name="data_this_device">この端末</string>
-    <string name="data_label">データ：</string>
-    <string name="data_switch">データを切り替える</string>
+    <string name="data_this_device">This device</string>
+    <string name="data_label">Data:</string>
+    <string name="data_switch">Switch data</string>
     <plurals name="data_imported_count">
-        <item quantity="one">（取り込んだデータ %1$d件）</item>
-        <item quantity="other">（取り込んだデータ %1$d件）</item>
+        <item quantity="one">(%1$d imported)</item>
+        <item quantity="other">(%1$d imported)</item>
     </plurals>
     <string name="data_snapshot_time">yyyy/MM/dd HH:mm</string>
-    <string name="data_viewing_band">閲覧中：%1$s（%2$s 時点）</string>
-    <string name="data_viewing_read_only">閲覧中のデータは変更できません</string>
-    <string name="detail_memo_none">（管理者メモなし）</string>
-    <string name="history_quick_since_last">前回以降</string>
-    <string name="history_share_device">端末：%1$s（%2$s 時点）</string>
+    <string name="data_viewing_band">Viewing: %1$s (as of %2$s)</string>
+    <string name="data_viewing_read_only">Imported data can\'t be changed</string>
+    <string name="detail_memo_none">(No note)</string>
+    <string name="history_quick_since_last">Since last</string>
+    <string name="history_share_device">Device: %1$s (as of %2$s)</string>
 
     <!-- 書き出し・取り込み（10_export_import.png） -->
-    <string name="transfer_title">書き出し・取り込み</string>
-    <string name="transfer_export_section">書き出し</string>
-    <string name="transfer_export_title">この端末のデータを書き出す</string>
-    <string name="transfer_export_desc">記録・確認状態・設定をまとめた .appwatch ファイルを作ります</string>
-    <string name="transfer_export_button">書き出す</string>
-    <string name="transfer_exporting">書き出しています…</string>
-    <string name="transfer_note">「ファイルとして保存」で保存場所を選びます。ファイルは暗号化されないので、対面での近距離共有など、本人と管理者だけが使う方法で受け渡して下さい。</string>
-    <string name="transfer_import_section">取り込み</string>
-    <string name="transfer_import_title">ファイルを取り込む</string>
-    <string name="transfer_import_desc">開くと「閲覧のみ」か「この端末に復元」を選びます</string>
-    <string name="transfer_import_button">選ぶ</string>
-    <string name="transfer_recent_section">最近の書き出し</string>
-    <string name="transfer_recent_empty">まだ書き出していません</string>
-    <string name="transfer_recent_line">%1$s ・ %2$s</string>
-    <string name="transfer_size_kb">%1$sKB</string>
-    <string name="transfer_size_mb">%1$sMB</string>
-    <string name="transfer_exported">書き出しました</string>
-    <string name="transfer_export_failed">書き出せませんでした</string>
-    <string name="transfer_reading">ファイルを読んでいます…</string>
+    <string name="transfer_title">Export / Import</string>
+    <string name="transfer_export_section">Export</string>
+    <string name="transfer_export_title">Export this device\'s data</string>
+    <string name="transfer_export_desc">Creates a .appwatch file with the records, statuses and settings</string>
+    <string name="transfer_export_button">Export</string>
+    <string name="transfer_exporting">Exporting…</string>
+    <string name="transfer_note">You choose where to save the file. The file isn\'t encrypted, so pass it only in ways that just the user and the helper use, such as sharing nearby in person.</string>
+    <string name="transfer_import_section">Import</string>
+    <string name="transfer_import_title">Import a file</string>
+    <string name="transfer_import_desc">Then choose \"View only\" or \"Restore to this device\"</string>
+    <string name="transfer_import_button">Choose</string>
+    <string name="transfer_recent_section">Recent exports</string>
+    <string name="transfer_recent_empty">No exports yet</string>
+    <string name="transfer_recent_line">%1$s · %2$s</string>
+    <string name="transfer_size_kb">%1$s KB</string>
+    <string name="transfer_size_mb">%1$s MB</string>
+    <string name="transfer_exported">Exported</string>
+    <string name="transfer_export_failed">Couldn\'t export</string>
+    <string name="transfer_reading">Reading the file…</string>
 
     <!-- 取り込みの選択（11_import_choice.png） -->
-    <string name="import_error_title">ファイルを取り込めません</string>
-    <string name="import_error_not_appwatch">AppWatch のファイルではありません</string>
-    <string name="import_error_too_new">新しいアプリで書き出されたファイルです。アプリを更新して下さい</string>
-    <string name="import_error_cannot_open">ファイルを開けませんでした</string>
-    <string name="import_error_close">閉じる</string>
-    <string name="import_title">データを取り込みます</string>
-    <string name="import_info_device">機種：%1$s ・ %2$s</string>
-    <string name="import_info_exported">書き出し：%1$s</string>
-    <string name="import_info_counts">アプリ %1$d件 ・ 要注意 %2$d件</string>
-    <string name="import_name_label">端末の名前（この端末の画面に表示）</string>
-    <string name="import_view_only">閲覧のみ</string>
-    <string name="import_view_only_desc">「取り込んだデータ」に追加します。この端末の記録は変わりません。前回取り込んだ同じ端末のデータは上書きします。</string>
-    <string name="import_view_only_own">この端末のデータです。閲覧のみでは取り込めません。</string>
-    <string name="import_restore">この端末に復元</string>
-    <string name="import_restore_desc">この端末のデータを、ファイルの内容で置き換えます。機種変更や初期化の後に使います。</string>
-    <string name="import_restore_view_only">閲覧専用の端末では復元できません。</string>
-    <string name="import_cancel">中止</string>
-    <string name="import_confirm">取り込む</string>
-    <string name="import_working">取り込んでいます…</string>
-    <string name="import_done">%1$sを取り込みました</string>
-    <string name="import_failed">取り込めませんでした</string>
+    <string name="import_error_title">Can\'t import the file</string>
+    <string name="import_error_not_appwatch">This isn\'t an AppWatch file</string>
+    <string name="import_error_too_new">This file was exported by a newer version. Please update the app</string>
+    <string name="import_error_cannot_open">Couldn\'t open the file</string>
+    <string name="import_error_close">Close</string>
+    <string name="import_title">Import data</string>
+    <string name="import_info_device">Model: %1$s · %2$s</string>
+    <string name="import_info_exported">Exported: %1$s</string>
+    <string name="import_info_counts">Apps: %1$d · Caution: %2$d</string>
+    <string name="import_name_label">Device name (shown on this device)</string>
+    <string name="import_view_only">View only</string>
+    <string name="import_view_only_desc">Adds it to \"Imported data\". This device\'s records don\'t change. Data imported earlier from the same device is replaced.</string>
+    <string name="import_view_only_own">This is this device\'s own data. It can\'t be imported as view only.</string>
+    <string name="import_restore">Restore to this device</string>
+    <string name="import_restore_desc">Replaces this device\'s data with the file. Use it after resetting or changing the device.</string>
+    <string name="import_restore_view_only">Can\'t restore on a view-only device.</string>
+    <string name="import_cancel">Cancel</string>
+    <string name="import_confirm">Import</string>
+    <string name="import_working">Importing…</string>
+    <string name="import_done">Imported %1$s</string>
+    <string name="import_failed">Couldn\'t import</string>
 
     <!-- 復元（14_restore_confirm.png） -->
-    <string name="restore_title">端末を初期化（または機種変更）しましたか？</string>
-    <string name="restore_exported">復元するデータ：%1$s に書き出したもの</string>
-    <string name="restore_yes">はい、初期化しました</string>
-    <string name="restore_yes_desc">確認状態と経緯は引き継ぎ、今の端末のアプリを新しい基準にします。履歴に「初期化」を1件記録します。</string>
-    <string name="restore_no">いいえ</string>
-    <string name="restore_no_desc">データをそのまま戻し、次のチェックで差分を記録します。</string>
-    <string name="restore_cancel">中止</string>
-    <string name="restore_working">復元しています…</string>
-    <string name="restore_done">復元しました</string>
-    <string name="restore_failed">復元できませんでした。この端末のデータは元のままです。</string>
-    <string name="restore_bulk_title">まとめて「問題なし」にしますか？</string>
+    <string name="restore_title">Did you reset (or change) this device?</string>
+    <string name="restore_exported">Data to restore: exported %1$s</string>
+    <string name="restore_yes">Yes, I reset it</string>
+    <string name="restore_yes_desc">Keeps the statuses and timeline, and uses the apps on this device now as the new starting point. Adds one \"Reset\" to the history.</string>
+    <string name="restore_no">No</string>
+    <string name="restore_no_desc">Restores the data as it is. The next check records the differences.</string>
+    <string name="restore_cancel">Cancel</string>
+    <string name="restore_working">Restoring…</string>
+    <string name="restore_done">Restored</string>
+    <string name="restore_failed">Couldn\'t restore. This device\'s data hasn\'t changed.</string>
+    <string name="restore_bulk_title">Set them to \"OK\"?</string>
     <plurals name="restore_bulk_body">
-        <item quantity="one">新しく見つかったプリインストールとシステムのアプリが %1$d件あります（前の端末の記録になく、確認状態もないもの）。まとめて「問題なし」にしますか？</item>
-        <item quantity="other">新しく見つかったプリインストールとシステムのアプリが %1$d件あります（前の端末の記録になく、確認状態もないもの）。まとめて「問題なし」にしますか？</item>
+        <item quantity="one">%1$d preinstalled or system app was newly found (not in the earlier records and without a status). Set it to \"OK\"?</item>
+        <item quantity="other">%1$d preinstalled and system apps were newly found (not in the earlier records and without a status). Set them all to \"OK\"?</item>
     </plurals>
-    <string name="restore_bulk_yes">問題なしにする</string>
-    <string name="restore_bulk_no">そのままにする</string>
+    <string name="restore_bulk_yes">Set to OK</string>
+    <string name="restore_bulk_no">Leave as is</string>
 
     <!-- 取り込んだデータ（12_imported_data.png） -->
     <plurals name="imported_caution">
-        <item quantity="one">要注意 %1$d件</item>
-        <item quantity="other">要注意 %1$d件</item>
+        <item quantity="one">%1$d Caution</item>
+        <item quantity="other">%1$d Caution</item>
     </plurals>
-    <string name="imported_no_caution">要注意なし</string>
-    <string name="imported_device">%1$s ・ %2$s</string>
-    <string name="imported_times">%1$s 時点 ・ 取り込み %2$s</string>
+    <string name="imported_no_caution">No Caution</string>
+    <string name="imported_device">%1$s · %2$s</string>
+    <string name="imported_times">As of %1$s · imported %2$s</string>
     <string name="imported_time_short">MM/dd HH:mm</string>
-    <string name="imported_open_status">確認状態</string>
-    <string name="imported_open_history">履歴と比較</string>
+    <string name="imported_open_status">Status</string>
+    <string name="imported_open_history">History</string>
     <string name="imported_more">…</string>
-    <string name="imported_more_desc">%1$sのその他の操作</string>
-    <string name="imported_rename">名前の変更</string>
-    <string name="imported_delete">削除</string>
-    <string name="imported_rename_ok">変更する</string>
-    <string name="imported_delete_title">「%1$s」を削除しますか？</string>
-    <string name="imported_delete_body">取り込んだデータを削除します。この端末の記録と、元の端末の記録は変わりません。</string>
-    <string name="imported_delete_ok">削除する</string>
-    <string name="imported_deleted">%1$sを削除しました</string>
-    <string name="imported_note">「…」から名前の変更と削除ができます。新しいファイルを取り込むと、同じ端末のデータは上書きされます。</string>
-    <string name="imported_howto">見守る端末の「設定」→「データの書き出し・取り込み」で書き出したファイルをこの端末に送り、下の「ファイルを取り込む」から開いて下さい。</string>
-    <string name="imported_import_button">ファイルを取り込む</string>
+    <string name="imported_more_desc">More actions for %1$s</string>
+    <string name="imported_rename">Rename</string>
+    <string name="imported_delete">Delete</string>
+    <string name="imported_rename_ok">Rename</string>
+    <string name="imported_delete_title">Delete \"%1$s\"?</string>
+    <string name="imported_delete_body">Deletes the imported data. The records on this device and on the original device don\'t change.</string>
+    <string name="imported_delete_ok">Delete</string>
+    <string name="imported_deleted">Deleted %1$s</string>
+    <string name="imported_note">Use \"…\" to rename or delete. Importing a newer file from the same device replaces its data.</string>
+    <string name="imported_howto">On the monitored device, export a file in Settings → Export / Import, send it to this device, and open it with \"Import a file\" below.</string>
+    <string name="imported_import_button">Import a file</string>
 </resources>

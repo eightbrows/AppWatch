@@ -14,6 +14,7 @@ import io.github.eightbrows.appwatch.data.settings.SettingsRepository
 import io.github.eightbrows.appwatch.data.transfer.DataSelector
 import io.github.eightbrows.appwatch.data.transfer.TransferRepository
 import io.github.eightbrows.appwatch.widget.AppWatchWidget
+import io.github.eightbrows.appwatch.widget.WidgetLocale
 import io.github.eightbrows.appwatch.work.MonitoringEffects
 import io.github.eightbrows.appwatch.work.MonitoringPolicy
 import kotlinx.coroutines.flow.combine
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** アプリ全体で1つだけ持つものを置く。 */
@@ -84,8 +86,14 @@ class AppWatchApplication : Application() {
     }
 
     /** ウィジェットを更新する（言語やテーマを切り替えた後など）。画面が作り直されても続くよう、アプリ全体の処理で行う。 */
-    fun refreshWidget() {
-        appScope.launch { AppWatchWidget.updateAll(this@AppWatchApplication) }
+    fun refreshWidget(delayMillis: Long = 0) {
+        appScope.launch {
+            if (delayMillis > 0) {
+                delay(delayMillis)
+                WidgetLocale.notifyChanged()
+            }
+            AppWatchWidget.updateAll(this@AppWatchApplication)
+        }
     }
 
     /** 開発版だけ、チェックの結果をログに出す（adb logcat -s AppWatch で見られる）。 */

@@ -150,6 +150,8 @@
     <string name="widget_setup_title">管理者に|初期設定を|依頼して下さい</string>
     <string name="widget_setup_note">初期設定が完了していません</string>
     <string name="widget_clear_title">確認が必要な|アプリは0件</string>
+    <string name="widget_view_only_title">閲覧専用の|端末です</string>
+    <string name="widget_view_only_note">このウィジェットは削除して下さい</string>
 
     <!-- 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png） -->
     <string name="setup_progress">初回設定　%1$d / %2$d</string>
@@ -212,7 +214,7 @@
     <!-- 設定メニュー：ダイアログ -->
     <string name="dialog_cancel">やめる</string>
     <string name="viewonly_confirm_title">閲覧専用にしますか？</string>
-    <string name="viewonly_confirm_body">この端末のアプリのチェックとウィジェットが止まります。これまでの記録は残ります。</string>
+    <string name="viewonly_confirm_body">この端末のアプリのチェックとウィジェットが止まります。これまでの記録は残ります。ホーム画面のウィジェットは削除して下さい。</string>
     <string name="viewonly_confirm_ok">閲覧専用にする</string>
     <string name="unused_dialog_open">設定画面を開く</string>
     <!-- 未使用アプリの一時停止の設定画面で、どのスイッチを切り替えるかの案内（Android 12 以上と 11 で名前が違う） -->
@@ -264,7 +266,12 @@
     <string name="filter_label_device">端末：</string>
     <string name="filter_label_registered">登録：</string>
     <string name="filter_label_state">状態：</string>
+    <string name="filter_status_unconfirmed">未確認</string>
+    <string name="filter_status_caution">要注意</string>
+    <string name="filter_status_ok">問題なし</string>
+    <string name="filter_kind_user">後から導入</string>
     <string name="filter_kind_preinstalled">プリイン</string>
+    <string name="filter_kind_system">システム</string>
     <string name="filter_source_play">Play</string>
     <string name="filter_source_other">Play外</string>
     <string name="filter_source_unknown">不明</string>
