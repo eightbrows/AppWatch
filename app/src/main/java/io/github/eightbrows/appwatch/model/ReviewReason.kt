@@ -21,16 +21,25 @@ enum class ReviewReason(val isCaution: Boolean = false) {
         /**
          * 警告と確認状態から、札に出す理由を優先の順に並べる。
          * [includeCaution] が true なら、要注意のときに「要注意」の札を先頭に足す。
+         * [isSelf]（本アプリ自身）なら、警告の札は出さない（警告の判定・記録はそのまま。表示だけ）。
          */
-        fun of(warnings: Set<AppWarning>, status: ReviewStatus, includeCaution: Boolean = true): List<ReviewReason> {
-            val reasons = warnings.mapTo(HashSet()) { it.toReason() }
+        fun of(
+            warnings: Set<AppWarning>,
+            status: ReviewStatus,
+            includeCaution: Boolean = true,
+            isSelf: Boolean = false,
+        ): List<ReviewReason> {
+            val reasons = if (isSelf) HashSet<ReviewReason>() else warnings.mapTo(HashSet()) { it.toReason() }
             if (includeCaution && status == ReviewStatus.CAUTION) reasons += CAUTION
             return reasons.sortedBy { it.ordinal }
         }
 
         /** トップのカード・一覧に出す札。「問題なし」にしたアプリは確認が必要ではないので、札を出さない。 */
         fun forTop(app: AppSummary): List<ReviewReason> =
-            if (app.reviewStatus == ReviewStatus.OK) emptyList() else of(app.warnings, app.reviewStatus)
+            if (app.reviewStatus == ReviewStatus.OK) emptyList() else of(app.warnings, app.reviewStatus, isSelf = app.isSelf)
+
+        /** 入手元の札を出すときは、説明の文に入手元を重ねて書かない（日時などだけにする）。 */
+        fun hidesSourceText(shown: List<ReviewReason>): Boolean = shown.any { it.isSource }
 
         private fun AppWarning.toReason(): ReviewReason = when (this) {
             AppWarning.NOT_FROM_PLAY -> NOT_FROM_PLAY

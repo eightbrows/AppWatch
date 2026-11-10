@@ -7,7 +7,7 @@ plugins {
 
 // バージョン（仕様書 6章）。手で書き換えるのは versionName だけ。
 // 形式は YYYYMMDD-DNN（開発版）／YYYYMMDD-RNN（正式版）。
-val appVersionName = "20261111-D01"
+val appVersionName = "20261111-D02"
 
 // versionCode は versionName の数字部分から作る（20261031-D04 → 2026103104）。
 // 日付と通し番号が増えれば必ず大きくなるので、上書きインストールで困らない。

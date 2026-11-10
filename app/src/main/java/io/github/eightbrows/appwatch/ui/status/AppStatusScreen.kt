@@ -507,8 +507,9 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
                     fontFamily = FontFamily.Monospace,
                     color = subColor,
                 )
-                SourceLine(entry)
-                RowWarnings(entry)
+                val reasons = ReviewReason.of(entry.warnings, entry.status, includeCaution = false, isSelf = entry.isSelf)
+                SourceLine(entry, withSource = !ReviewReason.hidesSourceText(reasons))
+                RowWarnings(entry, reasons)
                 entry.adminMemo?.takeIf { it.isNotBlank() }?.let { memo ->
                     Text(
                         text = stringResource(R.string.status_row_memo, memo),
@@ -571,9 +572,12 @@ private val ROW_MARK_SIZE = 24.dp
 private val ROW_MARK_RING = 2.5.dp
 private val ROW_MARK_OUTER = ROW_MARK_SIZE + ROW_MARK_RING * 2
 
-/** 入手元・日時（後から導入）、種類（プリインストール・システム）、端末にないこと。警告は下の札で出す。 */
+/**
+ * 入手元・日時（後から導入）、種類（プリインストール・システム）、端末にないこと。警告は下の札で出す。
+ * [withSource] が false（入手元の札を出す行）なら、入手元を外して日時だけにする。
+ */
 @Composable
-private fun SourceLine(entry: AppStatusEntry) {
+private fun SourceLine(entry: AppStatusEntry, withSource: Boolean) {
     val removedAt = entry.removedAt
     val kind = entry.kind
     val source = entry.source
@@ -583,10 +587,10 @@ private fun SourceLine(entry: AppStatusEntry) {
         !entry.isPresent && kind == null -> stringResource(R.string.status_row_not_installed)
         kind == AppKind.USER_INSTALLED && source != null -> {
             val date = entry.firstInstallTime?.takeIf { it > 0 }?.let { formatDateTime(it.toLocalDateTime()) }
-            if (date != null) {
-                stringResource(R.string.status_row_source_date, stringResource(source.labelRes()), date)
-            } else {
-                stringResource(source.labelRes())
+            when {
+                !withSource -> date
+                date != null -> stringResource(R.string.status_row_source_date, stringResource(source.labelRes()), date)
+                else -> stringResource(source.labelRes())
             }
         }
         kind != null -> stringResource(kind.labelRes())
@@ -597,10 +601,12 @@ private fun SourceLine(entry: AppStatusEntry) {
     }
 }
 
-/** 警告の札（トップ・アプリの詳細と同じ見た目）と、再インストール・署名の変更を見つけた日。確認状態は印で出しているので札にしない。 */
+/**
+ * 警告の札（トップ・アプリの詳細と同じ見た目）と、再インストール・署名の変更を見つけた日。
+ * 確認状態は印で出しているので札にしない。本アプリ自身には札を出さない（[reasons] が空）。
+ */
 @Composable
-private fun RowWarnings(entry: AppStatusEntry) {
-    val reasons = ReviewReason.of(entry.warnings, entry.status, includeCaution = false)
+private fun RowWarnings(entry: AppStatusEntry, reasons: List<ReviewReason>) {
     if (reasons.isEmpty()) return
     FlowRow(
         modifier = Modifier.padding(top = 4.dp),

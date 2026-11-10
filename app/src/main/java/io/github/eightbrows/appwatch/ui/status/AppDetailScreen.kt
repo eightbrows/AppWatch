@@ -353,13 +353,14 @@ internal fun AbsentMark(name: String, size: Dp = 56.dp) {
 
 /**
  * 警告の欄。理由はトップ・確認状態の画面と同じ札で出し、再インストール・署名の変更は日付の説明を添える。
- * 要注意は赤、それ以外で警告があれば橙の枠。
+ * 要注意は赤、それ以外で警告があれば橙の枠。本アプリ自身には警告の札を出さないので、要注意でなければ欄ごと出さない。
  */
 @Composable
 internal fun WarningBox(entry: AppStatusEntry, events: List<AppChange>) {
     val colors = AppWatchTheme.colors
     val isCaution = entry.status == ReviewStatus.CAUTION
-    if (!isCaution && entry.warnings.isEmpty()) return
+    val reasons = ReviewReason.of(entry.warnings, entry.status, isSelf = entry.isSelf)
+    if (reasons.isEmpty()) return
     val accent = if (isCaution) colors.danger else colors.warning
     Surface(
         shape = RoundedCornerShape(14.dp),
@@ -381,9 +382,9 @@ internal fun WarningBox(entry: AppStatusEntry, events: List<AppChange>) {
                     color = accent,
                 )
             }
-            ReasonChips(ReviewReason.of(entry.warnings, entry.status))
-            // 札と同じ順（以前に削除 → 署名の変更）
-            listOf(AppWarning.REINSTALLED, AppWarning.SIGNATURE_CHANGED).filter { it in entry.warnings }.forEach { warning ->
+            ReasonChips(reasons)
+            // 札と同じ順（以前に削除 → 署名の変更）。札を出していない警告の説明は出さない
+            listOf(AppWarning.REINSTALLED, AppWarning.SIGNATURE_CHANGED).filter { it in entry.warnings && !entry.isSelf }.forEach { warning ->
                 val text = datedWarningText(warning, entry, events) ?: return@forEach
                 Text(
                     text = stringResource(R.string.detail_warning_item, text),

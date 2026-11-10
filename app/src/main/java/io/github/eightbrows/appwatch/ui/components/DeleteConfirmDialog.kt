@@ -38,6 +38,8 @@ import androidx.compose.ui.window.Dialog
 import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.system.UninstallResult
 import io.github.eightbrows.appwatch.model.AppWarning
+import io.github.eightbrows.appwatch.model.ReviewReason
+import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 
 /** 削除の確認のダイアログに出すアプリ。 */
@@ -49,14 +51,13 @@ data class DeleteTarget(
     val isSelf: Boolean,
 ) {
     /**
-     * ダイアログに添える警告（最大 [MAX_WARNINGS] 行、仕様書 4章の警告の順）。
-     * 本アプリ自身は、警告の代わりに「見守りが止まる」の説明を出すので、警告は出さない。
+     * ダイアログに添える警告の札（トップ・アプリの詳細と同じ札、優先の順）。
+     * 本アプリ自身は、札の代わりに「見守りが止まる」の説明を出すので、札は出さない。
      */
-    val shownWarnings: List<AppWarning>
-        get() = if (isSelf) emptyList() else warnings.sortedBy { it.ordinal }.take(MAX_WARNINGS)
+    val shownReasons: List<ReviewReason>
+        get() = ReviewReason.of(warnings, ReviewStatus.UNCONFIRMED, includeCaution = false, isSelf = isSelf)
 
     companion object {
-        const val MAX_WARNINGS = 2
 
         /** 画面の回転などで消えないように保存する（null は「ダイアログを出していない」）。 */
         val Saver: Saver<DeleteTarget?, Any> = listSaver(
@@ -139,8 +140,9 @@ fun DeleteConfirmDialog(target: DeleteTarget, onCancel: () -> Unit, onConfirmDel
                 )
                 if (target.isSelf) {
                     WarningBox(stringResource(R.string.delete_dialog_self_body))
-                } else if (target.shownWarnings.isNotEmpty()) {
-                    WarningBox(target.shownWarnings.map { stringResource(it.labelRes()) }.joinToString("\n"))
+                } else {
+                    // 警告はトップ・アプリの詳細と同じ札で出す
+                    ReasonChips(target.shownReasons, Modifier.fillMaxWidth())
                 }
                 Text(
                     text = stringResource(R.string.delete_dialog_body),
@@ -180,7 +182,7 @@ fun DeleteConfirmDialog(target: DeleteTarget, onCancel: () -> Unit, onConfirmDel
     }
 }
 
-/** 警告の要点（橙色の囲み、先頭に警告の印）。 */
+/** 本アプリ自身を削除するときの説明（橙色の囲み、先頭に警告の印）。 */
 @Composable
 private fun WarningBox(text: String) {
     val colors = AppWatchTheme.colors

@@ -390,7 +390,7 @@ private fun NewAppCard(app: AppSummary, actions: TopActions) {
                     AppName(app, style = MaterialTheme.typography.titleLarge)
                     // 入手元の札を出すときは、同じことを書かない
                     Text(
-                        text = addedText(app, withSource = reasons.none { it.isSource }),
+                        text = addedText(app, withSource = !ReviewReason.hidesSourceText(reasons)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -576,7 +576,7 @@ private fun AppRow(app: AppSummary, showStatus: Boolean, actions: TopActions) {
                     // 幅が狭いので、追加日時と入手元は行を分ける（「Google Play」の途中で折り返さないように）
                     RowDetail(addedText(app, withSource = false))
                     // 入手元の札を出すときは、同じことを書かない
-                    if (reasons.none { it.isSource }) RowDetail(stringResource(app.source.labelRes()))
+                    if (!ReviewReason.hidesSourceText(reasons)) RowDetail(stringResource(app.source.labelRes()))
                 } else {
                     // プリインストール・システムは追加日時や入手元に意味がないので、種類を出す
                     RowDetail(stringResource(app.kind.labelRes()))

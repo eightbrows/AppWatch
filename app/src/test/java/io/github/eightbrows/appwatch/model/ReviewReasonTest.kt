@@ -81,6 +81,28 @@ class ReviewReasonTest {
     }
 
     @Test
+    fun self_showsNoWarningReasons() {
+        val warnings = setOf(AppWarning.UNKNOWN_SOURCE, AppWarning.DEBUG_SIGNATURE, AppWarning.NOT_FROM_PLAY)
+        assertTrue(ReviewReason.of(warnings, ReviewStatus.UNCONFIRMED, isSelf = true).isEmpty())
+        assertTrue(ReviewReason.of(warnings, ReviewStatus.OK, includeCaution = false, isSelf = true).isEmpty())
+        // トップ：問題なしでなくても、本アプリには札を出さない
+        assertTrue(ReviewReason.forTop(app(ReviewStatus.UNCONFIRMED, warnings).copy(isSelf = true)).isEmpty())
+        // 同じ警告でも、本アプリでなければ札を出す
+        assertEquals(3, ReviewReason.forTop(app(ReviewStatus.UNCONFIRMED, warnings)).size)
+    }
+
+    @Test
+    fun hidesSourceText_onlyWhenASourceReasonIsShown() {
+        assertTrue(ReviewReason.hidesSourceText(listOf(ReviewReason.UNKNOWN_SOURCE)))
+        assertTrue(ReviewReason.hidesSourceText(listOf(ReviewReason.DEBUG_SIGNATURE, ReviewReason.NOT_FROM_PLAY)))
+        assertFalse(ReviewReason.hidesSourceText(listOf(ReviewReason.DEBUG_SIGNATURE, ReviewReason.REINSTALLED)))
+        assertFalse(ReviewReason.hidesSourceText(emptyList()))
+        // 本アプリ自身は札を出さないので、入手元の文はそのまま
+        val self = ReviewReason.of(setOf(AppWarning.UNKNOWN_SOURCE), ReviewStatus.OK, includeCaution = false, isSelf = true)
+        assertFalse(ReviewReason.hidesSourceText(self))
+    }
+
+    @Test
     fun everyWarning_hasAReason() {
         AppWarning.entries.forEach { warning ->
             assertEquals(1, ReviewReason.of(setOf(warning), ReviewStatus.UNCONFIRMED).size)
