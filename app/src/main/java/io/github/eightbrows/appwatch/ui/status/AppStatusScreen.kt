@@ -79,6 +79,10 @@ import io.github.eightbrows.appwatch.ui.components.AdminTopBar
 import io.github.eightbrows.appwatch.ui.components.DataSwitcher
 import io.github.eightbrows.appwatch.ui.components.ViewingFooter
 import io.github.eightbrows.appwatch.ui.components.StatusMark
+import io.github.eightbrows.appwatch.ui.components.AppIcon
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
 import io.github.eightbrows.appwatch.ui.components.formatDateTime
 import io.github.eightbrows.appwatch.ui.components.formatShortDate
 import io.github.eightbrows.appwatch.ui.components.labelRes
@@ -526,8 +530,13 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
                     modifier = Modifier.semantics { contentDescription = selectLabel },
                 )
             }
-            StatusMark(status = entry.status, size = 24.dp, modifier = Modifier.padding(top = 12.dp))
-            Spacer(Modifier.width(10.dp))
+            RowIcon(
+                entry = entry,
+                loadIcon = showCheckbox,
+                rowColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                modifier = Modifier.padding(top = 10.dp),
+            )
+            Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f).padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
@@ -573,6 +582,43 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
         }
     }
 }
+
+/**
+ * 行の先頭のアイコンと、右下に重ねた確認状態の小さな印（印は行の背景の色で縁取る）。
+ * 端末にないアプリはアプリの詳細と同じ灰色の頭文字の印、取り込んだデータを見ているとき（[loadIcon] が false）は色付きの頭文字の印。
+ * 無効にしたアプリは灰色で薄く出す。
+ */
+@Composable
+private fun RowIcon(entry: AppStatusEntry, loadIcon: Boolean, rowColor: Color, modifier: Modifier = Modifier) {
+    Box(modifier.size(ROW_ICON_SIZE)) {
+        if (entry.isPresent) {
+            AppIcon(
+                name = entry.name,
+                packageName = entry.packageName,
+                size = ROW_ICON_SIZE,
+                versionKey = entry.versionName.orEmpty(),
+                loadIcon = loadIcon,
+                dimmed = !entry.isEnabled,
+            )
+        } else {
+            AbsentMark(entry.name, size = ROW_ICON_SIZE)
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 5.dp, y = 5.dp)
+                .size(ROW_MARK_SIZE + 4.dp)
+                .clip(CircleShape)
+                .background(rowColor)
+                .padding(2.dp),
+        ) {
+            StatusMark(status = entry.status, size = ROW_MARK_SIZE)
+        }
+    }
+}
+
+private val ROW_ICON_SIZE = 40.dp
+private val ROW_MARK_SIZE = 18.dp
 
 /** 入手元・日時（後から導入）、種類（プリインストール・システム）、端末にないこと。署名・入手元の警告は橙色。 */
 @Composable

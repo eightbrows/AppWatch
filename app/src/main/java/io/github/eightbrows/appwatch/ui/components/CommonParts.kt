@@ -23,8 +23,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -160,9 +163,12 @@ fun AppIcon(
     versionKey: String = "",
     /** false なら端末のアイコンを読まず、頭文字の印にする（取り込んだデータ：別の端末のアプリなので） */
     loadIcon: Boolean = true,
+    /** true なら灰色で薄く出す（無効にしたアプリ） */
+    dimmed: Boolean = false,
 ) {
+    val dimModifier = if (dimmed) modifier.alpha(DIMMED_ALPHA) else modifier
     if (!loadIcon) {
-        LetterIcon(name = name, packageName = packageName, modifier = modifier, size = size)
+        LetterIcon(name = name, packageName = packageName, modifier = dimModifier, size = size)
         return
     }
     val sizePx = with(LocalDensity.current) { size.roundToPx() }
@@ -172,12 +178,19 @@ fun AppIcon(
         Image(
             bitmap = remember(loaded) { loaded.asImageBitmap() },
             contentDescription = null,
-            modifier = modifier.size(size),
+            modifier = dimModifier.size(size),
+            colorFilter = if (dimmed) GrayscaleFilter else null,
         )
     } else {
-        LetterIcon(name = name, packageName = packageName, modifier = modifier, size = size)
+        LetterIcon(name = name, packageName = packageName, modifier = dimModifier, size = size)
     }
 }
+
+/** 無効にしたアプリのアイコンの薄さ。 */
+private const val DIMMED_ALPHA = 0.45f
+
+/** 無効にしたアプリのアイコンを灰色にする。 */
+private val GrayscaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
 @Composable
 private fun LetterIcon(name: String, packageName: String, modifier: Modifier, size: Dp) {

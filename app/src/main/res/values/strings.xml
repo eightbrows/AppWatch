@@ -194,7 +194,7 @@
     <string name="setup_category_other_desc">Installed by user · not from Google Play</string>
     <string name="setup_category_unknown_desc">Installed by user · unknown source</string>
     <string name="setup_category_self">This app (%1$s)</string>
-    <string name="setup_category_self_desc">Not from Google Play · AppWatch itself</string>
+    <string name="setup_category_self_desc">AppWatch itself</string>
     <string name="setup_check_note">Apps with warnings (such as a debug signature) stay \"Not reviewed\". You can change them one by one later.</string>
 
     <string name="setup_widget_title">Add the widget</string>

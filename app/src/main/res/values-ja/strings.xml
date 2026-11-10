@@ -189,7 +189,7 @@
     <string name="setup_category_other_desc">後から導入・Google Play 以外から入手</string>
     <string name="setup_category_unknown_desc">後から導入・入手元が分からない</string>
     <string name="setup_category_self">このアプリ（%1$s）</string>
-    <string name="setup_category_self_desc">Google Play 以外から入手・本アプリ自身</string>
+    <string name="setup_category_self_desc">本アプリ自身</string>
     <string name="setup_check_note">警告（開発用の署名など）のあるアプリは「未確認」のままです。後から個別に変更できます。</string>
 
     <string name="setup_widget_title">ウィジェットの追加</string>

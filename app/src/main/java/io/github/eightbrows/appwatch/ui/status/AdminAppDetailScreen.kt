@@ -59,6 +59,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.eightbrows.appwatch.R
@@ -304,17 +305,17 @@ internal fun DetailText(text: String) {
 
 /** 端末にないアプリの、アイコンの代わりの灰色の印。 */
 @Composable
-private fun AbsentMark(name: String) {
+internal fun AbsentMark(name: String, size: Dp = 56.dp) {
     val description = stringResource(R.string.detail_absent_mark)
     Box(
         modifier = Modifier
-            .size(56.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .size(size)
+            .clip(RoundedCornerShape(size * 0.22f))
             .background(AppWatchTheme.colors.unconfirmed.copy(alpha = 0.35f))
             .clearAndSetSemantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        Text(text = name.take(1), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(text = name.take(1), color = Color.White, fontSize = (size.value * 0.43f).sp, fontWeight = FontWeight.Bold)
     }
 }
 
