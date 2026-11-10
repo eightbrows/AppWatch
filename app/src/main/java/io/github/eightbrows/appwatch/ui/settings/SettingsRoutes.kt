@@ -18,7 +18,6 @@ import io.github.eightbrows.appwatch.data.settings.CheckInterval
 import io.github.eightbrows.appwatch.data.settings.ThemeMode
 import io.github.eightbrows.appwatch.data.system.HealthCheck
 import io.github.eightbrows.appwatch.data.system.HealthInput
-import io.github.eightbrows.appwatch.model.UsageMode
 import java.time.LocalDate
 
 /** 設定メニューから開く画面。 */
@@ -54,10 +53,7 @@ private fun rememberHealth(controller: SettingsController, resumeCount: Int): Pa
     return input to HealthCheck.checksInLastDays(scanDays, LocalDate.now())
 }
 
-/**
- * 設定メニュー（値を集めて SettingsMenuScreen に渡す）。
- * @param onSwitchToMonitor 見守る端末に戻すとき、保存の前に呼ぶ（初回設定を2の画面から始めるため）
- */
+/** 設定メニュー（値を集めて SettingsMenuScreen に渡す）。 */
 @Composable
 fun SettingsMenuRoute(
     controller: SettingsController,
@@ -65,13 +61,11 @@ fun SettingsMenuRoute(
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
     onNavigate: (SettingsDestination) -> Unit,
-    onSwitchToMonitor: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
     val cautionCount by controller.cautionCount.collectAsState(initial = 0)
     val importedNames by controller.importedNames.collectAsState(initial = emptyList())
-    val setup by controller.setupState.collectAsState(initial = null)
     val interval by controller.checkInterval.collectAsState(initial = CheckInterval.DEFAULT)
     val (healthInput, _) = rememberHealth(controller, resumeCount)
     // 言語を切り替えると Activity が作り直されるので、ここでは表示用に持つだけでよい
@@ -81,7 +75,6 @@ fun SettingsMenuRoute(
         state = SettingsMenuState(
             cautionCount = cautionCount,
             importedDataNames = importedNames,
-            usageMode = setup?.usageMode ?: UsageMode.MONITOR,
             checkInterval = interval,
             healthAllOk = HealthCheck.evaluate(healthInput).allOk,
             themeMode = themeMode,
@@ -99,15 +92,6 @@ fun SettingsMenuRoute(
             onOpenHistory = { onNavigate(SettingsDestination.HISTORY) },
             onOpenExportImport = { onNavigate(SettingsDestination.EXPORT_IMPORT) },
             onOpenImportedData = { onNavigate(SettingsDestination.IMPORTED_DATA) },
-            onUsageModeChange = { mode ->
-                when (mode) {
-                    UsageMode.VIEW_ONLY -> controller.switchToViewOnly()
-                    UsageMode.MONITOR -> {
-                        onSwitchToMonitor()
-                        controller.switchToMonitor()
-                    }
-                }
-            },
             onCheckIntervalChange = controller::setCheckInterval,
             onOpenHealthCheck = { onNavigate(SettingsDestination.HEALTH_CHECK) },
             onThemeModeChange = { mode ->

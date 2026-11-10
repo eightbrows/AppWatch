@@ -236,9 +236,9 @@ private fun ImportChoiceDialog(
 ) {
     val file = candidate.file
     var name by remember(candidate) { mutableStateOf(candidate.defaultName) }
-    // 初めは選べる方（閲覧のみ → 復元の順）
-    var restoreSelected by remember(candidate) { mutableStateOf(!candidate.canViewOnly && candidate.canRestore) }
-    val canConfirm = if (restoreSelected) candidate.canRestore else candidate.canViewOnly
+    // 初めは「閲覧のみ」。この端末自身のファイルなら「復元」
+    var restoreSelected by remember(candidate) { mutableStateOf(!candidate.canViewOnly) }
+    val canConfirm = restoreSelected || candidate.canViewOnly
     DialogCard(
         onDismissRequest = onCancel,
         bottom = {
@@ -307,9 +307,8 @@ private fun ImportChoiceDialog(
         OptionCard(
             title = stringResource(R.string.import_restore),
             description = stringResource(R.string.import_restore_desc),
-            note = if (!candidate.canRestore) stringResource(R.string.import_restore_view_only) else null,
             selected = restoreSelected,
-            enabled = candidate.canRestore,
+            enabled = true,
             onClick = { restoreSelected = true },
         )
     }

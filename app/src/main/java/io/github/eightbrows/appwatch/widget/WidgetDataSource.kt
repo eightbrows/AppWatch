@@ -1,6 +1,5 @@
 package io.github.eightbrows.appwatch.widget
 
-import io.github.eightbrows.appwatch.model.UsageMode
 import android.content.Context
 import io.github.eightbrows.appwatch.AppWatchApplication
 import io.github.eightbrows.appwatch.BuildConfig
@@ -41,7 +40,6 @@ class WidgetDataSource(context: Context) {
                 checkIntervalMinutes = interval,
                 deviceSettingsOk = DeviceSettings.allOk(appContext),
                 setupCompleted = setup.completed,
-                viewOnly = setup.usageMode == UsageMode.VIEW_ONLY,
             ),
         )
         if (BuildConfig.DEBUG && override != null) WidgetDebugOverride.apply(state, override) else state

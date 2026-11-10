@@ -12,7 +12,6 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import io.github.eightbrows.appwatch.model.UsageMode
 import io.github.eightbrows.appwatch.data.status.AppStatusRules
 import io.github.eightbrows.appwatch.data.status.FilterChip
 
@@ -39,7 +38,7 @@ class SettingsRepository(context: Context) {
         dataStore.edit { it[KEY_THEME_MODE] = mode.name }
     }
 
-    /** チェック間隔（分）。30／60／180／360 のどれか（仕様書 5章）。変更する画面は後のステップ。 */
+    /** チェック間隔（分）。[CHECK_INTERVALS] のどれか（仕様書 5章）。保存されていなければ初期値（12時間）。 */
     val checkIntervalMinutes: Flow<Int> = dataStore.data
         .map { prefs -> prefs[KEY_CHECK_INTERVAL]?.takeIf { it in CHECK_INTERVALS } ?: DEFAULT_CHECK_INTERVAL }
         .distinctUntilChanged()
@@ -50,52 +49,32 @@ class SettingsRepository(context: Context) {
     }
 
     /**
-     * 初回設定が終わったか。保存されていなければ「未完了」（[SETUP_COMPLETED_IF_UNSET]）。
+     * 初回設定の状態。保存されていなければ「未完了」（[SETUP_COMPLETED_IF_UNSET]）。
+     * 前の版で閲覧専用だった端末も「未完了」になる（[SetupState.fromStored]）。
      * 起動時の行き先、チェックを行うかどうか、ウィジェットの「管理者に初期設定を依頼して下さい」の判定に使う。
      */
-    val setupCompleted: Flow<Boolean> = dataStore.data
-        .map { prefs -> prefs[KEY_SETUP_COMPLETED] ?: SETUP_COMPLETED_IF_UNSET }
-        .distinctUntilChanged()
-
-    suspend fun setSetupCompleted(completed: Boolean) {
-        dataStore.edit { it[KEY_SETUP_COMPLETED] = completed }
-    }
-
-    /** 使い方（仕様書 3章）。初回設定の1の画面で選ぶまでは null。 */
-    val usageMode: Flow<UsageMode?> = dataStore.data
-        .map { prefs -> prefs[KEY_USAGE_MODE]?.let { saved -> UsageMode.entries.firstOrNull { it.name == saved } } }
-        .distinctUntilChanged()
-
-    suspend fun setUsageMode(mode: UsageMode) {
-        dataStore.edit { it[KEY_USAGE_MODE] = mode.name }
-    }
-
-    /**
-     * 使い方と初回設定の完了状態を、1回の書き込みでまとめて保存する。
-     * 別々に保存すると、1つ目を保存した時点で画面が切り替わり、2つ目が保存されないことがあるため。
-     */
-    suspend fun setUsageModeAndSetup(mode: UsageMode, completed: Boolean) {
-        dataStore.edit {
-            it[KEY_USAGE_MODE] = mode.name
-            it[KEY_SETUP_COMPLETED] = completed
-        }
-    }
-
-    /** 初回設定の状態（完了したか・使い方）をまとめて読む。 */
     val setupState: Flow<SetupState> = dataStore.data
         .map { prefs ->
-            SetupState(
+            SetupState.fromStored(
                 completed = prefs[KEY_SETUP_COMPLETED] ?: SETUP_COMPLETED_IF_UNSET,
-                usageMode = prefs[KEY_USAGE_MODE]?.let { saved -> UsageMode.entries.firstOrNull { it.name == saved } },
+                legacyUsageMode = prefs[KEY_LEGACY_USAGE_MODE],
             )
         }
         .distinctUntilChanged()
 
-    /** 初回設定の完了状態と使い方を消す（開発版の「初回設定のやり直し」だけで使う）。記録や他の設定値は残す。 */
+    /** 初回設定を終えたことを保存する。前の版の使い方の値は、もう使わないのでここで消す。 */
+    suspend fun completeSetup() {
+        dataStore.edit {
+            it[KEY_SETUP_COMPLETED] = true
+            it.remove(KEY_LEGACY_USAGE_MODE)
+        }
+    }
+
+    /** 初回設定の完了状態を消す（開発版の「初回設定のやり直し」だけで使う）。記録や他の設定値は残す。 */
     suspend fun clearSetupState() {
         dataStore.edit {
             it.remove(KEY_SETUP_COMPLETED)
-            it.remove(KEY_USAGE_MODE)
+            it.remove(KEY_LEGACY_USAGE_MODE)
         }
     }
 
@@ -116,7 +95,7 @@ class SettingsRepository(context: Context) {
         }
     }
 
-    /** 選択中のデータの番号（仕様書 7章）。保存がなければ null（見守る端末では「この端末」）。 */
+    /** 選択中のデータの番号（仕様書 7章）。保存がなければ null（「この端末」）。 */
     val selectedDatasetId: Flow<String?> = dataStore.data
         .map { prefs -> prefs[KEY_SELECTED_DATASET] }
         .distinctUntilChanged()
@@ -155,7 +134,8 @@ class SettingsRepository(context: Context) {
         private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
         private val KEY_CHECK_INTERVAL = intPreferencesKey("check_interval_minutes")
         private val KEY_SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
-        private val KEY_USAGE_MODE = stringPreferencesKey("usage_mode")
+        /** 前の版の使い方（見守る端末／閲覧専用）。今は読むだけで、初回設定を終えると消す。 */
+        private val KEY_LEGACY_USAGE_MODE = stringPreferencesKey("usage_mode")
         private val KEY_STATUS_FILTER_OFF = stringSetPreferencesKey("status_filter_off")
         private val KEY_SELECTED_DATASET = stringPreferencesKey("selected_dataset_id")
         private val KEY_RECENT_EXPORTS = stringPreferencesKey("recent_exports")

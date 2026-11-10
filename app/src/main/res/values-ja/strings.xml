@@ -36,6 +36,13 @@
     <string name="action_delete_app">削除する</string>
     <string name="action_details">詳しく</string>
     <string name="action_delete">削除</string>
+    <string name="delete_dialog_title">%1$sを削除しますか？</string>
+    <string name="delete_dialog_body">次に Android の確認が出ます。「OK」を押すと削除されます。</string>
+    <string name="delete_dialog_cancel">やめる</string>
+    <string name="delete_dialog_confirm">削除する</string>
+    <string name="delete_dialog_self_body">このアプリを削除すると、見守りが止まり、これまでの記録も消えます。削除する前に管理者に相談して下さい。</string>
+    <string name="delete_result_deleted">%1$sを削除しました</string>
+    <string name="delete_result_not_deleted">%1$sは削除されませんでした</string>
     <string name="action_app_info">Android のアプリ情報</string>
     <string name="action_app_info_short">アプリ情報</string>
     <string name="error_cannot_open_screen">画面を開けませんでした</string>
@@ -46,11 +53,6 @@
     <string name="kind_system">システム</string>
 
     <!-- 本アプリの削除警告 -->
-    <string name="self_delete_title">このアプリを\n削除しますか？</string>
-    <string name="self_delete_body">このアプリを削除すると、見守りが止まり、これまでの記録も消えます。削除する前に管理者に相談して下さい。</string>
-    <string name="self_delete_cancel">やめる</string>
-    <string name="self_delete_confirm">削除する</string>
-    <string name="self_delete_note">「削除する」の後、Android の削除確認に進みます</string>
 
     <!-- 警告 -->
     <string name="warning_not_from_play">Google Play 以外から入りました</string>
@@ -90,9 +92,6 @@
     <string name="settings_list_separator">、</string>
 
     <string name="settings_section_behavior">動作</string>
-    <string name="settings_usage_mode">使い方</string>
-    <string name="usage_mode_monitor">見守る端末</string>
-    <string name="usage_mode_view_only">閲覧専用</string>
     <string name="settings_check_interval">チェック間隔</string>
     <string name="settings_health_check">動作チェック</string>
     <string name="health_all_ok">すべて正常</string>
@@ -150,22 +149,17 @@
     <string name="widget_setup_title">管理者に|初期設定を|依頼して下さい</string>
     <string name="widget_setup_note">初期設定が完了していません</string>
     <string name="widget_clear_title">確認が必要な|アプリは0件</string>
-    <string name="widget_view_only_title">閲覧専用の|端末です</string>
-    <string name="widget_view_only_note">このウィジェットは削除して下さい</string>
 
     <!-- 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png） -->
     <string name="setup_progress">初回設定　%1$d / %2$d</string>
+    <string name="setup_welcome_title">アプリ見守当番へ\nようこそ</string>
+    <string name="setup_welcome_body">この端末のアプリを定期的に記録し、不要なアプリの削除を手伝います。設定は管理者が行います。</string>
     <string name="setup_next">次へ</string>
     <string name="setup_later">後で設定する</string>
     <string name="setup_finish">設定を完了する</string>
 
-    <string name="setup_mode_title">アプリ見守当番へ\nようこそ</string>
-    <string name="setup_mode_body">この端末の使い方を選んで下さい。設定は管理者が行います。</string>
-    <string name="setup_mode_monitor_desc">インストールされたアプリを定期的に記録し、不要なアプリの削除を手伝います。本人が使う端末です。</string>
-    <string name="setup_mode_viewer_desc">書き出されたデータを取り込んで閲覧するだけです。この端末のアプリは記録しません。</string>
-    <string name="setup_mode_note">後から設定で変更できます。</string>
 
-    <string name="setup_settings_title">見守りを続けるための\n設定</string>
+    <string name="setup_settings_title">見守りを続けるための設定</string>
     <string name="setup_settings_body">定期チェックが Android に止められないように設定します。</string>
     <string name="setup_battery_desc">チェックが止まるのを防ぎます</string>
     <string name="setup_unused_desc">長く開かなくても止まらないようにします（Android 11 以上）</string>
@@ -202,7 +196,6 @@
 
     <!-- 取り込んだデータ（閲覧専用の最初の画面。取り込みは後のステップ） -->
     <string name="imported_title">取り込んだデータ</string>
-    <string name="imported_badge">閲覧専用</string>
     <string name="imported_empty">まだ取り込んだデータはありません</string>
 
     <!-- 設定メニュー：チェック間隔の選択肢 -->
@@ -210,12 +203,12 @@
     <string name="check_interval_1h">1時間</string>
     <string name="check_interval_3h">3時間</string>
     <string name="check_interval_6h">6時間</string>
+    <string name="check_interval_12h">12時間</string>
+    <string name="check_interval_24h">24時間</string>
 
     <!-- 設定メニュー：ダイアログ -->
     <string name="dialog_cancel">やめる</string>
-    <string name="viewonly_confirm_title">閲覧専用にしますか？</string>
-    <string name="viewonly_confirm_body">この端末のアプリのチェックとウィジェットが止まります。これまでの記録は残ります。ホーム画面のウィジェットは削除して下さい。</string>
-    <string name="viewonly_confirm_ok">閲覧専用にする</string>
+    <string name="dialog_ok">OK</string>
     <string name="unused_dialog_open">設定画面を開く</string>
     <!-- 未使用アプリの一時停止の設定画面で、どのスイッチを切り替えるかの案内（Android 12 以上と 11 で名前が違う） -->
     <string name="unused_hint_android12">開いた画面の下の方にある「使用していないアプリを一時停止」をオフにして下さい。</string>
@@ -399,8 +392,6 @@
         <item quantity="other">登録済み（端末にない）%1$d件</item>
     </plurals>
     <string name="prereg_registered_empty">まだありません</string>
-    <string name="prereg_view_only_title">閲覧専用の端末では登録できません</string>
-    <string name="prereg_view_only_body">この端末は閲覧専用です。注意アプリの事前登録は、見守る端末で行って下さい。</string>
     <string name="notice_pre_registered">%1$sを『要注意』として登録しました</string>
     <string name="notice_unregistered">%1$sの登録を解除しました</string>
 
@@ -521,7 +512,6 @@
     <string name="import_view_only_own">この端末のデータです。閲覧のみでは取り込めません。</string>
     <string name="import_restore">この端末に復元</string>
     <string name="import_restore_desc">この端末のデータを、ファイルの内容で置き換えます。機種変更や初期化の後に使います。</string>
-    <string name="import_restore_view_only">閲覧専用の端末では復元できません。</string>
     <string name="import_cancel">中止</string>
     <string name="import_confirm">取り込む</string>
     <string name="import_working">取り込んでいます…</string>

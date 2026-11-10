@@ -5,7 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 
-/** ウィジェットの置き方と、使う・使わないの切り替え。 */
+/** ウィジェットの置き方。 */
 object WidgetPlacement {
 
     private fun component(context: Context) = ComponentName(context, AppWatchWidgetReceiver::class.java)
@@ -26,18 +26,14 @@ object WidgetPlacement {
         AppWidgetManager.getInstance(context).requestPinAppWidget(component(context), null, null)
 
     /**
-     * ウィジェットを使うかどうかを切り替える。使わないとき（閲覧専用）は受け取りを無効にし、
-     * ウィジェットの一覧に出ないようにする（仕様書 3章）。今と同じなら何もしない。
+     * ウィジェットの受け取りは常に有効（マニフェストの既定）。
+     * 前の版では閲覧専用にすると無効にしていた。その端末を更新したときのために、無効になっていれば既定に戻す。
+     * 無効になっていなければ何もしない。
      */
-    fun setEnabled(context: Context, enabled: Boolean) {
+    fun restoreDefaultEnabled(context: Context) {
         val pm = context.packageManager
-        val wanted = if (enabled) {
-            PackageManager.COMPONENT_ENABLED_STATE_DEFAULT // マニフェストの既定（有効）に戻す
-        } else {
-            PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-        }
-        if (pm.getComponentEnabledSetting(component(context)) != wanted) {
-            pm.setComponentEnabledSetting(component(context), wanted, PackageManager.DONT_KILL_APP)
+        if (pm.getComponentEnabledSetting(component(context)) == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+            pm.setComponentEnabledSetting(component(context), PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, PackageManager.DONT_KILL_APP)
         }
     }
 

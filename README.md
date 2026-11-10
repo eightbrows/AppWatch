@@ -11,11 +11,11 @@
 
 ### 主な機能
 
-- 定期チェック（30分〜6時間ごと）と、アプリの追加・削除・更新・無効化・署名の変化の記録
-- 「確認が必要なアプリ」の表示と、ボタン1つで Android の削除画面へ
+- 定期チェック（30分〜24時間ごと）と、アプリの追加・削除・更新・無効化・署名の変化の記録
+- 「確認が必要なアプリ」の表示と、確認のうえで Android の削除へ（削除の結果も表示）
 - ホーム画面のウィジェット（4×2）
 - 管理者用：アプリの確認状態、注意アプリの事前登録（Google Play の「共有」から）、履歴と比較
-- データの書き出し・取り込み（閲覧のみ／この端末に復元）、閲覧専用の使い方
+- データの書き出し・取り込み（閲覧のみ／この端末に復元）
 - 日本語・英語、ライト・ダークのテーマ
 
 ### 動作環境
@@ -26,7 +26,7 @@ Android 8.0 以上
 
 1. [Releases](https://github.com/eightbrows/AppWatch/releases) から最新の `AppWatch-YYYYMMDD-RNN.apk` を端末にダウンロードします。
 2. ダウンロードした APK を開いて入れます。Google Play 以外からのアプリなので、Android の確認で、ダウンロードに使ったアプリ（ブラウザやファイルアプリ）に「不明なアプリのインストール」を許可して下さい。
-3. 初回設定で「見守る端末」（本人の端末）か「閲覧専用」（管理者の端末）を選びます。
+3. 初回設定（3つの画面）を行います。管理者の端末にも入れておくと、本人の端末から書き出したデータを取り込んで見られます。
 
 ### 使う権限
 
@@ -61,11 +61,11 @@ AppWatch is an Android app for people who aren't used to smartphones. It regular
 
 ### Features
 
-- Periodic checks (every 30 minutes to 6 hours) that record added, removed, updated and disabled apps and signature changes
-- A list of apps that need review, with one button to open Android's uninstall screen
+- Periodic checks (every 30 minutes to 24 hours) that record added, removed, updated and disabled apps and signature changes
+- A list of apps that need review, and deleting them after a confirmation (the result is shown too)
 - A home screen widget (4×2)
 - For helpers: app status, pre-registering apps (from Google Play's "Share"), and history
-- Export and import of data (view only, or restore to this device), and a view-only mode
+- Export and import of data (view only, or restore to this device)
 - Japanese and English, light and dark themes
 
 ### Requirements
@@ -76,7 +76,7 @@ Android 8.0 or later
 
 1. Download the latest `AppWatch-YYYYMMDD-RNN.apk` from [Releases](https://github.com/eightbrows/AppWatch/releases) to the device.
 2. Open the APK to install it. It doesn't come from Google Play, so when Android asks, allow "Install unknown apps" for the app you downloaded it with (a browser or a file app).
-3. In the first setup, choose "Monitored device" (the user's device) or "View only" (the helper's device).
+3. Go through the first setup (three screens). If the helper installs it on their own device too, they can import and view data exported from the user's device.
 
 ### Permissions
 

@@ -55,7 +55,6 @@ import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.status.AppStatusEntry
 import io.github.eightbrows.appwatch.data.status.ShareParser
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.model.UsageMode
 import io.github.eightbrows.appwatch.ui.components.AdminTopBar
 import io.github.eightbrows.appwatch.ui.components.StatusMark
 import io.github.eightbrows.appwatch.ui.components.labelRes
@@ -67,7 +66,7 @@ data class SharedText(val text: String, val subject: String?, val id: Long)
 
 /**
  * 注意アプリの事前登録（管理者）。画面サンプル 08_pre_register.png、仕様書 6章。
- * 共有で開いたときは、その文面から URL（パッケージ名）とアプリ名を入れる。閲覧専用の端末では登録できない。
+ * 共有で開いたときは、その文面から URL（パッケージ名）とアプリ名を入れる。
  */
 @Composable
 fun PreRegisterRoute(
@@ -78,7 +77,6 @@ fun PreRegisterRoute(
     onOpenDetail: (String) -> Unit,
 ) {
     val entries by remember { controller.localEntries }.collectAsState(initial = null)
-    val usageMode by remember { controller.usageMode }.collectAsState(initial = null)
     var input by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
     var memo by rememberSaveable { mutableStateOf("") }
@@ -102,17 +100,11 @@ fun PreRegisterRoute(
     ) {
         AdminTopBar(title = stringResource(R.string.settings_pre_register), onBack = onBack)
         val currentEntries = entries
-        when {
-            usageMode == UsageMode.VIEW_ONLY -> {
-                ViewOnlyMessage()
-                return@Column
-            }
-            currentEntries == null || usageMode == null -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                return@Column
-            }
+        if (currentEntries == null) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            return@Column
         }
-        val all = currentEntries.orEmpty()
+        val all = currentEntries
         val packageName = remember(input) { ShareParser.extractPackageName(input) }
         val existing = remember(all, packageName) { all.firstOrNull { it.packageName == packageName } }
         val registeredAbsent = remember(all) {
@@ -361,22 +353,5 @@ private fun RegisterButton(enabled: Boolean, onClick: () -> Unit) {
         ) {
             Text(stringResource(R.string.prereg_register), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
-    }
-}
-
-/** 閲覧専用の端末では、登録の画面の代わりに出す。 */
-@Composable
-private fun ViewOnlyMessage() {
-    Column(Modifier.padding(horizontal = 20.dp, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            stringResource(R.string.prereg_view_only_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Text(
-            stringResource(R.string.prereg_view_only_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

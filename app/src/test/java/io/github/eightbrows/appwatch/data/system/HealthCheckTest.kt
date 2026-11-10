@@ -2,6 +2,7 @@ package io.github.eightbrows.appwatch.data.system
 
 import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.settings.CheckInterval
+import io.github.eightbrows.appwatch.data.settings.SettingsRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -85,8 +86,12 @@ class HealthCheckTest {
 
     @Test
     fun checkInterval_choicesAndMinutes() {
-        assertEquals(listOf(30, 60, 180, 360), CheckInterval.entries.map { it.minutes })
-        assertEquals(CheckInterval.MINUTES_30, CheckInterval.DEFAULT)
+        assertEquals(listOf(30, 60, 180, 360, 720, 1440), CheckInterval.entries.map { it.minutes })
+        assertEquals(CheckInterval.HOURS_12, CheckInterval.DEFAULT)
+        assertEquals(720, SettingsRepository.DEFAULT_CHECK_INTERVAL)
+        assertEquals(CheckInterval.HOURS_24, CheckInterval.fromMinutes(1440))
+        assertEquals(R.string.check_interval_12h, CheckInterval.HOURS_12.labelRes)
+        assertEquals(R.string.check_interval_24h, CheckInterval.HOURS_24.labelRes)
         assertEquals(CheckInterval.HOURS_3, CheckInterval.fromMinutes(180))
         assertEquals(CheckInterval.DEFAULT, CheckInterval.fromMinutes(45)) // 知らない値は初期値
         assertEquals(R.string.check_interval_1h, CheckInterval.HOURS_1.labelRes)

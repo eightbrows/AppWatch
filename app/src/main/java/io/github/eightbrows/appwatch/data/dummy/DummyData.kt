@@ -6,7 +6,6 @@ import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.PermissionState
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.model.UsageMode
 import java.time.LocalDateTime
 
 /**
@@ -137,8 +136,7 @@ object DummyData {
     // ---- 設定メニュー ----
 
     val importedDataNames: List<String> = listOf("端末A", "端末B")
-    val usageMode: UsageMode = UsageMode.MONITOR
-    val checkIntervalMinutes: Int = 30
+    val checkIntervalMinutes: Int = 720
     val healthCheckAllOk: Boolean = true
 
     val permissionQueryAllPackages: PermissionState = PermissionState.GRANTED

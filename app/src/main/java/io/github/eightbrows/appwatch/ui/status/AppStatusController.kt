@@ -8,7 +8,6 @@ import io.github.eightbrows.appwatch.data.status.AppStatusEntry
 import io.github.eightbrows.appwatch.data.status.AppStatusRules
 import io.github.eightbrows.appwatch.data.status.FilterChip
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.model.UsageMode
 import io.github.eightbrows.appwatch.data.transfer.DataSelection
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -74,7 +73,7 @@ class AppStatusController(context: Context) {
         app.appScope.launch { app.dataSelector.select(datasetId) }
     }
 
-    /** 確認状態の画面の行（選択中のデータ）。閲覧専用で取り込んだデータがなければ空。 */
+    /** 確認状態の画面の行（選択中のデータ）。 */
     @OptIn(ExperimentalCoroutinesApi::class)
     val entries: Flow<List<AppStatusEntry>> = selection.flatMapLatest { sel ->
         sel.selected?.let { repository.observeStatusEntries(it.id) } ?: flowOf(emptyList())
@@ -154,9 +153,6 @@ class AppStatusController(context: Context) {
             }
         }
     }
-
-    /** 使い方（閲覧専用では事前登録できない）。 */
-    val usageMode: Flow<UsageMode?> = app.settingsRepository.usageMode
 
     /**
      * 注意アプリの事前登録（仕様書 6章）。1つの操作として記録し、「元に戻す」付きのお知らせを返す。

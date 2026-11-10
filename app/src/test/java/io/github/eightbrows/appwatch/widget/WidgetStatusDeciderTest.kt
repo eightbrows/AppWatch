@@ -29,25 +29,6 @@ class WidgetStatusDeciderTest {
 
     private fun decide(input: WidgetInput) = WidgetStatusDecider.decide(input)
 
-    // ---- 閲覧専用 ----
-
-    @Test
-    fun viewOnly_overridesEverything_andHasNoCount() {
-        val busy = clear.copy(
-            cautionCount = 3,
-            needsReviewCount = 2,
-            lastCheckAt = now - 1_000 * minute,
-            deviceSettingsOk = false,
-            setupCompleted = false,
-            viewOnly = true,
-        )
-        val state = decide(busy)
-        assertEquals(WidgetStatus.VIEW_ONLY, state.status)
-        assertEquals(0, state.count)
-        assertEquals(WidgetStatus.VIEW_ONLY, decide(clear.copy(viewOnly = true)).status)
-        assertEquals(WidgetStatus.ALL_CLEAR, decide(clear.copy(viewOnly = false)).status)
-    }
-
     // ---- 1つだけ当てはまるとき ----
 
     @Test
@@ -126,6 +107,13 @@ class WidgetStatusDeciderTest {
         // 6時間間隔なら、18時間より前で停止
         assertFalse(WidgetStatusDecider.isStopped(now - 17 * 60 * minute, now, 360))
         assertTrue(WidgetStatusDecider.isStopped(now - 19 * 60 * minute, now, 360))
+        // 12時間ごと：36時間を過ぎたら停止
+        assertFalse(WidgetStatusDecider.isStopped(now - 36 * 60 * minute, now, 720))
+        assertTrue(WidgetStatusDecider.isStopped(now - 36 * 60 * minute - 1, now, 720))
+        // 24時間ごと：3日を過ぎたら停止（2日前のチェックはまだ停止ではない）
+        assertFalse(WidgetStatusDecider.isStopped(now - 48 * 60 * minute, now, 1440))
+        assertFalse(WidgetStatusDecider.isStopped(now - 72 * 60 * minute, now, 1440))
+        assertTrue(WidgetStatusDecider.isStopped(now - 72 * 60 * minute - 1, now, 1440))
     }
 
     @Test

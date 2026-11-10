@@ -10,7 +10,6 @@ import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.InstalledApp
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.model.UsageMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -76,13 +75,6 @@ class ImportRulesTest {
         assertTrue(ImportRules.canViewOnly(file(deviceId = "device-a"), "local"))
     }
 
-    @Test
-    fun 閲覧専用の端末では復元できない() {
-        assertFalse(ImportRules.canRestore(UsageMode.VIEW_ONLY))
-        assertTrue(ImportRules.canRestore(UsageMode.MONITOR))
-        assertTrue(ImportRules.canRestore(null))
-    }
-
     // ---- 復元の「はい」 ----
 
     @Test
@@ -139,7 +131,7 @@ class ImportRulesTest {
 
     @Test
     fun 選んだデータがあればそれ() {
-        val selection = DatasetSelector.resolve("ds2", "local", "", list, viewOnly = false)
+        val selection = DatasetSelector.resolve("ds2", "local", "", list)
         assertEquals("ds2", selection.selected?.id)
         assertTrue(selection.isViewingImported)
         assertEquals(listOf("local", "ds1", "ds2"), selection.options.map { it.id })
@@ -148,27 +140,23 @@ class ImportRulesTest {
 
     @Test
     fun 選んだデータが削除されたら_この端末に戻る() {
-        val selection = DatasetSelector.resolve("deleted", "local", "", list, viewOnly = false)
+        val selection = DatasetSelector.resolve("deleted", "local", "", list)
         assertEquals("local", selection.selected?.id)
         assertFalse(selection.isViewingImported)
     }
 
     @Test
     fun 取り込んだデータがなければ切り替えを出さない() {
-        val selection = DatasetSelector.resolve(null, "local", "", emptyList(), viewOnly = false)
+        val selection = DatasetSelector.resolve(null, "local", "", emptyList())
         assertFalse(selection.showsSwitcher)
         assertEquals("local", selection.selected?.id)
     }
 
     @Test
-    fun 閲覧専用ではこの端末を出さず_一覧の最初にする() {
-        val selection = DatasetSelector.resolve(null, "local", "", list, viewOnly = true)
-        assertEquals(listOf("ds1", "ds2"), selection.options.map { it.id })
-        assertEquals("ds1", selection.selected?.id)
-        // 「この端末」を保存していても使わない
-        assertEquals("ds1", DatasetSelector.resolve("local", "local", "", list, viewOnly = true).selected?.id)
-        // 取り込んだデータがなければ、選択なし（取り込んだデータの画面に戻る）
-        assertNull(DatasetSelector.resolve(null, "local", "", emptyList(), viewOnly = true).selected)
+    fun この端末を保存していればこの端末() {
+        val selection = DatasetSelector.resolve("local", "local", "", list)
+        assertEquals("local", selection.selected?.id)
+        assertEquals(listOf("local", "ds1", "ds2"), selection.options.map { it.id })
     }
 
     // ---- 最近の書き出し ----

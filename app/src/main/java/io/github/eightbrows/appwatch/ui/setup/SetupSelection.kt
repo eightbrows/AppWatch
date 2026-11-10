@@ -5,7 +5,7 @@ import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.ReviewStatus
 
-/** 初回設定の3「最初のチェック」の項目（仕様書 6章の表の順）。 */
+/** 初回設定の2「最初のチェック」の項目（仕様書 6章の表の順）。 */
 enum class SetupCategory {
     SYSTEM,
     PREINSTALLED,

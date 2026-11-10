@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -50,7 +52,6 @@ import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.settings.AppLanguage
 import io.github.eightbrows.appwatch.data.settings.CheckInterval
 import io.github.eightbrows.appwatch.data.settings.ThemeMode
-import io.github.eightbrows.appwatch.model.UsageMode
 import io.github.eightbrows.appwatch.ui.components.AdminTopBar
 import io.github.eightbrows.appwatch.ui.components.SegmentedToggle
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
@@ -61,7 +62,6 @@ data class SettingsMenuState(
     val cautionCount: Int,
     /** 取り込んだデータの名前（まだないので空） */
     val importedDataNames: List<String>,
-    val usageMode: UsageMode,
     val checkInterval: CheckInterval,
     /** 動作チェックが「すべて正常」か */
     val healthAllOk: Boolean,
@@ -82,8 +82,6 @@ data class SettingsMenuActions(
     val onOpenHistory: () -> Unit,
     val onOpenExportImport: () -> Unit,
     val onOpenImportedData: () -> Unit,
-    /** 使い方を選んだとき（閲覧専用にするときは、確認を済ませてから呼ぶ） */
-    val onUsageModeChange: (UsageMode) -> Unit,
     val onCheckIntervalChange: (CheckInterval) -> Unit,
     val onOpenHealthCheck: () -> Unit,
     val onThemeModeChange: (ThemeMode) -> Unit,
@@ -96,11 +94,10 @@ data class SettingsMenuActions(
 )
 
 /** 開いているダイアログ。 */
-private enum class MenuDialog { NONE, USAGE_MODE, VIEW_ONLY_CONFIRM, CHECK_INTERVAL, UNUSED_GUIDE }
+private enum class MenuDialog { NONE, CHECK_INTERVAL, UNUSED_GUIDE }
 
 /**
  * 設定メニュー（管理者）。画面サンプル 05_settings_menu.png、仕様書 6章「設定メニュー」。
- * 閲覧専用の端末では「チェック間隔」「動作チェック」と「権限」の区分を出さない。
  *
  * @param unusedAppHint 未使用アプリの一時停止の設定画面で、どのスイッチを切り替えるかの案内
  */
@@ -113,7 +110,6 @@ fun SettingsMenuScreen(
 ) {
     val colors = AppWatchTheme.colors
     val navigationBars = WindowInsets.navigationBars.asPaddingValues()
-    val isViewOnly = state.usageMode == UsageMode.VIEW_ONLY
     var dialog by rememberSaveable { mutableStateOf(MenuDialog.NONE) }
 
     Column(
@@ -189,31 +185,22 @@ fun SettingsMenuScreen(
             item(key = "behavior") {
                 SettingsSection(stringResource(R.string.settings_section_behavior)) {
                     SettingsRow(
-                        title = stringResource(R.string.settings_usage_mode),
-                        onClick = { dialog = MenuDialog.USAGE_MODE },
-                        trailing = { ValueText(stringResource(usageModeLabel(state.usageMode))) },
+                        title = stringResource(R.string.settings_check_interval),
+                        onClick = { dialog = MenuDialog.CHECK_INTERVAL },
+                        trailing = { ValueText(stringResource(state.checkInterval.labelRes)) },
                     )
-                    // 閲覧専用の端末では、チェック間隔と動作チェックを出さない
-                    if (!isViewOnly) {
-                        RowDivider()
-                        SettingsRow(
-                            title = stringResource(R.string.settings_check_interval),
-                            onClick = { dialog = MenuDialog.CHECK_INTERVAL },
-                            trailing = { ValueText(stringResource(state.checkInterval.labelRes)) },
-                        )
-                        RowDivider()
-                        SettingsRow(
-                            title = stringResource(R.string.settings_health_check),
-                            onClick = actions.onOpenHealthCheck,
-                            trailing = {
-                                if (state.healthAllOk) {
-                                    StateText(stringResource(R.string.health_all_ok), colors.ok)
-                                } else {
-                                    StateText(stringResource(R.string.health_needs_attention), colors.warning)
-                                }
-                            },
-                        )
-                    }
+                    RowDivider()
+                    SettingsRow(
+                        title = stringResource(R.string.settings_health_check),
+                        onClick = actions.onOpenHealthCheck,
+                        trailing = {
+                            if (state.healthAllOk) {
+                                StateText(stringResource(R.string.health_all_ok), colors.ok)
+                            } else {
+                                StateText(stringResource(R.string.health_needs_attention), colors.warning)
+                            }
+                        },
+                    )
                 }
             }
 
@@ -253,42 +240,39 @@ fun SettingsMenuScreen(
                 }
             }
 
-            // 閲覧専用の端末では、権限の区分を出さない（この端末のアプリを記録しないため）
-            if (!isViewOnly) {
-                item(key = "permissions") {
-                    SettingsSection(stringResource(R.string.settings_section_permissions)) {
-                        PermissionRow(
-                            title = stringResource(R.string.perm_query_all),
-                            description = stringResource(R.string.perm_query_all_desc),
-                            ok = true,
-                            okText = stringResource(R.string.state_granted),
-                        )
+            item(key = "permissions") {
+                SettingsSection(stringResource(R.string.settings_section_permissions)) {
+                    PermissionRow(
+                        title = stringResource(R.string.perm_query_all),
+                        description = stringResource(R.string.perm_query_all_desc),
+                        ok = true,
+                        okText = stringResource(R.string.state_granted),
+                    )
+                    RowDivider()
+                    PermissionRow(
+                        title = stringResource(R.string.perm_delete),
+                        description = stringResource(R.string.perm_delete_desc),
+                        ok = true,
+                        okText = stringResource(R.string.state_granted),
+                    )
+                    RowDivider()
+                    PermissionRow(
+                        title = stringResource(R.string.perm_battery),
+                        description = stringResource(R.string.perm_battery_desc),
+                        ok = state.batteryOptimizationExcluded,
+                        okText = stringResource(R.string.state_configured),
+                        onClick = actions.onOpenBatterySettings,
+                    )
+                    // 未使用アプリの一時停止は Android 11 以上の仕組み（仕様書 2章）
+                    if (state.showsUnusedAppRestrictions) {
                         RowDivider()
                         PermissionRow(
-                            title = stringResource(R.string.perm_delete),
-                            description = stringResource(R.string.perm_delete_desc),
-                            ok = true,
-                            okText = stringResource(R.string.state_granted),
-                        )
-                        RowDivider()
-                        PermissionRow(
-                            title = stringResource(R.string.perm_battery),
-                            description = stringResource(R.string.perm_battery_desc),
-                            ok = state.batteryOptimizationExcluded,
+                            title = stringResource(R.string.perm_unused),
+                            description = stringResource(R.string.perm_unused_desc),
+                            ok = state.unusedAppRestrictionsExcluded,
                             okText = stringResource(R.string.state_configured),
-                            onClick = actions.onOpenBatterySettings,
+                            onClick = { dialog = MenuDialog.UNUSED_GUIDE },
                         )
-                        // 未使用アプリの一時停止は Android 11 以上の仕組み（仕様書 2章）
-                        if (state.showsUnusedAppRestrictions) {
-                            RowDivider()
-                            PermissionRow(
-                                title = stringResource(R.string.perm_unused),
-                                description = stringResource(R.string.perm_unused_desc),
-                                ok = state.unusedAppRestrictionsExcluded,
-                                okText = stringResource(R.string.state_configured),
-                                onClick = { dialog = MenuDialog.UNUSED_GUIDE },
-                            )
-                        }
                     }
                 }
             }
@@ -323,39 +307,6 @@ fun SettingsMenuScreen(
     }
 
     when (dialog) {
-        MenuDialog.USAGE_MODE -> ChoiceDialog(
-            title = stringResource(R.string.settings_usage_mode),
-            options = UsageMode.entries.map { it to stringResource(usageModeLabel(it)) },
-            selected = state.usageMode,
-            onDismiss = { dialog = MenuDialog.NONE },
-            onSelect = { mode ->
-                dialog = when {
-                    mode == state.usageMode -> MenuDialog.NONE
-                    // 閲覧専用にするときは確認を出す
-                    mode == UsageMode.VIEW_ONLY -> MenuDialog.VIEW_ONLY_CONFIRM
-                    else -> {
-                        actions.onUsageModeChange(mode)
-                        MenuDialog.NONE
-                    }
-                }
-            },
-        )
-
-        MenuDialog.VIEW_ONLY_CONFIRM -> AlertDialog(
-            onDismissRequest = { dialog = MenuDialog.NONE },
-            title = { Text(stringResource(R.string.viewonly_confirm_title)) },
-            text = { Text(stringResource(R.string.viewonly_confirm_body), style = MaterialTheme.typography.bodyLarge) },
-            confirmButton = {
-                TextButton(onClick = {
-                    dialog = MenuDialog.NONE
-                    actions.onUsageModeChange(UsageMode.VIEW_ONLY)
-                }) { Text(stringResource(R.string.viewonly_confirm_ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { dialog = MenuDialog.NONE }) { Text(stringResource(R.string.dialog_cancel)) }
-            },
-        )
-
         MenuDialog.CHECK_INTERVAL -> ChoiceDialog(
             title = stringResource(R.string.settings_check_interval),
             options = CheckInterval.entries.map { it to stringResource(it.labelRes) },
@@ -390,12 +341,7 @@ fun SettingsMenuScreen(
 private val CompactToggleText: TextStyle
     @Composable get() = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
 
-private fun usageModeLabel(mode: UsageMode): Int = when (mode) {
-    UsageMode.MONITOR -> R.string.usage_mode_monitor
-    UsageMode.VIEW_ONLY -> R.string.usage_mode_view_only
-}
-
-/** 選択肢から1つ選ぶダイアログ（使い方・チェック間隔）。選ぶとすぐに閉じる。 */
+/** 選択肢から1つ選ぶダイアログ（チェック間隔）。選ぶとすぐに閉じる。選択肢が多くても入るよう、中身はスクロールできる。 */
 @Composable
 private fun <T> ChoiceDialog(
     title: String,
@@ -408,7 +354,7 @@ private fun <T> ChoiceDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 options.forEach { (value, label) ->
                     Row(
                         modifier = Modifier

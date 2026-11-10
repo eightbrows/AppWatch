@@ -50,7 +50,6 @@ import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.settings.RecentExport
 import io.github.eightbrows.appwatch.data.transfer.AppWatchFile
 import io.github.eightbrows.appwatch.data.transfer.ImportOutcome
-import io.github.eightbrows.appwatch.model.UsageMode
 import io.github.eightbrows.appwatch.ui.components.AdminTopBar
 import io.github.eightbrows.appwatch.ui.components.formatSnapshotTime
 import kotlinx.coroutines.launch
@@ -59,7 +58,6 @@ import kotlin.math.ceil
 
 /**
  * 書き出し・取り込み（管理者）。画面サンプル 10_export_import.png、仕様書 7章。
- * 閲覧専用の端末では、書き出しの欄を出さない。
  * @param openUri ファイルアプリなどから開いたファイル。読んだら [onOpenUriConsumed] を呼ぶ
  */
 @Composable
@@ -71,9 +69,7 @@ fun ExportImportRoute(
     onImportedForViewing: (ImportOutcome) -> Unit,
     onRestored: () -> Unit,
 ) {
-    val usageMode by remember { controller.usageMode }.collectAsState(initial = null)
     val recent by remember { controller.recentExports }.collectAsState(initial = emptyList())
-    val viewOnly = usageMode == UsageMode.VIEW_ONLY
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val resources = LocalResources.current
@@ -113,22 +109,20 @@ fun ExportImportRoute(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                if (!viewOnly) {
-                    SectionTitle(stringResource(R.string.transfer_export_section))
-                    ActionCard(
-                        title = stringResource(R.string.transfer_export_title),
-                        description = stringResource(R.string.transfer_export_desc),
-                        button = stringResource(R.string.transfer_export_button),
-                        busy = exporting,
-                        onClick = { saveLauncher.launch(controller.defaultFileName()) },
-                    )
-                    Text(
-                        text = stringResource(R.string.transfer_note),
-                        modifier = Modifier.padding(horizontal = 4.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                SectionTitle(stringResource(R.string.transfer_export_section))
+                ActionCard(
+                    title = stringResource(R.string.transfer_export_title),
+                    description = stringResource(R.string.transfer_export_desc),
+                    button = stringResource(R.string.transfer_export_button),
+                    busy = exporting,
+                    onClick = { saveLauncher.launch(controller.defaultFileName()) },
+                )
+                Text(
+                    text = stringResource(R.string.transfer_note),
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 SectionTitle(stringResource(R.string.transfer_import_section))
                 ActionCard(
                     title = stringResource(R.string.transfer_import_title),
@@ -137,10 +131,8 @@ fun ExportImportRoute(
                     busy = false,
                     onClick = importFlow::pick,
                 )
-                if (!viewOnly) {
-                    SectionTitle(stringResource(R.string.transfer_recent_section))
-                    RecentExports(recent)
-                }
+                SectionTitle(stringResource(R.string.transfer_recent_section))
+                RecentExports(recent)
             }
             SnackbarHost(
                 hostState = snackbarHostState,

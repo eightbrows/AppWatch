@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * アプリを開いたとき・戻ってきたときに1回チェックする（仕様書 5章）。
      * 直前1分以内にチェック済みなら省略される（削除・アプリ情報の画面から戻ったときは省略しない）。
-     * 初回設定が終わるまでと閲覧専用では、チェックしない（CheckRunner が判断する）。
+     * 初回設定が終わるまでは、チェックしない（CheckRunner が判断する）。
      */
     override fun onResume() {
         super.onResume()

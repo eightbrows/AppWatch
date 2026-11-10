@@ -19,7 +19,7 @@ class HistoryController(context: Context) {
     /** 選択中のデータ（確認状態・アプリの詳細と共通）。 */
     val selection: Flow<DataSelection> = app.dataSelector.selection
 
-    /** 選択中のデータの記録（端末の変化とチェックの実行記録）。閲覧専用で取り込んだデータがなければ空。 */
+    /** 選択中のデータの記録（端末の変化とチェックの実行記録）。 */
     @OptIn(ExperimentalCoroutinesApi::class)
     val records: Flow<HistoryRecords> = selection.flatMapLatest { sel ->
         sel.selected?.let { repository.observeHistory(it.id) } ?: flowOf(HistoryRecords(emptyList(), emptyList()))

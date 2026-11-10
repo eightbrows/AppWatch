@@ -50,7 +50,7 @@ sealed interface CheckOutcome {
     /** 別のチェックが動いていたので省略した */
     data object AlreadyRunning : CheckOutcome
 
-    /** 自動のチェックが許されていない（初回設定の前・閲覧専用）ので行わなかった */
+    /** 自動のチェックが許されていない（初回設定の前）ので行わなかった */
     data object NotAllowed : CheckOutcome
 
     data class Failed(val error: Exception) : CheckOutcome
@@ -69,7 +69,7 @@ class CheckRunner(
     private val clock: () -> Long = System::currentTimeMillis,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val minIntervalMillis: Long = MIN_INTERVAL_MILLIS,
-    /** 自動のチェック（アプリを開いたとき・定期チェック）を行ってよいか。初回設定の前と閲覧専用では false */
+    /** 自動のチェック（アプリを開いたとき・定期チェック）を行ってよいか。初回設定の前は false */
     private val isAutomaticCheckAllowed: suspend () -> Boolean = { true },
     private val onRecorded: (RecordOutcome) -> Unit = {},
 ) {

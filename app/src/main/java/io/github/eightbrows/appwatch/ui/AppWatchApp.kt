@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,8 +35,14 @@ import io.github.eightbrows.appwatch.ui.status.AppStatusRoute
 import io.github.eightbrows.appwatch.ui.status.PreRegisterRoute
 import io.github.eightbrows.appwatch.ui.status.SharedText
 import io.github.eightbrows.appwatch.ui.status.UserAppDetailRoute
-import io.github.eightbrows.appwatch.ui.top.SelfDeleteWarningDialog
 import io.github.eightbrows.appwatch.model.AppSummary
+import io.github.eightbrows.appwatch.data.status.AppStatusEntry
+import io.github.eightbrows.appwatch.data.system.UninstallEvent
+import io.github.eightbrows.appwatch.data.system.UninstallResult
+import io.github.eightbrows.appwatch.data.system.Uninstaller
+import io.github.eightbrows.appwatch.ui.components.DeleteConfirmDialog
+import io.github.eightbrows.appwatch.ui.components.DeleteResultDialog
+import io.github.eightbrows.appwatch.ui.components.DeleteTarget
 import io.github.eightbrows.appwatch.ui.top.TopActions
 import io.github.eightbrows.appwatch.ui.top.TopLists
 import io.github.eightbrows.appwatch.ui.top.TopScreen
@@ -58,7 +63,6 @@ data class TopData(
 private fun StartDestination.toScreen(): Screen = when (this) {
     StartDestination.SETUP -> Screen.SETUP
     StartDestination.TOP -> Screen.TOP
-    StartDestination.IMPORTED_DATA -> Screen.IMPORTED_DATA
 }
 
 private fun SettingsDestination.toScreen(): Screen = when (this) {
@@ -114,13 +118,11 @@ fun AppWatchApp(
         navigator.snapshot().forEach { stateHolder.removeState(it.name) }
         navigator.resetTo(target)
     }
-    // 初回設定の完了・使い方の変更・開発版のやり直しで行き先が変わったら、最初の画面を切り替える
+    // 初回設定の完了・開発版のやり直しで行き先が変わったら、最初の画面を切り替える
     LaunchedEffect(startDestination) {
         // 共有・ファイルで開いた画面は、事前登録・取り込みだけのための画面なので切り替えない
         if (!startedFromShare && !startedFromFile && navigator.root != startDestination.toScreen()) resetTo(startDestination.toScreen())
     }
-    // 見守る端末に戻すときは、初回設定を2の画面から始める（アプリを閉じて開き直したら1から）
-    var setupInitialStep by rememberSaveable { mutableIntStateOf(1) }
     val goBack: () -> Unit = {
         val leaving = navigator.current
         if (navigator.back()) stateHolder.removeState(leaving.name)
@@ -156,22 +158,35 @@ fun AppWatchApp(
         resetTo(startDestination.toScreen())
     }
 
-    // 本アプリの削除警告を出しているときは、そのパッケージ名（画面の回転でも消えないように保存する）
-    var selfDeleteTarget by rememberSaveable { mutableStateOf<String?>(null) }
+    // 削除の確認を出しているアプリ（画面の回転でも消えないように保存する）
+    var deleteTarget by rememberSaveable(stateSaver = DeleteTarget.Saver) { mutableStateOf<DeleteTarget?>(null) }
+    // 削除の結果（アプリ名と、削除されたか）
+    var deleteResultName by rememberSaveable { mutableStateOf<String?>(null) }
+    var deleteResultDeleted by rememberSaveable { mutableStateOf(false) }
+    // 削除の流れ：Android の確認の画面を開く・結果を表示する
+    LaunchedEffect(Unit) {
+        Uninstaller.eventFlow.collect { event ->
+            when (event) {
+                is UninstallEvent.Confirm -> {
+                    onOpenSystemScreen()
+                    AppActions.startConfirm(context, event.intent)
+                }
+                is UninstallEvent.Finished -> {
+                    deleteResultName = event.appName
+                    deleteResultDeleted = event.result == UninstallResult.DELETED
+                }
+            }
+        }
+    }
 
     // アプリの詳細（管理者）で開いているアプリのパッケージ名
     var detailPackage by rememberSaveable { mutableStateOf<String?>(null) }
     // アプリの詳細（本人）で開いているアプリのパッケージ名
     var userDetailPackage by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // Android のアンインストール画面を開く。本アプリなら先に削除警告を出す
-    val uninstall: (String, Boolean) -> Unit = { packageName, isSelf ->
-        if (isSelf) {
-            selfDeleteTarget = packageName
-        } else {
-            onOpenSystemScreen()
-            AppActions.uninstall(context, packageName)
-        }
+    // 削除するときは、まず本アプリの確認のダイアログを出す（その後に Android の確認）
+    val requestDelete: (AppStatusEntry) -> Unit = { entry ->
+        deleteTarget = DeleteTarget(entry.packageName, entry.name, entry.versionName, entry.warnings, entry.isSelf)
     }
 
     val screen = navigator.current
@@ -180,18 +195,12 @@ fun AppWatchApp(
             Screen.SETUP -> SetupScreen(
                 controller = setupController,
                 resumeCount = resumeCount,
-                initialStep = setupInitialStep,
-                onCompleted = { destination ->
-                    setupInitialStep = 1
-                    resetTo(destination.toScreen())
-                },
+                onCompleted = { resetTo(Screen.TOP) },
             )
 
             Screen.IMPORTED_DATA -> ImportedDataRoute(
                 controller = transferController,
-                onOpenSettings = { navigator.navigate(Screen.SETTINGS_MENU) },
-                // 設定メニューから開いたとき（最初の画面でないとき）は、戻るボタンを出す
-                onBack = if (navigator.root == Screen.IMPORTED_DATA) null else goBack,
+                onBack = goBack,
                 onOpenStatus = { navigator.navigate(Screen.APP_STATUS) },
                 onOpenHistory = { navigator.navigate(Screen.HISTORY) },
                 onImportedForViewing = onImportedForViewing,
@@ -221,14 +230,7 @@ fun AppWatchApp(
                         controller = statusController,
                         packageName = packageName,
                         onBack = goBack,
-                        onUninstall = { entry ->
-                            if (entry.isSelf) {
-                                selfDeleteTarget = entry.packageName
-                            } else {
-                                onOpenSystemScreen()
-                                AppActions.uninstall(context, entry.packageName)
-                            }
-                        },
+                        onUninstall = requestDelete,
                         onOpenAppInfo = { entry ->
                             onOpenSystemScreen()
                             AppActions.openAppInfo(context, entry.packageName)
@@ -258,7 +260,7 @@ fun AppWatchApp(
                         controller = statusController,
                         packageName = packageName,
                         onBack = goBack,
-                        onUninstall = { entry -> uninstall(entry.packageName, entry.isSelf) },
+                        onUninstall = requestDelete,
                         onOpenAppInfo = { entry ->
                             onOpenSystemScreen()
                             AppActions.openAppInfo(context, entry.packageName)
@@ -303,12 +305,7 @@ fun AppWatchApp(
                     actions = TopActions(
                         onOpenSettings = { navigator.navigate(Screen.SETTINGS_MENU) },
                         onUninstall = { app ->
-                            if (app.isSelf) {
-                                selfDeleteTarget = app.packageName
-                            } else {
-                                onOpenSystemScreen()
-                                AppActions.uninstall(context, app.packageName)
-                            }
+                            deleteTarget = DeleteTarget(app.packageName, app.name, app.versionName, app.warnings, app.isSelf)
                         },
                         onOpenAppInfo = { app ->
                             onOpenSystemScreen()
@@ -329,20 +326,31 @@ fun AppWatchApp(
                 themeMode = themeMode,
                 onThemeModeChange = onThemeModeChange,
                 onNavigate = { destination -> navigator.navigate(destination.toScreen()) },
-                onSwitchToMonitor = { setupInitialStep = 2 },
                 onBack = goBack,
             )
         }
     }
 
-    selfDeleteTarget?.let { packageName ->
-        SelfDeleteWarningDialog(
-            onCancel = { selfDeleteTarget = null },
+    deleteTarget?.let { target ->
+        DeleteConfirmDialog(
+            target = target,
+            onCancel = { deleteTarget = null },
             onConfirmDelete = {
-                selfDeleteTarget = null
-                onOpenSystemScreen()
-                AppActions.uninstall(context, packageName)
+                deleteTarget = null
+                // 結果を受け取れる方法で削除を頼む。頼めなかったら、今までどおり Android の削除画面を開く（結果は出ない）
+                if (!Uninstaller.start(context, target.packageName, target.name)) {
+                    onOpenSystemScreen()
+                    AppActions.uninstall(context, target.packageName)
+                }
             },
+        )
+    }
+
+    deleteResultName?.let { name ->
+        DeleteResultDialog(
+            appName = name,
+            result = if (deleteResultDeleted) UninstallResult.DELETED else UninstallResult.NOT_DELETED,
+            onDismiss = { deleteResultName = null },
         )
     }
 }

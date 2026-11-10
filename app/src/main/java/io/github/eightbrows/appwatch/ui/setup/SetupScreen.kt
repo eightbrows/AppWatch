@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,7 +31,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,74 +56,57 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.record.CheckOutcome
-import io.github.eightbrows.appwatch.data.settings.StartDestination
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.model.UsageMode
 import io.github.eightbrows.appwatch.ui.components.StatusMark
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import kotlinx.coroutines.launch
 
-private const val STEP_COUNT = 4
-
 /**
- * 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png）。
- * 見守る端末は4画面、閲覧専用は1の画面のあと「取り込んだデータ」へ進む。
- * 戻る操作で前の画面へ。1の画面で戻るとアプリを閉じる（この画面が最初の画面なので）。
+ * 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png）。3つの画面（[SetupStep]）。
+ * 戻る操作で前の画面へ。最初の画面で戻るとアプリを閉じる（この画面が最初の画面なので）。
  *
  * @param resumeCount アプリに戻ってくるたびに増える数。設定画面から戻ったときに状態を読み直すのに使う
- * @param initialStep 最初に出す画面。設定メニューから見守る端末に戻すときは 2（使い方の選択は出さない）
- * @param onCompleted 初回設定が終わったときに、次に開く画面を渡して呼ぶ
+ * @param onCompleted 初回設定が終わったときに呼ぶ（トップへ）
  */
 @Composable
 fun SetupScreen(
     controller: SetupController,
     resumeCount: Int,
-    onCompleted: (StartDestination) -> Unit,
-    initialStep: Int = 1,
+    onCompleted: () -> Unit,
 ) {
-    var step by rememberSaveable { mutableIntStateOf(initialStep) }
-    var mode by rememberSaveable { mutableStateOf(UsageMode.MONITOR) }
+    var stepName by rememberSaveable { mutableStateOf(SetupStep.FIRST.name) }
+    val step = SetupStep.valueOf(stepName)
+    val goTo: (SetupStep) -> Unit = { stepName = it.name }
     var checkedNames by rememberSaveable {
         mutableStateOf(SetupSelection.DEFAULT_CHECKED.map { it.name })
     }
-    // 最初のチェックは1回だけ行う（4から3に戻ったときに、もう一度行わない）
+    // 最初のチェックは1回だけ行う（3から2に戻ったときに、もう一度行わない）
     var firstCheckDone by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    // 最初に出した画面より前には戻らない（その画面で戻るとアプリを閉じる）
-    BackHandler(enabled = step > initialStep) { step-- }
+    // 最初の画面より前には戻らない（その画面で戻るとアプリを閉じる）
+    BackHandler(enabled = step.previous != null) { step.previous?.let(goTo) }
 
     when (step) {
-        1 -> ModeStep(
-            selected = mode,
-            onSelect = { mode = it },
-            onNext = {
-                scope.launch {
-                    controller.chooseMode(mode)
-                    if (mode == UsageMode.VIEW_ONLY) onCompleted(StartDestination.IMPORTED_DATA) else step = 2
-                }
-            },
-        )
+        SetupStep.SETTINGS -> SettingsStep(controller = controller, resumeCount = resumeCount, onNext = { goTo(SetupStep.FIRST_CHECK) })
 
-        2 -> SettingsStep(controller = controller, resumeCount = resumeCount, onNext = { step = 3 })
-
-        3 -> FirstCheckStep(
+        SetupStep.FIRST_CHECK -> FirstCheckStep(
             controller = controller,
             alreadyChecked = firstCheckDone,
             onChecked = { firstCheckDone = true },
             checked = checkedNames.mapNotNull { name -> SetupCategory.entries.firstOrNull { it.name == name } }.toSet(),
             onCheckedChange = { checked -> checkedNames = checked.map { it.name } },
-            onNext = { step = 4 },
+            onNext = { goTo(SetupStep.WIDGET) },
         )
 
-        else -> WidgetStep(
+        SetupStep.WIDGET -> WidgetStep(
             controller = controller,
             resumeCount = resumeCount,
             onFinish = {
                 scope.launch {
                     controller.complete()
-                    onCompleted(StartDestination.TOP)
+                    onCompleted()
                 }
             },
         )
@@ -134,12 +115,13 @@ fun SetupScreen(
 
 // ---- 共通の形 ----
 
-/** 上部に「初回設定 n / 4」と進み具合の点、真ん中に内容、下部に大きなボタン。 */
+/** 上部に「初回設定 n / 3」と進み具合の点（[header] があればその下に）、見出し、内容、下部に大きなボタン。 */
 @Composable
 private fun SetupScaffold(
-    step: Int,
+    step: SetupStep,
     title: String,
     bottom: @Composable ColumnScope.() -> Unit,
+    header: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -157,16 +139,18 @@ private fun SetupScaffold(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = stringResource(R.string.setup_progress, step, STEP_COUNT),
+                    text = stringResource(R.string.setup_progress, step.number, SetupStep.COUNT),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
                 )
                 ProgressDots(current = step)
             }
+            header?.invoke(this)
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineMedium,
+                // 上に「ようこそ」の見出しがあるときは、その下の区切りの見出しとして小さめにする
+                style = if (header != null) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.semantics { heading() },
             )
@@ -186,13 +170,13 @@ private fun SetupScaffold(
 
 /** 進み具合の点。今の画面は横長、済んだ画面は濃い色、まだの画面は薄い色。 */
 @Composable
-private fun ProgressDots(current: Int) {
+private fun ProgressDots(current: SetupStep) {
     Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-        for (i in 1..STEP_COUNT) {
-            val color = if (i <= current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+        for (i in 1..SetupStep.COUNT) {
+            val color = if (i <= current.number) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
             Box(
                 Modifier
-                    .size(width = if (i == current) 22.dp else 8.dp, height = 8.dp)
+                    .size(width = if (i == current.number) 22.dp else 8.dp, height = 8.dp)
                     .clip(CircleShape)
                     .background(color),
             )
@@ -259,64 +243,7 @@ private fun DoneLabel(text: String) {
     }
 }
 
-// ---- 1 使い方の選択 ----
-
-@Composable
-private fun ModeStep(selected: UsageMode, onSelect: (UsageMode) -> Unit, onNext: () -> Unit) {
-    SetupScaffold(
-        step = 1,
-        title = stringResource(R.string.setup_mode_title),
-        bottom = { PrimaryButton(stringResource(R.string.setup_next), onNext) },
-    ) {
-        BodyText(stringResource(R.string.setup_mode_body))
-        ModeOption(
-            title = stringResource(R.string.usage_mode_monitor),
-            description = stringResource(R.string.setup_mode_monitor_desc),
-            selected = selected == UsageMode.MONITOR,
-            onClick = { onSelect(UsageMode.MONITOR) },
-        )
-        ModeOption(
-            title = stringResource(R.string.usage_mode_view_only),
-            description = stringResource(R.string.setup_mode_viewer_desc),
-            selected = selected == UsageMode.VIEW_ONLY,
-            onClick = { onSelect(UsageMode.VIEW_ONLY) },
-        )
-        Text(
-            text = stringResource(R.string.setup_mode_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ModeOption(title: String, description: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = if (selected) {
-            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-        } else {
-            BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton),
-    ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
-            RadioButton(selected = selected, onClick = null)
-            Spacer(Modifier.width(10.dp))
-            Column {
-                Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(Modifier.height(2.dp))
-                Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-// ---- 2 見守りを続けるための設定 ----
+// ---- 1 見守りを続けるための設定 ----
 
 @Composable
 private fun SettingsStep(controller: SetupController, resumeCount: Int, onNext: () -> Unit) {
@@ -335,8 +262,18 @@ private fun SettingsStep(controller: SetupController, resumeCount: Int, onNext: 
     }
 
     SetupScaffold(
-        step = 2,
+        step = SetupStep.SETTINGS,
         title = stringResource(R.string.setup_settings_title),
+        header = {
+            // 最初の画面なので、上に「アプリ見守当番へようこそ」の見出しと短い説明を出す
+            Text(
+                text = stringResource(R.string.setup_welcome_title),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.semantics { heading() },
+            )
+            BodyText(stringResource(R.string.setup_welcome_body))
+        },
         bottom = {
             // 未設定が残っている間は「次へ」を押せない。「後で設定する」で進める
             PrimaryButton(stringResource(R.string.setup_next), onNext, enabled = allOk)
@@ -419,7 +356,7 @@ private fun SettingRowMain(title: String, description: String, done: Boolean, on
     }
 }
 
-// ---- 3 最初のチェック ----
+// ---- 2 最初のチェック ----
 
 private sealed interface FirstCheckState {
     data object Running : FirstCheckState
@@ -460,7 +397,7 @@ private fun FirstCheckStep(
         FirstCheckState.Running -> stringResource(R.string.setup_check_running)
     }
     SetupScaffold(
-        step = 3,
+        step = SetupStep.FIRST_CHECK,
         title = title,
         bottom = {
             when (current) {
@@ -605,7 +542,7 @@ private fun CategoryRow(category: SetupCategory, count: Int, checked: Boolean, o
     }
 }
 
-// ---- 4 ウィジェットの追加 ----
+// ---- 3 ウィジェットの追加 ----
 
 @Composable
 private fun WidgetStep(controller: SetupController, resumeCount: Int, onFinish: () -> Unit) {
@@ -615,7 +552,7 @@ private fun WidgetStep(controller: SetupController, resumeCount: Int, onFinish: 
     var finishing by remember { mutableStateOf(false) }
 
     SetupScaffold(
-        step = 4,
+        step = SetupStep.WIDGET,
         title = stringResource(R.string.setup_widget_title),
         bottom = {
             // ウィジェットを置かなくても完了できる

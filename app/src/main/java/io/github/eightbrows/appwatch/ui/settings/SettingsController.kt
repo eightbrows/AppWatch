@@ -8,11 +8,9 @@ import androidx.work.WorkManager
 import io.github.eightbrows.appwatch.AppWatchApplication
 import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.settings.CheckInterval
-import io.github.eightbrows.appwatch.data.settings.SetupState
 import io.github.eightbrows.appwatch.data.system.DeviceSettings
 import io.github.eightbrows.appwatch.data.system.ScanDay
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.model.UsageMode
 import io.github.eightbrows.appwatch.work.CheckScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -34,8 +32,6 @@ class SettingsController(context: Context) {
 
     /** 取り込んだデータの名前（設定メニューの「取り込んだデータ」の行の補足）。 */
     val importedNames: Flow<List<String>> = app.transferRepository.observeImported().map { list -> list.map { it.name } }
-
-    val setupState: Flow<SetupState> = app.settingsRepository.setupState
 
     val checkInterval: Flow<CheckInterval> = app.settingsRepository.checkIntervalMinutes.map(CheckInterval::fromMinutes)
 
@@ -69,24 +65,6 @@ class SettingsController(context: Context) {
     /** チェック間隔を保存する。保存すると、アプリ側で定期チェックが新しい間隔で登録し直される。 */
     fun setCheckInterval(interval: CheckInterval) {
         app.appScope.launch { app.settingsRepository.setCheckIntervalMinutes(interval.minutes) }
-    }
-
-    /**
-     * 閲覧専用にする（仕様書 6章「使い方の切り替え」）。初回設定は完了のまま。
-     * 保存すると、アプリ側で定期チェックの登録が外れ、ウィジェットの受け取りが無効になり、
-     * 最初の画面が「取り込んだデータ」に変わる。この端末の記録は消さない。
-     */
-    fun switchToViewOnly() {
-        // 画面が切り替わっても保存が途中で止まらないよう、アプリ全体の処理で行う
-        app.appScope.launch { app.settingsRepository.setUsageModeAndSetup(UsageMode.VIEW_ONLY, completed = true) }
-    }
-
-    /**
-     * 見守る端末に戻す。初回設定を未完了にするので、初回設定（2の画面から）に進む。
-     * 3の画面でもう一度チェックし、4で完了するとトップへ。途中でアプリを閉じたら、次は初回設定の1から。
-     */
-    fun switchToMonitor() {
-        app.appScope.launch { app.settingsRepository.setUsageModeAndSetup(UsageMode.MONITOR, completed = false) }
     }
 
     /** ウィジェットを更新する（言語・テーマを切り替えた後）。 */

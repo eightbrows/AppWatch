@@ -8,7 +8,6 @@ import io.github.eightbrows.appwatch.data.record.CheckOutcome
 import io.github.eightbrows.appwatch.data.system.DeviceSettings
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.model.UsageMode
 import io.github.eightbrows.appwatch.widget.WidgetPlacement
 import kotlinx.coroutines.flow.first
 import java.util.UUID
@@ -19,18 +18,7 @@ class SetupController(context: Context) {
     private val appContext = context.applicationContext
     private val app = appContext as AppWatchApplication
 
-    // ---- 1 使い方の選択 ----
-
-    /**
-     * 使い方を保存する。閲覧専用なら初回設定はここで完了する（2〜4は出さない）。
-     * 完了すると、アプリ側で定期チェックの登録とウィジェットの有効・無効が切り替わる。
-     */
-    suspend fun chooseMode(mode: UsageMode) {
-        app.settingsRepository.setUsageMode(mode)
-        if (mode == UsageMode.VIEW_ONLY) app.settingsRepository.setSetupCompleted(true)
-    }
-
-    // ---- 2 見守りを続けるための設定 ----
+    // ---- 1 見守りを続けるための設定 ----
 
     fun isBatteryOptimizationExcluded(): Boolean = DeviceSettings.isBatteryOptimizationExcluded(appContext)
 
@@ -47,7 +35,7 @@ class SetupController(context: Context) {
     @get:StringRes
     val unusedAppRestrictionsHint: Int get() = DeviceSettings.unusedAppRestrictionsHint()
 
-    // ---- 3 最初のチェック ----
+    // ---- 2 最初のチェック ----
 
     /** 最初のチェック。初回設定の前でも行う（初回なら基準を作る）。 */
     suspend fun runFirstCheck(): CheckOutcome = app.checkRunner.check(force = true)
@@ -65,7 +53,7 @@ class SetupController(context: Context) {
         return app.recordRepository.setReviewStatus(targets, ReviewStatus.OK, operationId = UUID.randomUUID().toString())
     }
 
-    // ---- 4 ウィジェットの追加 ----
+    // ---- 3 ウィジェットの追加 ----
 
     fun isWidgetPlaced(): Boolean = WidgetPlacement.isPlaced(appContext)
 
@@ -73,9 +61,8 @@ class SetupController(context: Context) {
 
     fun requestWidgetPin(): Boolean = WidgetPlacement.requestPin(appContext)
 
-    /** 初回設定を完了する（見守る端末）。完了すると、アプリ側で定期チェックが登録され、ウィジェットが更新される。 */
+    /** 初回設定を完了する。完了すると、アプリ側で定期チェックが登録され、ウィジェットが更新される。 */
     suspend fun complete() {
-        app.settingsRepository.setUsageMode(UsageMode.MONITOR)
-        app.settingsRepository.setSetupCompleted(true)
+        app.settingsRepository.completeSetup()
     }
 }

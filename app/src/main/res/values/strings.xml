@@ -38,6 +38,13 @@
     <string name="action_delete_app">Delete</string>
     <string name="action_details">Details</string>
     <string name="action_delete">Delete</string>
+    <string name="delete_dialog_title">Delete %1$s?</string>
+    <string name="delete_dialog_body">Android will ask you next. Tap \"OK\" to delete it.</string>
+    <string name="delete_dialog_cancel">Don\'t delete</string>
+    <string name="delete_dialog_confirm">Delete</string>
+    <string name="delete_dialog_self_body">If you delete this app, monitoring stops and all records are deleted. Please talk to your helper first.</string>
+    <string name="delete_result_deleted">Deleted %1$s</string>
+    <string name="delete_result_not_deleted">%1$s wasn\'t deleted</string>
     <string name="action_app_info">Android app info</string>
     <string name="action_app_info_short">App info</string>
     <string name="error_cannot_open_screen">Couldn\'t open the screen</string>
@@ -48,11 +55,6 @@
     <string name="kind_system">System</string>
 
     <!-- 本アプリの削除警告 -->
-    <string name="self_delete_title">Delete\nthis app?</string>
-    <string name="self_delete_body">If you delete this app, monitoring stops and all records are deleted. Please talk to your helper first.</string>
-    <string name="self_delete_cancel">Don\'t delete</string>
-    <string name="self_delete_confirm">Delete</string>
-    <string name="self_delete_note">After \"Delete\", Android asks you to confirm</string>
 
     <!-- 警告 -->
     <string name="warning_not_from_play">Not from Google Play</string>
@@ -93,9 +95,6 @@
     <string name="settings_list_separator">", "</string>
 
     <string name="settings_section_behavior">Behavior</string>
-    <string name="settings_usage_mode">Device use</string>
-    <string name="usage_mode_monitor">Monitored device</string>
-    <string name="usage_mode_view_only">View only</string>
     <string name="settings_check_interval">Check interval</string>
     <string name="settings_health_check">Status check</string>
     <string name="health_all_ok">All OK</string>
@@ -154,22 +153,17 @@
     <string name="widget_setup_title">Ask your helper to set up the app</string>
     <string name="widget_setup_note">Setup isn\'t finished</string>
     <string name="widget_clear_title">No apps to review</string>
-    <string name="widget_view_only_title">This is a view-only device</string>
-    <string name="widget_view_only_note">Please remove this widget</string>
 
     <!-- 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png） -->
     <string name="setup_progress">Setup  %1$d / %2$d</string>
+    <string name="setup_welcome_title">Welcome to\nAppWatch</string>
+    <string name="setup_welcome_body">AppWatch regularly records the apps on this device and helps remove ones that aren\'t needed. Your helper does the setup.</string>
     <string name="setup_next">Next</string>
     <string name="setup_later">Set up later</string>
     <string name="setup_finish">Finish setup</string>
 
-    <string name="setup_mode_title">Welcome to\nAppWatch</string>
-    <string name="setup_mode_body">Choose how this device will be used. Your helper does the setup.</string>
-    <string name="setup_mode_monitor_desc">Regularly records the installed apps and helps remove ones that aren\'t needed. For the user\'s own device.</string>
-    <string name="setup_mode_viewer_desc">Only imports and views exported data. Doesn\'t record the apps on this device.</string>
-    <string name="setup_mode_note">You can change this later in Settings.</string>
 
-    <string name="setup_settings_title">Keep monitoring\nrunning</string>
+    <string name="setup_settings_title">Keep monitoring running</string>
     <string name="setup_settings_body">Set this device so Android doesn\'t stop the periodic checks.</string>
     <string name="setup_battery_desc">Keeps checks from stopping</string>
     <string name="setup_unused_desc">Keeps checks running even if the app isn\'t opened for a long time (Android 11 and later)</string>
@@ -207,7 +201,6 @@
 
     <!-- 取り込んだデータ（閲覧専用の最初の画面） -->
     <string name="imported_title">Imported data</string>
-    <string name="imported_badge">View only</string>
     <string name="imported_empty">No imported data yet</string>
 
     <!-- 設定メニュー：チェック間隔の選択肢 -->
@@ -215,12 +208,12 @@
     <string name="check_interval_1h">1 hour</string>
     <string name="check_interval_3h">3 hours</string>
     <string name="check_interval_6h">6 hours</string>
+    <string name="check_interval_12h">12 hours</string>
+    <string name="check_interval_24h">24 hours</string>
 
     <!-- 設定メニュー：ダイアログ -->
     <string name="dialog_cancel">Cancel</string>
-    <string name="viewonly_confirm_title">Switch to view only?</string>
-    <string name="viewonly_confirm_body">Checks of the apps on this device and the widget will stop. Records so far are kept. Please remove the widget from the home screen.</string>
-    <string name="viewonly_confirm_ok">Switch</string>
+    <string name="dialog_ok">OK</string>
     <string name="unused_dialog_open">Open settings</string>
     <!-- 未使用アプリの一時停止の設定画面で、どのスイッチを切り替えるかの案内（Android 12 以上と 11 で名前が違う） -->
     <string name="unused_hint_android12">Near the bottom of the screen that opens, turn off \"Pause app activity if unused\".</string>
@@ -412,8 +405,6 @@
         <item quantity="other">Registered, not on device: %1$d</item>
     </plurals>
     <string name="prereg_registered_empty">None yet</string>
-    <string name="prereg_view_only_title">Can\'t register on a view-only device</string>
-    <string name="prereg_view_only_body">This device is view only. Pre-register apps on the monitored device.</string>
     <string name="notice_pre_registered">Registered %1$s as \"Caution\"</string>
     <string name="notice_unregistered">Removed the registration of %1$s</string>
 
@@ -538,7 +529,6 @@
     <string name="import_view_only_own">This is this device\'s own data. It can\'t be imported as view only.</string>
     <string name="import_restore">Restore to this device</string>
     <string name="import_restore_desc">Replaces this device\'s data with the file. Use it after resetting or changing the device.</string>
-    <string name="import_restore_view_only">Can\'t restore on a view-only device.</string>
     <string name="import_cancel">Cancel</string>
     <string name="import_confirm">Import</string>
     <string name="import_working">Importing…</string>

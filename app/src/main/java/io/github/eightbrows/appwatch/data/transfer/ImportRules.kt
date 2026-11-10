@@ -9,7 +9,6 @@ import io.github.eightbrows.appwatch.data.record.ChangeDetector
 import io.github.eightbrows.appwatch.data.record.ChangeType
 import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.InstalledApp
-import io.github.eightbrows.appwatch.model.UsageMode
 import java.time.Instant
 import java.time.ZoneId
 
@@ -54,9 +53,6 @@ object ImportRules {
     /** 「閲覧のみ」を選べるか。この端末自身のファイルは選べない。 */
     fun canViewOnly(file: AppWatchFile, localDeviceId: String): Boolean = !isOwnFile(file, localDeviceId)
 
-    /** 「この端末に復元」を選べるか。閲覧専用の端末では選べない。 */
-    fun canRestore(usageMode: UsageMode?): Boolean = usageMode != UsageMode.VIEW_ONLY
-
     /**
      * 復元の「はい」（端末を初期化・機種変更した）。確認状態・経緯・チェックの実行記録はファイルのものを引き継ぎ、
      * 今の端末のアプリ（[scanned]）を新しい基準と最新の状態にする。変化の記録に「初期化」を1件足し、
@@ -98,7 +94,7 @@ data class DatasetOption(
 
 /** 選択中のデータと、切り替えの選択肢。 */
 data class DataSelection(
-    /** 選択中のデータ。閲覧専用で取り込んだデータがなければ null */
+    /** 選択中のデータ（「この端末」か取り込んだデータ）。 */
     val selected: DatasetOption?,
     val options: List<DatasetOption>,
     val importedCount: Int,
@@ -112,23 +108,20 @@ data class DataSelection(
 
 object DatasetSelector {
     /**
-     * 選択中のデータを決める。保存した番号のデータがなければ（削除されたなど）、
-     * 見守る端末では「この端末」、閲覧専用では取り込んだデータの最初（なければ null）にする。
-     * 閲覧専用の端末では「この端末」を選択肢に出さない。
+     * 選択中のデータを決める。選択肢は「この端末」と取り込んだデータ。
+     * 保存した番号のデータがなければ（削除されたなど）、「この端末」にする。
      */
     fun resolve(
         savedId: String?,
         localId: String,
         localName: String,
         imported: List<ImportedDataset>,
-        viewOnly: Boolean,
     ): DataSelection {
         val importedOptions = imported.map {
             DatasetOption(id = it.id, name = it.name, isLocal = false, exportedAt = it.exportedAt, previousExportedAt = it.previousExportedAt)
         }
-        val options = if (viewOnly) importedOptions else listOf(DatasetOption(localId, localName, isLocal = true)) + importedOptions
-        val selected = options.firstOrNull { it.id == savedId }
-            ?: if (viewOnly) importedOptions.firstOrNull() else options.first()
+        val options = listOf(DatasetOption(localId, localName, isLocal = true)) + importedOptions
+        val selected = options.firstOrNull { it.id == savedId } ?: options.first()
         return DataSelection(selected = selected, options = options, importedCount = imported.size)
     }
 }

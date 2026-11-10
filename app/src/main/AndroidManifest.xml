@@ -68,6 +68,11 @@
                 android:resource="@xml/appwatch_widget_info" />
         </receiver>
 
+        <!-- アプリの削除の結果を受け取る（本アプリの中だけ。PackageInstaller から届く） -->
+        <receiver
+            android:name=".data.system.UninstallResultReceiver"
+            android:exported="false" />
+
         <!-- Android 12 以下でアプリ別の言語を AppCompat が保存・復元するための設定 -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

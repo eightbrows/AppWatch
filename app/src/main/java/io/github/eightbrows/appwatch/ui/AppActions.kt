@@ -19,6 +19,11 @@ object AppActions {
         start(context, Intent(Intent.ACTION_DELETE, packageUri(packageName)))
     }
 
+    /** Android の削除の確認の画面を開く（PackageInstaller から届いた画面）。 */
+    fun startConfirm(context: Context, intent: Intent) {
+        start(context, intent)
+    }
+
     /** Android のアプリ情報の画面を開く（無効化・強制停止などはここから行う）。 */
     fun openAppInfo(context: Context, packageName: String) {
         start(context, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri(packageName)))

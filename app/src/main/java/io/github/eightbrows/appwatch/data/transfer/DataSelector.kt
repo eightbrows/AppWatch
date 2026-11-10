@@ -2,7 +2,6 @@ package io.github.eightbrows.appwatch.data.transfer
 
 import io.github.eightbrows.appwatch.data.record.RecordRepository
 import io.github.eightbrows.appwatch.data.settings.SettingsRepository
-import io.github.eightbrows.appwatch.model.UsageMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -18,16 +17,14 @@ class DataSelector(
 ) {
     val selection: Flow<DataSelection> = combine(
         settings.selectedDatasetId,
-        settings.usageMode,
         records.observeLocalDatasetId(),
         transfer.observeImported(),
-    ) { saved, mode, localId, imported ->
+    ) { saved, localId, imported ->
         DatasetSelector.resolve(
             savedId = saved,
             localId = localId,
             localName = "",
             imported = imported,
-            viewOnly = mode == UsageMode.VIEW_ONLY,
         )
     }.distinctUntilChanged()
 

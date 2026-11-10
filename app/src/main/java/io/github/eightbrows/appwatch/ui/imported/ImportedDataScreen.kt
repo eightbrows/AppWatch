@@ -6,14 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,7 +54,6 @@ import io.github.eightbrows.appwatch.ui.components.AdminTopBar
 import io.github.eightbrows.appwatch.ui.components.formatSnapshotTime
 import io.github.eightbrows.appwatch.ui.components.toLocalDateTime
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
-import io.github.eightbrows.appwatch.ui.top.LongPressSettingsButton
 import io.github.eightbrows.appwatch.ui.transfer.ImportFlowDialogs
 import io.github.eightbrows.appwatch.ui.transfer.TransferController
 import io.github.eightbrows.appwatch.ui.transfer.TransferNotice
@@ -65,16 +61,11 @@ import io.github.eightbrows.appwatch.ui.transfer.rememberImportFlow
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
-/**
- * 取り込んだデータ（12_imported_data.png、仕様書 7章）。閲覧専用の端末では最初の画面（右上の歯車の長押しで設定メニュー）、
- * 見守る端末では設定メニューから開く（戻る付き）。
- */
+/** 取り込んだデータ（12_imported_data.png、仕様書 7章）。設定メニューと、ファイルを開いたときの取り込みの後から開く。 */
 @Composable
 fun ImportedDataRoute(
     controller: TransferController,
-    onOpenSettings: () -> Unit,
-    /** 設定メニューから開いたときの戻る操作。最初の画面（閲覧専用）なら null で、代わりに歯車を出す */
-    onBack: (() -> Unit)?,
+    onBack: () -> Unit,
     onOpenStatus: () -> Unit,
     onOpenHistory: () -> Unit,
     onImportedForViewing: (ImportOutcome) -> Unit,
@@ -105,11 +96,7 @@ fun ImportedDataRoute(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        if (onBack != null) {
-            AdminTopBar(title = stringResource(R.string.imported_title), onBack = onBack)
-        } else {
-            RootHeader(onOpenSettings)
-        }
+        AdminTopBar(title = stringResource(R.string.imported_title), onBack = onBack)
         Box(Modifier.weight(1f)) {
             val list = imported
             LazyColumn(
@@ -201,37 +188,6 @@ fun ImportedDataRoute(
             },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.dialog_cancel)) } },
         )
-    }
-}
-
-/** 閲覧専用の端末の最初の画面の上部（題名・「閲覧専用」・長押しで開く歯車）。 */
-@Composable
-private fun RootHeader(onOpenSettings: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.imported_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.semantics { heading() },
-        )
-        Spacer(Modifier.width(10.dp))
-        Text(
-            text = stringResource(R.string.imported_badge),
-            style = MaterialTheme.typography.labelSmall,
-            color = AppWatchTheme.colors.onAdminBadge,
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .background(AppWatchTheme.colors.adminBadge)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-        )
-        Spacer(Modifier.weight(1f))
-        LongPressSettingsButton(onLongPress = onOpenSettings)
     }
 }
 

@@ -64,8 +64,8 @@ class AppWatchApplication : Application() {
             scope = appScope,
             scanner = { scanner.scan().map { AppClassifier.classify(it, packageName) } },
             recorder = recordRepository,
-            // 初回設定が終わるまでと閲覧専用では、自動のチェックを行わない（仕様書 3章・6章）
-            isAutomaticCheckAllowed = { settingsRepository.setupState.first().isMonitoring },
+            // 初回設定が終わるまでは、自動のチェックを行わない（仕様書 6章）
+            isAutomaticCheckAllowed = { settingsRepository.setupState.first().completed },
             onRecorded = { outcome ->
                 if (BuildConfig.DEBUG) logOutcome(outcome)
                 // チェックのあとウィジェットを更新する（アプリを開いたときのチェックも含む）
@@ -76,7 +76,7 @@ class AppWatchApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // 起動時と、初回設定・使い方・チェック間隔が変わったときに、見守りの仕組み（定期チェック・ウィジェット）を合わせる。
+        // 起動時と、初回設定・チェック間隔が変わったときに、見守りの仕組み（定期チェック・ウィジェット）を合わせる。
         // チェック間隔を変えたときは、新しい間隔で登録し直される。記録（データベース）はどの場合も消さない
         appScope.launch {
             combine(settingsRepository.setupState, settingsRepository.checkIntervalMinutes, MonitoringPolicy::decide)

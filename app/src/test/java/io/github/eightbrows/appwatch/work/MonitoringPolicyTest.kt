@@ -1,42 +1,37 @@
 package io.github.eightbrows.appwatch.work
 
 import io.github.eightbrows.appwatch.data.settings.SetupState
-import io.github.eightbrows.appwatch.model.UsageMode
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class MonitoringPolicyTest {
 
-    private val monitor = SetupState(completed = true, usageMode = UsageMode.MONITOR)
-    private val viewOnly = SetupState(completed = true, usageMode = UsageMode.VIEW_ONLY)
-    private val beforeSetup = SetupState(completed = false, usageMode = null)
+    private val completed = SetupState(completed = true)
+    private val beforeSetup = SetupState(completed = false)
 
     @Test
-    fun monitor_schedulesWithInterval_andUsesWidget() {
-        assertEquals(MonitoringDecision(30, widgetEnabled = true), MonitoringPolicy.decide(monitor, 30))
+    fun completed_schedulesWithInterval() {
+        assertEquals(MonitoringDecision(30), MonitoringPolicy.decide(completed, 30))
+        assertEquals(MonitoringDecision(720), MonitoringPolicy.decide(completed, 720))
+        assertEquals(MonitoringDecision(1440), MonitoringPolicy.decide(completed, 1440))
     }
 
     @Test
     fun changingInterval_reschedulesWithNewInterval() {
-        assertEquals(180, MonitoringPolicy.decide(monitor, 180).scheduleIntervalMinutes)
+        assertEquals(180, MonitoringPolicy.decide(completed, 180).scheduleIntervalMinutes)
     }
 
     @Test
-    fun viewOnly_cancelsCheck_andDisablesWidget() {
-        assertEquals(MonitoringDecision(null, widgetEnabled = false), MonitoringPolicy.decide(viewOnly, 30))
+    fun beforeSetup_cancelsCheck() {
+        assertNull(MonitoringPolicy.decide(beforeSetup, 720).scheduleIntervalMinutes)
     }
 
     @Test
-    fun beforeSetup_cancelsCheck_butKeepsWidgetForSetupRequest() {
-        assertEquals(MonitoringDecision(null, widgetEnabled = true), MonitoringPolicy.decide(beforeSetup, 30))
-    }
-
-    @Test
-    fun switchingViewOnlyToMonitor_restartsSetup_thenSchedulesOnCompletion() {
-        // 設定メニューで見守る端末に戻した直後：初回設定は未完了（登録は外したまま、ウィジェットは有効に戻る）
-        val switching = SetupState(completed = false, usageMode = UsageMode.MONITOR)
-        assertEquals(MonitoringDecision(null, widgetEnabled = true), MonitoringPolicy.decide(switching, 60))
-        // 初回設定を完了したら、その時点の間隔で登録する
-        assertEquals(MonitoringDecision(60, widgetEnabled = true), MonitoringPolicy.decide(monitor, 60))
+    fun legacyViewOnlyDevice_cancelsCheck_untilSetupIsDone() {
+        // 前の版で閲覧専用だった端末：更新後は初回設定の前と同じ。初回設定を終えたら、その時点の間隔で登録する
+        val legacy = SetupState.fromStored(completed = true, legacyUsageMode = SetupState.LEGACY_VIEW_ONLY)
+        assertNull(MonitoringPolicy.decide(legacy, 720).scheduleIntervalMinutes)
+        assertEquals(720, MonitoringPolicy.decide(SetupState.fromStored(completed = true, legacyUsageMode = null), 720).scheduleIntervalMinutes)
     }
 }

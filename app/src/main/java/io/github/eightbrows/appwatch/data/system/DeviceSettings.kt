@@ -12,8 +12,8 @@ import androidx.core.content.IntentCompat
 import io.github.eightbrows.appwatch.R
 
 /**
- * 見守りを続けるための端末の設定（仕様書 6章 初回設定の2）の状態を読み、設定画面を開く。
- * 初回設定の2、設定メニューの「権限」「動作チェック」、ウィジェットの「設定の確認が必要です」で使う。
+ * 見守りを続けるための端末の設定（仕様書 6章 初回設定の1）の状態を読み、設定画面を開く。
+ * 初回設定の1、設定メニューの「権限」「動作チェック」、ウィジェットの「設定の確認が必要です」で使う。
  */
 object DeviceSettings {
 
@@ -57,7 +57,7 @@ object DeviceSettings {
         IntentCompat.createManageUnusedAppRestrictionsIntent(context, context.packageName)
 
     /**
-     * 未使用アプリの一時停止の設定画面で、どのスイッチを切り替えるかの案内（仕様書 6章 初回設定の2）。
+     * 未使用アプリの一時停止の設定画面で、どのスイッチを切り替えるかの案内（仕様書 6章 初回設定の1）。
      * Android 12 以上は「使用していないアプリを一時停止」、11 は名前が違う（権限を自動で削除する設定）。
      */
     @StringRes

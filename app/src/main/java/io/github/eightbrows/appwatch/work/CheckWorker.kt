@@ -19,7 +19,7 @@ class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
 
     override suspend fun doWork(): Result {
         val app = applicationContext as AppWatchApplication
-        // 初回設定の前・閲覧専用では何もしない（登録はアプリ側で外すが、残っていても安全なように）
+        // 初回設定の前は何もしない（登録はアプリ側で外すが、残っていても安全なように）
         val outcome = app.checkRunner.checkIfAllowed()
         // 省略したときも、時間の経過で「停止」の表示が変わることがあるので更新する
         AppWatchWidget.updateAll(applicationContext)
@@ -36,7 +36,7 @@ object CheckScheduler {
     /**
      * 定期チェックを登録する。アプリの起動時に毎回呼ぶ。
      * - すでに同じ間隔で登録されていれば、次の実行の予定は変わらない（UPDATE）
-     * - 間隔が変わっていれば、新しい間隔にする（チェック間隔の設定画面は後のステップ）
+     * - 間隔が変わっていれば、新しい間隔にする（設定メニューのチェック間隔）
      * - 端末を再起動しても、WorkManager が登録を引き継ぐ
      * @param uniqueName 一意のジョブの名前（テストで本物の登録に触れないように、別の名前を渡せる）
      */
@@ -49,7 +49,7 @@ object CheckScheduler {
         )
     }
 
-    /** 定期チェックの登録を外す（初回設定の前・閲覧専用）。登録がなければ何もしない。 */
+    /** 定期チェックの登録を外す（初回設定の前）。登録がなければ何もしない。 */
     fun cancel(context: Context, uniqueName: String = UNIQUE_WORK_NAME) {
         WorkManager.getInstance(context).cancelUniqueWork(uniqueName)
     }

@@ -9,7 +9,7 @@
             android:exported="true"
             android:permission="android.permission.DUMP" />
 
-        <!-- 初回設定をやり直す（完了状態と使い方を消す）。DUMP の権限が要るので adb からしか呼べない -->
+        <!-- 初回設定をやり直す（完了状態を消す）。DUMP の権限が要るので adb からしか呼べない -->
         <receiver
             android:name=".ui.setup.DebugSetupReceiver"
             android:exported="true"

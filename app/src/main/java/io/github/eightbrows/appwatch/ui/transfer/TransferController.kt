@@ -14,7 +14,6 @@ import io.github.eightbrows.appwatch.data.transfer.ReadResult
 import io.github.eightbrows.appwatch.data.transfer.RestoreOutcome
 import io.github.eightbrows.appwatch.data.transfer.TransferSettings
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.model.UsageMode
 import io.github.eightbrows.appwatch.work.MonitoringEffects
 import io.github.eightbrows.appwatch.work.MonitoringPolicy
 import kotlinx.coroutines.Dispatchers
@@ -51,7 +50,6 @@ data class ImportCandidate(
     val defaultName: String,
     val isOwnFile: Boolean,
     val canViewOnly: Boolean,
-    val canRestore: Boolean,
 )
 
 /** 書き出し・取り込みの後に、次の画面で出すお知らせ。 */
@@ -70,7 +68,6 @@ class TransferController(context: Context) {
 
     val recentExports: Flow<List<RecentExport>> = settings.recentExports
     val imported: Flow<List<ImportedDataset>> = transfer.observeImported()
-    val usageMode: Flow<UsageMode?> = settings.usageMode
 
     private val _notice = MutableStateFlow<TransferNotice?>(null)
 
@@ -87,12 +84,12 @@ class TransferController(context: Context) {
     // ---- 書き出し ----
 
     /**
-     * この端末のデータを [uri] に書き出す。書き出しの前に一度チェックして、最新の状態を入れる（見守る端末のとき）。
+     * この端末のデータを [uri] に書き出す。書き出しの前に一度チェックして、最新の状態を入れる（初回設定を終えていれば）。
      * 画面を閉じても途中で止まらないようにする。
      */
     suspend fun export(uri: Uri): ExportResult = withContext(NonCancellable + Dispatchers.IO) {
         try {
-            if (settings.setupState.first().isMonitoring) app.checkRunner.check(force = true)
+            if (settings.setupState.first().completed) app.checkRunner.check(force = true)
             val file = transfer.buildExport(
                 TransferSettings(
                     checkIntervalMinutes = settings.checkIntervalMinutes.first(),
@@ -141,14 +138,12 @@ class TransferController(context: Context) {
                 val file = result.file
                 val localId = app.recordRepository.localDatasetId()
                 val imported = transfer.getImported()
-                val usage = settings.usageMode.first()
                 OpenResult.Ready(
                     ImportCandidate(
                         file = file,
                         defaultName = ImportRules.defaultName(file, imported),
                         isOwnFile = ImportRules.isOwnFile(file, localId),
                         canViewOnly = ImportRules.canViewOnly(file, localId),
-                        canRestore = ImportRules.canRestore(usage),
                     ),
                 )
             }
@@ -189,7 +184,7 @@ class TransferController(context: Context) {
 
     fun delete(dataset: ImportedDataset) {
         app.appScope.launch {
-            // 選んでいたデータなら、選択を外す（この端末、または閲覧専用では一覧の最初に戻る）
+            // 選んでいたデータなら、選択を外す（「この端末」に戻る）
             if (settings.selectedDatasetId.first() == dataset.id) app.dataSelector.clear()
             transfer.deleteImported(dataset.id)
             _notice.value = TransferNotice.Deleted(dataset.name)

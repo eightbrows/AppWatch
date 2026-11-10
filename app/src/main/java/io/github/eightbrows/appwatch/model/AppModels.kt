@@ -14,9 +14,6 @@ enum class AppWarning { NOT_FROM_PLAY, UNKNOWN_SOURCE, DEBUG_SIGNATURE, SIGNATUR
 /** 確認状態（仕様書 4章）。管理者が設定する。 */
 enum class ReviewStatus { UNCONFIRMED, OK, CAUTION }
 
-/** 使い方（仕様書 3章）。 */
-enum class UsageMode { MONITOR, VIEW_ONLY }
-
 /** 権限・設定の状態。設定メニューの「権限」に表示する。 */
 enum class PermissionState { GRANTED, CONFIGURED, NOT_CONFIGURED }
 

@@ -14,8 +14,8 @@ import kotlinx.coroutines.launch
  * 使い方（adb から。DUMP の権限が要るので、端末上の他のアプリからは呼べない）：
  *   adb shell am broadcast -n io.github.eightbrows.appwatch/.ui.setup.DebugSetupReceiver
  *
- * 初回設定の完了状態と使い方だけを消す。記録（データベース）・テーマ・チェック間隔は残る。
- * 消すと、アプリ側で定期チェックの登録が外れ、ウィジェットの受け取りは有効に戻り、
+ * 初回設定の完了状態だけを消す。記録（データベース）・テーマ・チェック間隔は残る。
+ * 消すと、アプリ側で定期チェックの登録が外れ、
  * ウィジェットは「管理者に初期設定を依頼して下さい」になる。次にアプリを開くと初回設定から始まる。
  */
 class DebugSetupReceiver : BroadcastReceiver() {
