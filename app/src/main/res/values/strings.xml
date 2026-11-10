@@ -22,6 +22,7 @@
     <string name="top_unconfirmed_apps">Not reviewed yet</string>
     <string name="top_all_apps">All apps</string>
     <string name="top_nothing_to_review">No apps need review</string>
+    <string name="top_search_empty">No matching apps</string>
     <string name="top_open_settings">Settings (press and hold to open)</string>
     <string name="top_open_settings_action">Open settings</string>
     <string name="top_loading">Getting the list of apps</string>
@@ -33,7 +34,6 @@
     <string name="app_added_at_with_source">Added %1$s · %2$s</string>
     <string name="app_self_label">This app</string>
     <string name="app_disabled_label">Disabled</string>
-    <string name="app_previously_deleted">You deleted this app before</string>
     <string name="app_admin_memo">Helper\'s note</string>
     <string name="action_delete_app">Delete</string>
     <string name="action_details">Details</string>
@@ -62,9 +62,17 @@
     <string name="warning_debug_signature">Debug signature</string>
     <string name="warning_signature_changed">Signature changed</string>
     <string name="warning_reinstalled">You deleted this app before</string>
+    <!-- 確認が必要になった理由の札（トップ・アプリの詳細・確認状態の画面） -->
+    <string name="reason_caution">Caution</string>
+    <string name="reason_reinstalled">Deleted before</string>
+    <string name="reason_signature_changed">Signature changed</string>
+    <string name="reason_debug_signature">Developer signature</string>
+    <string name="reason_not_from_play">Not from Google Play</string>
+    <string name="reason_unknown_source">Unknown source</string>
 
     <!-- 入手元 -->
-    <string name="source_google_play">Google Play</string>
+    <!-- 「Google」と「Play」の間で折り返さない -->
+    <string name="source_google_play">Google\u00A0Play</string>
     <string name="source_other">Not from Google Play</string>
     <string name="source_unknown">Unknown source</string>
 
@@ -299,8 +307,6 @@
     <string name="status_row_removed">Not on device (removed %1$s)</string>
     <string name="status_row_not_installed">Not installed</string>
     <string name="status_row_memo">Note: %1$s</string>
-    <string name="badge_reinstalled">Reinstalled</string>
-    <string name="badge_signature_changed">Signature changed</string>
     <string name="status_reinstalled_at">Found again %1$s</string>
     <string name="status_signature_changed_at">Found %1$s</string>
     <!-- お知らせ（「元に戻す」付き） -->
@@ -346,7 +352,6 @@
     <string name="detail_history">Timeline</string>
     <string name="detail_history_empty">No records yet</string>
     <string name="detail_save">Save</string>
-    <string name="detail_uninstall">Uninstall</string>
     <string name="detail_discard_title">Go back without saving?</string>
     <string name="detail_discard_body">Changes to the status and the note won\'t be saved.</string>
     <string name="detail_discard_confirm">Don\'t save</string>

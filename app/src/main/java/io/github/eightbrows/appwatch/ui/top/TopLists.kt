@@ -1,6 +1,7 @@
 package io.github.eightbrows.appwatch.ui.top
 
 import io.github.eightbrows.appwatch.model.AppKind
+import io.github.eightbrows.appwatch.model.AppSearch
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.ReviewStatus
@@ -14,6 +15,16 @@ data class TopLists(
     /** 「すべて」で出す一覧。 */
     val all: List<AppSummary>,
 ) {
+    /**
+     * 検索で絞った一覧（アプリ名・パッケージ名の部分一致、大文字・小文字を区別しない）。
+     * どの一覧にも同じように効かせ、並び順は変えない。空の検索なら、そのまま返す。
+     */
+    fun filtered(query: String): TopLists {
+        if (query.isBlank()) return this
+        val match = { app: AppSummary -> AppSearch.matches(app.name, app.packageName, query) }
+        return TopLists(cards = cards.filter(match), unconfirmed = unconfirmed.filter(match), all = all.filter(match))
+    }
+
     companion object {
         /**
          * トップの振り分け（仕様書 6章）。[apps] には端末にあるアプリだけを渡す。

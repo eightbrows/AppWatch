@@ -50,7 +50,7 @@ import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import kotlin.math.absoluteValue
 
-/** 管理者用の画面の右上に出す印。 */
+/** 管理者用の画面の右上に出す印。黄色の背景に濃い文字（ライト・ダークとも同じ）。 */
 @Composable
 fun AdminBadge(modifier: Modifier = Modifier) {
     Text(
@@ -61,12 +61,19 @@ fun AdminBadge(modifier: Modifier = Modifier) {
             .padding(horizontal = 8.dp, vertical = 4.dp),
         color = AppWatchTheme.colors.onAdminBadge,
         style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
     )
 }
 
-/** 管理者用の画面の上部（戻る・題名・「管理者用」の印）。 */
+/** 管理者用の画面の上部（戻る・題名・「管理者用」の印）。すべての管理者用の画面でこれを使う。 */
 @Composable
 fun AdminTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    ScreenTopBar(title = title, onBack = onBack, modifier = modifier, showAdminBadge = true)
+}
+
+/** 画面の上部（戻る・題名）。[showAdminBadge] が true なら右上に「管理者用」の印を出す。 */
+@Composable
+fun ScreenTopBar(title: String, onBack: () -> Unit, showAdminBadge: Boolean, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -89,7 +96,7 @@ fun AdminTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        AdminBadge()
+        if (showAdminBadge) AdminBadge()
     }
 }
 

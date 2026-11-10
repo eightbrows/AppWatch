@@ -12,7 +12,7 @@
 ### 主な機能
 
 - 定期チェック（30分〜24時間ごと）と、アプリの追加・削除・更新・無効化・署名の変化の記録
-- 「確認が必要なアプリ」の表示と、確認のうえで Android の削除へ（削除の結果も表示）
+- 「確認が必要なアプリ」の表示（理由の札・検索・アプリの詳細）と、確認のうえで Android の削除へ（削除の結果も表示）
 - ホーム画面のウィジェット（4×2）
 - 管理者用：アプリの確認状態、注意アプリの事前登録（Google Play の「共有」から）、履歴と比較
 - データの書き出し・取り込み（閲覧のみ／この端末に復元）
@@ -33,7 +33,7 @@ Android 8.0 以上
 | 権限 | 理由 |
 | --- | --- |
 | インストールされたアプリの一覧の取得 | 端末のアプリを記録し、変化を見つけるため |
-| アプリの削除の要求 | 「削除する」から Android の削除画面を開くため（削除は毎回 Android の確認を通ります） |
+| アプリの削除の要求 | 「削除する」から Android に削除を頼むため（削除は毎回 Android の確認を通ります） |
 | 電池の最適化からの除外の要求 | 定期チェックが止まらないようにするため（設定は利用者が選びます） |
 
 定期チェック（WorkManager）が使う権限（端末の起動後の再開など）も含まれます。インターネットの権限はありません。
@@ -62,7 +62,7 @@ AppWatch is an Android app for people who aren't used to smartphones. It regular
 ### Features
 
 - Periodic checks (every 30 minutes to 24 hours) that record added, removed, updated and disabled apps and signature changes
-- A list of apps that need review, and deleting them after a confirmation (the result is shown too)
+- A list of apps that need review (with the reasons, a search and app details), and deleting them after a confirmation (the result is shown too)
 - A home screen widget (4×2)
 - For helpers: app status, pre-registering apps (from Google Play's "Share"), and history
 - Export and import of data (view only, or restore to this device)
@@ -83,7 +83,7 @@ Android 8.0 or later
 | Permission | Why |
 | --- | --- |
 | See installed apps | To record the apps on the device and find changes |
-| Request app deletion | To open Android's uninstall screen from "Delete" (Android always asks to confirm) |
+| Request app deletion | To ask Android to delete an app from "Delete" (Android always asks to confirm) |
 | Request no battery optimization | To keep periodic checks from stopping (the user chooses the setting) |
 
 The permissions used by periodic checks (WorkManager), such as restarting after the device boots, are also included. There is no internet permission.

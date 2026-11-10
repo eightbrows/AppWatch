@@ -25,14 +25,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarDuration
@@ -54,7 +52,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -72,7 +69,6 @@ import io.github.eightbrows.appwatch.data.status.AppStatusRules
 import io.github.eightbrows.appwatch.data.status.FilterChip
 import io.github.eightbrows.appwatch.data.status.FilterRow
 import io.github.eightbrows.appwatch.model.AppKind
-import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.data.transfer.DataSelection
 import io.github.eightbrows.appwatch.ui.components.AdminTopBar
@@ -80,8 +76,11 @@ import io.github.eightbrows.appwatch.ui.components.DataSwitcher
 import io.github.eightbrows.appwatch.ui.components.ViewingFooter
 import io.github.eightbrows.appwatch.ui.components.StatusMark
 import io.github.eightbrows.appwatch.ui.components.AppIcon
+import io.github.eightbrows.appwatch.ui.components.AppSearchField
+import io.github.eightbrows.appwatch.ui.components.ReasonChip
+import io.github.eightbrows.appwatch.model.AppSearch
+import io.github.eightbrows.appwatch.model.ReviewReason
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.CircleShape
 import io.github.eightbrows.appwatch.ui.components.formatDateTime
 import io.github.eightbrows.appwatch.ui.components.formatShortDate
@@ -321,58 +320,7 @@ private fun SearchRow(query: String, onQueryChange: (String) -> Unit, onPreRegis
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val hint = stringResource(R.string.status_search_hint)
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .height(48.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-                .padding(start = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_search),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Box(Modifier.weight(1f)) {
-                if (query.isEmpty()) {
-                    Text(
-                        text = hint,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                BasicTextField(
-                    value = query,
-                    onValueChange = onQueryChange,
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .semantics { contentDescription = hint },
-                )
-            }
-            if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_close),
-                        contentDescription = stringResource(R.string.status_search_clear),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            } else {
-                Spacer(Modifier.width(12.dp))
-            }
-        }
+        AppSearchField(query = query, onQueryChange = onQueryChange, modifier = Modifier.weight(1f))
         Button(
             onClick = onPreRegister,
             enabled = preRegisterEnabled,
@@ -536,7 +484,7 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
                 rowColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
                 modifier = Modifier.padding(top = 10.dp),
             )
-            Spacer(Modifier.width(9.dp))
+            Spacer(Modifier.width(6.dp))
             Column(Modifier.weight(1f).padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
@@ -554,15 +502,13 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
                     Text(stringResource(R.string.format_version, it), style = MaterialTheme.typography.bodySmall, color = subColor)
                 }
                 Text(
-                    text = entry.packageName,
+                    text = AppSearch.breakablePackageName(entry.packageName),
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Monospace,
                     color = subColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
                 SourceLine(entry)
-                RecordedWarnings(entry)
+                RowWarnings(entry)
                 entry.adminMemo?.takeIf { it.isNotBlank() }?.let { memo ->
                     Text(
                         text = stringResource(R.string.status_row_memo, memo),
@@ -584,13 +530,15 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
 }
 
 /**
- * 行の先頭のアイコンと、右下に重ねた確認状態の小さな印（印は行の背景の色で縁取る）。
+ * 行の先頭のアイコンと、右下の角に置いた確認状態の印（印は行の背景の色で縁取る）。
+ * 印の中心をアイコンの右下の角に置き、印の大部分をアイコンの外に出す（重なるのは印の 1/4 まで）。
+ * 外に出た分も場所を取り、文字と重ならないようにする。
  * 端末にないアプリはアプリの詳細と同じ灰色の頭文字の印、取り込んだデータを見ているとき（[loadIcon] が false）は色付きの頭文字の印。
  * 無効にしたアプリは灰色で薄く出す。
  */
 @Composable
 private fun RowIcon(entry: AppStatusEntry, loadIcon: Boolean, rowColor: Color, modifier: Modifier = Modifier) {
-    Box(modifier.size(ROW_ICON_SIZE)) {
+    Box(modifier.size(ROW_ICON_SIZE + ROW_MARK_OUTER / 2)) {
         if (entry.isPresent) {
             AppIcon(
                 name = entry.name,
@@ -606,98 +554,76 @@ private fun RowIcon(entry: AppStatusEntry, loadIcon: Boolean, rowColor: Color, m
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .offset(x = 5.dp, y = 5.dp)
-                .size(ROW_MARK_SIZE + 4.dp)
+                .size(ROW_MARK_OUTER)
                 .clip(CircleShape)
                 .background(rowColor)
-                .padding(2.dp),
+                .padding(ROW_MARK_RING),
         ) {
             StatusMark(status = entry.status, size = ROW_MARK_SIZE)
         }
     }
 }
 
-private val ROW_ICON_SIZE = 40.dp
-private val ROW_MARK_SIZE = 18.dp
+private val ROW_ICON_SIZE = 48.dp
+private val ROW_MARK_SIZE = 24.dp
 
-/** 入手元・日時（後から導入）、種類（プリインストール・システム）、端末にないこと。署名・入手元の警告は橙色。 */
+/** 印の縁取り（行の背景の色）。どのアイコンの色の上でも印を見分けられるようにする。 */
+private val ROW_MARK_RING = 2.5.dp
+private val ROW_MARK_OUTER = ROW_MARK_SIZE + ROW_MARK_RING * 2
+
+/** 入手元・日時（後から導入）、種類（プリインストール・システム）、端末にないこと。警告は下の札で出す。 */
 @Composable
 private fun SourceLine(entry: AppStatusEntry) {
-    val colors = AppWatchTheme.colors
     val removedAt = entry.removedAt
     val kind = entry.kind
     val source = entry.source
-    val (text, warn) = when {
+    val text = when {
         !entry.isPresent && removedAt != null ->
-            stringResource(R.string.status_row_removed, formatShortDate(removedAt.toLocalDateTime())) to false
-        !entry.isPresent && kind == null -> stringResource(R.string.status_row_not_installed) to false
+            stringResource(R.string.status_row_removed, formatShortDate(removedAt.toLocalDateTime()))
+        !entry.isPresent && kind == null -> stringResource(R.string.status_row_not_installed)
         kind == AppKind.USER_INSTALLED && source != null -> {
-            val sourceWarned = AppWarning.NOT_FROM_PLAY in entry.warnings || AppWarning.UNKNOWN_SOURCE in entry.warnings
             val date = entry.firstInstallTime?.takeIf { it > 0 }?.let { formatDateTime(it.toLocalDateTime()) }
-            val base = if (date != null) {
+            if (date != null) {
                 stringResource(R.string.status_row_source_date, stringResource(source.labelRes()), date)
             } else {
                 stringResource(source.labelRes())
             }
-            val debug = AppWarning.DEBUG_SIGNATURE in entry.warnings
-            val withDebug = if (debug) {
-                stringResource(R.string.status_row_source_date, base, stringResource(R.string.warning_debug_signature))
-            } else {
-                base
-            }
-            withDebug to (sourceWarned || debug)
         }
-        kind != null -> stringResource(kind.labelRes()) to false
-        else -> null to false
+        kind != null -> stringResource(kind.labelRes())
+        else -> null
     }
     if (text != null) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (warn) FontWeight.Bold else FontWeight.Normal,
-            color = if (warn) colors.warning else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text(text = text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
-/** 「再インストール」「署名変更」の印と短い説明。 */
+/** 警告の札（トップ・アプリの詳細と同じ見た目）と、再インストール・署名の変更を見つけた日。確認状態は印で出しているので札にしない。 */
 @Composable
-private fun RecordedWarnings(entry: AppStatusEntry) {
-    val reinstalledAt = entry.reinstalledAt?.takeIf { AppWarning.REINSTALLED in entry.warnings }
-    val signatureAt = entry.signatureChangedAt?.takeIf { AppWarning.SIGNATURE_CHANGED in entry.warnings }
-    if (reinstalledAt != null) {
-        WarningBadgeLine(
-            badge = stringResource(R.string.badge_reinstalled),
-            detail = stringResource(R.string.status_reinstalled_at, formatShortDate(reinstalledAt.toLocalDateTime())),
-        )
-    }
-    if (signatureAt != null) {
-        WarningBadgeLine(
-            badge = stringResource(R.string.badge_signature_changed),
-            detail = stringResource(R.string.status_signature_changed_at, formatShortDate(signatureAt.toLocalDateTime())),
-        )
-    }
-}
-
-@Composable
-private fun WarningBadgeLine(badge: String, detail: String) {
-    val colors = AppWatchTheme.colors
-    Row(
-        modifier = Modifier.padding(top = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun RowWarnings(entry: AppStatusEntry) {
+    val reasons = ReviewReason.of(entry.warnings, entry.status, includeCaution = false)
+    if (reasons.isEmpty()) return
+    FlowRow(
+        modifier = Modifier.padding(top = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = badge,
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .background(colors.warningStrong)
-                .padding(horizontal = 6.dp, vertical = 1.dp),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = colors.onDanger,
-        )
-        Text(text = detail, style = MaterialTheme.typography.bodySmall, color = colors.warning)
+        reasons.forEach { reason ->
+            ReasonChip(reason)
+            // 見つけた日は、その札のすぐ後に出す
+            val date = when (reason) {
+                ReviewReason.REINSTALLED -> entry.reinstalledAt?.let {
+                    stringResource(R.string.status_reinstalled_at, formatShortDate(it.toLocalDateTime()))
+                }
+                ReviewReason.SIGNATURE_CHANGED -> entry.signatureChangedAt?.let {
+                    stringResource(R.string.status_signature_changed_at, formatShortDate(it.toLocalDateTime()))
+                }
+                else -> null
+            }
+            if (date != null) {
+                Text(text = date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
 

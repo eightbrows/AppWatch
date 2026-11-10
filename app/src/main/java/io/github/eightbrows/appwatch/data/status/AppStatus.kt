@@ -4,6 +4,7 @@ import io.github.eightbrows.appwatch.data.record.PolicyState
 import io.github.eightbrows.appwatch.data.record.StatusChangeReason
 import io.github.eightbrows.appwatch.data.record.TrackedApp
 import io.github.eightbrows.appwatch.model.AppKind
+import io.github.eightbrows.appwatch.model.AppSearch
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.ReviewStatus
@@ -195,11 +196,8 @@ object AppStatusRules {
         }
 
     /** 検索：アプリ名・パッケージ名の部分一致（大文字・小文字を区別しない）。空なら全部。 */
-    fun matchesQuery(entry: AppStatusEntry, query: String): Boolean {
-        val q = query.trim()
-        if (q.isEmpty()) return true
-        return entry.name.contains(q, ignoreCase = true) || entry.packageName.contains(q, ignoreCase = true)
-    }
+    fun matchesQuery(entry: AppStatusEntry, query: String): Boolean =
+        AppSearch.matches(entry.name, entry.packageName, query)
 
     /** 並び：要注意 → 未確認 → 問題なし、同じ中はアプリ名の順。 */
     val ORDER: Comparator<AppStatusEntry> = compareBy<AppStatusEntry> {

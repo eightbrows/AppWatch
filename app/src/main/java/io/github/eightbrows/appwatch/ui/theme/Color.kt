@@ -23,6 +23,10 @@ internal val DarkOutline = Color(0xFF5A5650)
 internal val DarkOutlineVariant = Color(0xFF34322F)
 internal val DarkPrimary = Color(0xFFA9C4F5)
 
+// 「管理者用」の印。ダークでも同じ黄色にして目立たせる
+private val AdminBadgeYellow = Color(0xFFFFD54F)
+private val OnAdminBadge = Color(0xFF1C1B1A)
+
 /** Material 3 の色の組にない、このアプリ用の色。 */
 @Immutable
 data class AppWatchColors(
@@ -36,8 +40,13 @@ data class AppWatchColors(
     val warningBorder: Color,
     val warningContainer: Color,
     val onWarningContainer: Color,
-    /** 本アプリの削除警告の丸い印 */
+    /** 強い警告の色 */
     val warningStrong: Color,
+    /** 確認が必要になった理由の札（警告：オレンジ系、要注意：赤系） */
+    val warningChip: Color,
+    val onWarningChip: Color,
+    val dangerChip: Color,
+    val onDangerChip: Color,
     /** 安全な方の操作（本アプリの削除警告の「やめる」） */
     val safeAction: Color,
     val onSafeAction: Color,
@@ -49,7 +58,7 @@ data class AppWatchColors(
     /** 切り替えボタンの背景と、選ばれているもの */
     val segmentTrack: Color,
     val segmentSelected: Color,
-    /** 「管理者用」の印 */
+    /** 「管理者用」の印（ライト・ダークとも黄色の背景に濃い文字） */
     val adminBadge: Color,
     val onAdminBadge: Color,
     /** トップ右上の歯車（薄い色） */
@@ -66,6 +75,10 @@ internal val LightAppWatchColors = AppWatchColors(
     warningContainer = Color(0xFFFFF3E5),
     onWarningContainer = Color(0xFF8A4300),
     warningStrong = Color(0xFFB8480F),
+    warningChip = Color(0xFFFFDDB8),
+    onWarningChip = Color(0xFF6B3300),
+    dangerChip = Color(0xFFFAD4D0),
+    onDangerChip = Color(0xFF8C1D18),
     safeAction = Color(0xFF1F4FAE),
     onSafeAction = Color(0xFFFFFFFF),
     ok = Color(0xFF2E7D32),
@@ -73,8 +86,8 @@ internal val LightAppWatchColors = AppWatchColors(
     unconfirmed = Color(0xFF8A867F),
     segmentTrack = Color(0xFFE8E5DF),
     segmentSelected = Color(0xFFFFFFFF),
-    adminBadge = Color(0xFF4A4F55),
-    onAdminBadge = Color(0xFFFFFFFF),
+    adminBadge = AdminBadgeYellow,
+    onAdminBadge = OnAdminBadge,
     subtleIcon = Color(0xFF9E9A94),
 )
 
@@ -88,6 +101,10 @@ internal val DarkAppWatchColors = AppWatchColors(
     warningContainer = Color(0xFF3A2A1A),
     onWarningContainer = Color(0xFFF6C38F),
     warningStrong = Color(0xFFC75A1E),
+    warningChip = Color(0xFF5C3A12),
+    onWarningChip = Color(0xFFFFD9AE),
+    dangerChip = Color(0xFF6B1F1A),
+    onDangerChip = Color(0xFFFFDAD5),
     safeAction = Color(0xFF9DBBF2),
     onSafeAction = Color(0xFF0B1F44),
     ok = Color(0xFF81C784),
@@ -95,7 +112,7 @@ internal val DarkAppWatchColors = AppWatchColors(
     unconfirmed = Color(0xFF9A958E),
     segmentTrack = Color(0xFF2F2D2B),
     segmentSelected = Color(0xFF4A4744),
-    adminBadge = Color(0xFF5A6068),
-    onAdminBadge = Color(0xFFFFFFFF),
+    adminBadge = AdminBadgeYellow,
+    onAdminBadge = OnAdminBadge,
     subtleIcon = Color(0xFF77736D),
 )

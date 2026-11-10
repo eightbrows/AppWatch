@@ -11,6 +11,7 @@ import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.PermissionState
+import io.github.eightbrows.appwatch.model.ReviewReason
 import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.data.status.FilterChip
 import java.time.Instant
@@ -29,6 +30,16 @@ fun AppWarning.labelRes(): Int = when (this) {
     AppWarning.DEBUG_SIGNATURE -> R.string.warning_debug_signature
     AppWarning.SIGNATURE_CHANGED -> R.string.warning_signature_changed
     AppWarning.REINSTALLED -> R.string.warning_reinstalled
+}
+
+@StringRes
+fun ReviewReason.labelRes(): Int = when (this) {
+    ReviewReason.CAUTION -> R.string.reason_caution
+    ReviewReason.REINSTALLED -> R.string.reason_reinstalled
+    ReviewReason.SIGNATURE_CHANGED -> R.string.reason_signature_changed
+    ReviewReason.DEBUG_SIGNATURE -> R.string.reason_debug_signature
+    ReviewReason.NOT_FROM_PLAY -> R.string.reason_not_from_play
+    ReviewReason.UNKNOWN_SOURCE -> R.string.reason_unknown_source
 }
 
 @StringRes

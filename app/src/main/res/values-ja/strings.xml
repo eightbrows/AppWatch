@@ -20,6 +20,7 @@
     <string name="top_unconfirmed_apps">まだ確認していないアプリ</string>
     <string name="top_all_apps">すべてのアプリ</string>
     <string name="top_nothing_to_review">確認が必要なアプリはありません</string>
+    <string name="top_search_empty">当てはまるアプリはありません</string>
     <string name="top_open_settings">設定（長押しで開きます）</string>
     <string name="top_open_settings_action">設定を開く</string>
     <string name="top_loading">アプリの一覧を取得しています</string>
@@ -31,7 +32,6 @@
     <string name="app_added_at_with_source">%1$s に追加 ・ %2$s</string>
     <string name="app_self_label">本アプリ</string>
     <string name="app_disabled_label">無効</string>
-    <string name="app_previously_deleted">以前に削除したアプリです</string>
     <string name="app_admin_memo">管理者メモ</string>
     <string name="action_delete_app">削除する</string>
     <string name="action_details">詳しく</string>
@@ -60,9 +60,17 @@
     <string name="warning_debug_signature">開発用の署名のアプリです</string>
     <string name="warning_signature_changed">署名が変わりました</string>
     <string name="warning_reinstalled">以前に削除したアプリです</string>
+    <!-- 確認が必要になった理由の札（トップ・アプリの詳細・確認状態の画面） -->
+    <string name="reason_caution">要注意</string>
+    <string name="reason_reinstalled">以前に削除したアプリ</string>
+    <string name="reason_signature_changed">署名が変わった</string>
+    <string name="reason_debug_signature">開発用の署名</string>
+    <string name="reason_not_from_play">Google Play 以外から入った</string>
+    <string name="reason_unknown_source">入手元が分からない</string>
 
     <!-- 入手元 -->
-    <string name="source_google_play">Google Play</string>
+    <!-- 「Google」と「Play」の間で折り返さない -->
+    <string name="source_google_play">Google\u00A0Play</string>
     <string name="source_other">Google Play 以外</string>
     <string name="source_unknown">入手元が分からない</string>
 
@@ -292,8 +300,6 @@
     <string name="status_row_removed">端末にありません（%1$s に削除）</string>
     <string name="status_row_not_installed">端末に入っていません</string>
     <string name="status_row_memo">管理者メモ：%1$s</string>
-    <string name="badge_reinstalled">再インストール</string>
-    <string name="badge_signature_changed">署名変更</string>
     <string name="status_reinstalled_at">%1$s に再検出</string>
     <string name="status_signature_changed_at">%1$s に検出</string>
     <!-- お知らせ（「元に戻す」付き） -->
@@ -334,7 +340,6 @@
     <string name="detail_history">これまでの経緯</string>
     <string name="detail_history_empty">記録はまだありません</string>
     <string name="detail_save">保存</string>
-    <string name="detail_uninstall">アンインストール</string>
     <string name="detail_discard_title">変更を保存しないで戻りますか？</string>
     <string name="detail_discard_body">確認の状態と管理者メモの変更は保存されません。</string>
     <string name="detail_discard_confirm">保存しないで戻る</string>

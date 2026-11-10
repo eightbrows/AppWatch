@@ -10,7 +10,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.record.CheckState
 import io.github.eightbrows.appwatch.data.settings.StartDestination
@@ -29,12 +28,12 @@ import io.github.eightbrows.appwatch.ui.settings.SettingsDestination
 import io.github.eightbrows.appwatch.ui.settings.SettingsMenuRoute
 import io.github.eightbrows.appwatch.ui.setup.SetupController
 import io.github.eightbrows.appwatch.ui.setup.SetupScreen
-import io.github.eightbrows.appwatch.ui.status.AdminAppDetailRoute
+import io.github.eightbrows.appwatch.ui.status.AppDetailRoute
+import io.github.eightbrows.appwatch.ui.status.DetailViewer
 import io.github.eightbrows.appwatch.ui.status.AppStatusController
 import io.github.eightbrows.appwatch.ui.status.AppStatusRoute
 import io.github.eightbrows.appwatch.ui.status.PreRegisterRoute
 import io.github.eightbrows.appwatch.ui.status.SharedText
-import io.github.eightbrows.appwatch.ui.status.UserAppDetailRoute
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.data.status.AppStatusEntry
 import io.github.eightbrows.appwatch.data.system.UninstallEvent
@@ -188,6 +187,10 @@ fun AppWatchApp(
     val requestDelete: (AppStatusEntry) -> Unit = { entry ->
         deleteTarget = DeleteTarget(entry.packageName, entry.name, entry.versionName, entry.warnings, entry.isSelf)
     }
+    val openAppInfo: (AppStatusEntry) -> Unit = { entry ->
+        onOpenSystemScreen()
+        AppActions.openAppInfo(context, entry.packageName)
+    }
 
     val screen = navigator.current
     stateHolder.SaveableStateProvider(screen.name) {
@@ -226,15 +229,13 @@ fun AppWatchApp(
                 if (packageName == null) {
                     LaunchedEffect(Unit) { goBack() }
                 } else {
-                    AdminAppDetailRoute(
+                    AppDetailRoute(
                         controller = statusController,
                         packageName = packageName,
+                        viewer = DetailViewer.HELPER,
                         onBack = goBack,
-                        onUninstall = requestDelete,
-                        onOpenAppInfo = { entry ->
-                            onOpenSystemScreen()
-                            AppActions.openAppInfo(context, entry.packageName)
-                        },
+                        onDelete = requestDelete,
+                        onOpenAppInfo = openAppInfo,
                     )
                 }
             }
@@ -256,15 +257,14 @@ fun AppWatchApp(
                 if (packageName == null) {
                     LaunchedEffect(Unit) { goBack() }
                 } else {
-                    UserAppDetailRoute(
+                    // トップから開くアプリの詳細：管理者用と同じ形で、見るだけ
+                    AppDetailRoute(
                         controller = statusController,
                         packageName = packageName,
+                        viewer = DetailViewer.PERSON,
                         onBack = goBack,
-                        onUninstall = requestDelete,
-                        onOpenAppInfo = { entry ->
-                            onOpenSystemScreen()
-                            AppActions.openAppInfo(context, entry.packageName)
-                        },
+                        onDelete = requestDelete,
+                        onOpenAppInfo = openAppInfo,
                     )
                 }
             }
@@ -304,7 +304,7 @@ fun AppWatchApp(
                     lastCheckAt = lastCheckAt,
                     actions = TopActions(
                         onOpenSettings = { navigator.navigate(Screen.SETTINGS_MENU) },
-                        onUninstall = { app ->
+                        onDelete = { app ->
                             deleteTarget = DeleteTarget(app.packageName, app.name, app.versionName, app.warnings, app.isSelf)
                         },
                         onOpenAppInfo = { app ->

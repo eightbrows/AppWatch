@@ -70,33 +70,56 @@ import io.github.eightbrows.appwatch.data.status.AppStatusEntry
 import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.ui.components.AdminTopBar
+import io.github.eightbrows.appwatch.ui.components.ScreenTopBar
+import io.github.eightbrows.appwatch.ui.components.StatusMark
 import io.github.eightbrows.appwatch.ui.components.ViewingBand
 import io.github.eightbrows.appwatch.ui.components.ViewingFooter
 import io.github.eightbrows.appwatch.ui.components.AppIcon
+import io.github.eightbrows.appwatch.ui.components.ReasonChips
+import io.github.eightbrows.appwatch.model.AppSearch
+import io.github.eightbrows.appwatch.model.ReviewReason
 import io.github.eightbrows.appwatch.ui.components.formatDateTime
 import io.github.eightbrows.appwatch.ui.components.formatShortDate
 import io.github.eightbrows.appwatch.ui.components.labelRes
 import io.github.eightbrows.appwatch.ui.components.toLocalDateTime
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 
+/** アプリの詳細を見る人。 */
+enum class DetailViewer {
+    /** 管理者（設定メニューから）。確認状態・管理者メモを編集できる。選択中のデータを見る */
+    HELPER,
+
+    /** 本人（トップから）。見るだけ。いつもこの端末のデータを見る */
+    PERSON,
+}
+
 /**
- * アプリの詳細（管理者）。画面サンプル 07_app_detail_admin.png。本人用の詳細（03）と同じ形で、確認状態と管理者メモを編集できる。
- * 「保存」で前の画面に戻り、そこで「元に戻す」付きのお知らせを出す。保存しないで戻るときは確認を出す。
+ * アプリの詳細。画面サンプル 07_app_detail_admin.png。本人用と管理者用で同じ部品・同じ並びを使う。
+ * - 管理者用：確認状態と管理者メモを編集できる。「保存」で前の画面に戻り、そこで「元に戻す」付きのお知らせを出す。
+ *   保存しないで戻るときは確認を出す。取り込んだデータを見ているときは見るだけ。
+ * - 本人用：確認状態・管理者メモは見るだけ（「（管理者が設定）」を添える）。下部は「Android のアプリ情報」と「削除する」だけ。
+ *   「管理者用」の印は出さない。削除して戻ってきたら、チェックで端末から消えたのが分かった時点でトップへ戻る。
+ * 「削除する」は、削除の確認を出してから Android の削除の確認に進む。
  */
 @Composable
-fun AdminAppDetailRoute(
+fun AppDetailRoute(
     controller: AppStatusController,
     packageName: String,
+    viewer: DetailViewer,
     onBack: () -> Unit,
-    /** Android のアンインストール画面を開く（本アプリなら先に削除警告を出す） */
-    onUninstall: (AppStatusEntry) -> Unit,
+    /** 削除の確認を出す */
+    onDelete: (AppStatusEntry) -> Unit,
     onOpenAppInfo: (AppStatusEntry) -> Unit,
 ) {
-    val detail by remember(packageName) { controller.detail(packageName) }.collectAsState(initial = null)
+    val forHelper = viewer == DetailViewer.HELPER
+    val detail by remember(packageName, viewer) {
+        if (forHelper) controller.detail(packageName) else controller.localDetail(packageName)
+    }.collectAsState(initial = null)
     val selection by remember { controller.selection }.collectAsState(initial = null)
-    // 取り込んだデータを見ているときは、見るだけ（保存・アプリ情報・アンインストール・登録の解除を出さない）
-    val viewing = selection?.isViewingImported == true
+    // 取り込んだデータを見ているときは、見るだけ（保存・アプリ情報・削除・登録の解除を出さない）
+    val viewing = forHelper && selection?.isViewingImported == true
+    // 確認状態・管理者メモを編集できるか（管理者が、この端末のデータを見ているとき）
+    val editable = forHelper && !viewing
     val entry = detail?.entry
 
     // 編集中の値（画面の回転でも消えないように保存する）。読み込んだ最初の1回だけ、保存されている値を入れる
@@ -114,8 +137,13 @@ fun AdminAppDetailRoute(
             initialized = true
         }
     }
+    // 本人用：「削除する」を押したか。戻ってきてチェックで端末から消えたのが分かったら、トップへ戻る
+    var deleteRequested by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(detail, deleteRequested) {
+        if (!forHelper && deleteRequested && detail != null && entry?.isPresent != true) onBack()
+    }
 
-    val isDirty = entry != null && initialized && (
+    val isDirty = editable && entry != null && initialized && (
         status != entry.status ||
             memo.trim() != entry.adminMemo.orEmpty() ||
             (pressedOk && status == ReviewStatus.OK && entry.hasRecordedWarnings)
@@ -129,7 +157,7 @@ fun AdminAppDetailRoute(
             .background(MaterialTheme.colorScheme.background)
             .imePadding(),
     ) {
-        AdminTopBar(title = stringResource(R.string.detail_title), onBack = tryBack)
+        ScreenTopBar(title = stringResource(R.string.detail_title), onBack = tryBack, showAdminBadge = forHelper)
         val current = detail
         if (current == null || entry == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -144,40 +172,40 @@ fun AdminAppDetailRoute(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            selection?.let { ViewingBand(it) }
+            if (forHelper) selection?.let { ViewingBand(it) }
             Header(entry, loadIcon = !viewing)
             WarningBox(entry, current.events)
             SectionLabel(stringResource(R.string.detail_status))
-            if (viewing) {
-                // 取り込んだデータは見るだけ：選ばれた確認状態と管理者メモだけを示す（本人用の詳細と同じ形）
-                StatusView(entry.status, showsByAdmin = false)
-                SectionLabel(stringResource(R.string.app_admin_memo))
-                MemoView(entry.adminMemo?.takeIf { it.isNotBlank() } ?: stringResource(R.string.detail_memo_none))
-                SectionLabel(stringResource(R.string.detail_history))
-                History(current.events)
-                return@Column
+            if (editable) {
+                StatusButtons(
+                    selected = status,
+                    onSelect = {
+                        status = it
+                        if (it == ReviewStatus.OK) pressedOk = true
+                    },
+                )
+            } else {
+                // 見るだけ：本人には「（管理者が設定）」を添える。取り込んだデータは選ばれた確認状態だけを示す
+                StatusView(entry.status, showsByAdmin = !forHelper)
             }
-            StatusButtons(
-                selected = status,
-                onSelect = {
-                    status = it
-                    if (it == ReviewStatus.OK) pressedOk = true
-                },
-            )
             SectionLabel(stringResource(R.string.app_admin_memo))
-            OutlinedTextField(
-                value = memo,
-                onValueChange = { memo = it },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 2,
-                textStyle = MaterialTheme.typography.bodyLarge,
-                placeholder = { Text(stringResource(R.string.detail_memo_hint)) },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
+            if (editable) {
+                OutlinedTextField(
+                    value = memo,
+                    onValueChange = { memo = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    placeholder = { Text(stringResource(R.string.detail_memo_hint)) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                )
+            } else {
+                MemoView(entry.adminMemo?.takeIf { it.isNotBlank() } ?: stringResource(R.string.detail_memo_none))
+            }
             SectionLabel(stringResource(R.string.detail_history))
             History(current.events)
         }
@@ -187,13 +215,17 @@ fun AdminAppDetailRoute(
         }
         BottomButtons(
             entry = entry,
+            viewer = viewer,
             canSave = isDirty,
             onSave = {
                 controller.saveDetail(entry, status, memo)
                 onBack()
             },
             onOpenAppInfo = { onOpenAppInfo(entry) },
-            onUninstall = { onUninstall(entry) },
+            onDelete = {
+                deleteRequested = true
+                onDelete(entry)
+            },
             onUnregister = { confirmUnregister = true },
         )
     }
@@ -289,7 +321,7 @@ internal fun Header(entry: AppStatusEntry, loadIcon: Boolean = true) {
                 kind != null -> DetailText(stringResource(kind.labelRes()))
             }
             Text(
-                text = entry.packageName,
+                text = AppSearch.breakablePackageName(entry.packageName),
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = FontFamily.Monospace,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -319,45 +351,53 @@ internal fun AbsentMark(name: String, size: Dp = 56.dp) {
     }
 }
 
-/** 警告の欄。要注意は赤、それ以外で警告があれば橙。 */
+/**
+ * 警告の欄。理由はトップ・確認状態の画面と同じ札で出し、再インストール・署名の変更は日付の説明を添える。
+ * 要注意は赤、それ以外で警告があれば橙の枠。
+ */
 @Composable
 internal fun WarningBox(entry: AppStatusEntry, events: List<AppChange>) {
     val colors = AppWatchTheme.colors
     val isCaution = entry.status == ReviewStatus.CAUTION
     if (!isCaution && entry.warnings.isEmpty()) return
-    val container = if (isCaution) colors.dangerContainer else colors.warningContainer
-    val content = if (isCaution) colors.onDangerContainer else colors.onWarningContainer
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(container)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+    val accent = if (isCaution) colors.danger else colors.warning
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.5.dp, if (isCaution) colors.danger else colors.warningBorder),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(painterResource(R.drawable.ic_warning), contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = stringResource(if (isCaution) R.string.detail_caution_title else R.string.detail_warning_title),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = content,
-            )
-        }
-        entry.warnings.sortedBy { it.ordinal }.forEach { warning ->
-            Text(
-                text = stringResource(R.string.detail_warning_item, warningText(warning, entry, events)),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(painterResource(R.drawable.ic_warning), contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stringResource(if (isCaution) R.string.detail_caution_title else R.string.detail_warning_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = accent,
+                )
+            }
+            ReasonChips(ReviewReason.of(entry.warnings, entry.status))
+            // 札と同じ順（以前に削除 → 署名の変更）
+            listOf(AppWarning.REINSTALLED, AppWarning.SIGNATURE_CHANGED).filter { it in entry.warnings }.forEach { warning ->
+                val text = datedWarningText(warning, entry, events) ?: return@forEach
+                Text(
+                    text = stringResource(R.string.detail_warning_item, text),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
     }
 }
 
-/** 警告の説明。再インストールは削除した日と入れ直した日、署名の変更は見つけた日を付ける。 */
+/** 日付の分かる警告の説明。再インストールは削除した日と入れ直した日、署名の変更は見つけた日。それ以外は null（札だけ）。 */
 @Composable
-private fun warningText(warning: AppWarning, entry: AppStatusEntry, events: List<AppChange>): String {
+private fun datedWarningText(warning: AppWarning, entry: AppStatusEntry, events: List<AppChange>): String? {
     val reinstalledAt = entry.reinstalledAt
     val signatureAt = entry.signatureChangedAt
     return when {
@@ -372,7 +412,7 @@ private fun warningText(warning: AppWarning, entry: AppStatusEntry, events: List
         }
         warning == AppWarning.SIGNATURE_CHANGED && signatureAt != null ->
             stringResource(R.string.detail_signature_changed_date, formatShortDate(signatureAt.toLocalDateTime()))
-        else -> stringResource(warning.labelRes())
+        else -> null
     }
 }
 
@@ -492,17 +532,24 @@ private fun historyText(event: AppChange, all: List<AppChange>): String = when (
     )
 }
 
-/** 下部の「保存」「Android のアプリ情報」「アンインストール」。端末にないアプリは、アプリ情報とアンインストールを押せない。 */
+/**
+ * 下部のボタン。
+ * - 管理者用：「保存」「Android のアプリ情報」「削除する」。端末にないアプリは、アプリ情報と削除を押せない。
+ *   端末にない登録済みのアプリは、アプリ情報と削除の代わりに「登録を解除」。
+ * - 本人用：「Android のアプリ情報」と「削除する」だけ。「削除する」は後から導入のアプリだけに出す。
+ */
 @Composable
 private fun BottomButtons(
     entry: AppStatusEntry,
+    viewer: DetailViewer,
     canSave: Boolean,
     onSave: () -> Unit,
     onOpenAppInfo: () -> Unit,
-    onUninstall: () -> Unit,
+    onDelete: () -> Unit,
     onUnregister: () -> Unit,
 ) {
     val colors = AppWatchTheme.colors
+    val forHelper = viewer == DetailViewer.HELPER
     Column {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Column(
@@ -512,18 +559,19 @@ private fun BottomButtons(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Button(
-                onClick = onSave,
-                enabled = canSave,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Text(stringResource(R.string.detail_save), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            if (forHelper) {
+                Button(
+                    onClick = onSave,
+                    enabled = canSave,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text(stringResource(R.string.detail_save), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
             }
-            // 端末にない登録済みのアプリは、アプリ情報・アンインストールの代わりに「登録を解除」
-            if (entry.isPreRegistered && !entry.isPresent) {
+            if (forHelper && entry.isPreRegistered && !entry.isPresent) {
                 OutlinedButton(
                     onClick = onUnregister,
                     modifier = Modifier
@@ -537,6 +585,10 @@ private fun BottomButtons(
                 }
                 return@Column
             }
+            // 削除できるのは後から導入したアプリだけ（プリインストール・システムは Android のアプリ情報から）
+            val canDelete = entry.isPresent && entry.kind == AppKind.USER_INSTALLED
+            // 本人用は、削除できないアプリでは「削除する」を出さない（管理者用は押せない形で出す）
+            val showDelete = forHelper || canDelete
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = onOpenAppInfo,
@@ -556,31 +608,80 @@ private fun BottomButtons(
                         textAlign = TextAlign.Center,
                     )
                 }
-                // 削除できるのは後から導入したアプリだけ（プリインストール・システムは Android のアプリ情報から）
-                val canUninstall = entry.isPresent && entry.kind == AppKind.USER_INSTALLED
-                OutlinedButton(
-                    onClick = onUninstall,
-                    enabled = canUninstall,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(
-                        1.dp,
-                        if (canUninstall) colors.danger else MaterialTheme.colorScheme.outlineVariant,
-                    ),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.danger),
-                    contentPadding = PaddingValues(horizontal = 6.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.detail_uninstall),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        textAlign = TextAlign.Center,
-                    )
+                if (showDelete) {
+                    OutlinedButton(
+                        onClick = onDelete,
+                        enabled = canDelete,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(
+                            if (canDelete) 1.5.dp else 1.dp,
+                            if (canDelete) colors.danger else MaterialTheme.colorScheme.outlineVariant,
+                        ),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.danger),
+                        contentPadding = PaddingValues(horizontal = 6.dp),
+                    ) {
+                        Text(
+                            stringResource(R.string.action_delete_app),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+/** 確認の状態（見るだけ）。「未確認」以外は「（管理者が設定）」を添える。 */
+@Composable
+internal fun StatusView(status: ReviewStatus, showsByAdmin: Boolean = true) {
+    val colors = AppWatchTheme.colors
+    val color = when (status) {
+        ReviewStatus.CAUTION -> colors.danger
+        ReviewStatus.OK -> colors.ok
+        ReviewStatus.UNCONFIRMED -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+                .semantics(mergeDescendants = true) {},
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StatusMark(status = status, size = 28.dp)
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = stringResource(status.labelRes()),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = color,
+            )
+            if (showsByAdmin && status != ReviewStatus.UNCONFIRMED) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.detail_status_by_admin),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** 管理者メモ（見るだけ）。本人用と、取り込んだデータを見ているときの管理者用で使う。 */
+@Composable
+internal fun MemoView(memo: String) {
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = memo,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
