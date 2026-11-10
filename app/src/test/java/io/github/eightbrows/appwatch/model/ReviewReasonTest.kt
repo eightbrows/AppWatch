@@ -103,6 +103,31 @@ class ReviewReasonTest {
     }
 
     @Test
+    fun explanation_listsAllSixInFixedOrder_andChecksOnlyTheApplyingOnes() {
+        val items = ReviewReason.explanationItems(listOf(ReviewReason.REINSTALLED, ReviewReason.UNKNOWN_SOURCE))
+        assertEquals(
+            listOf(
+                ReviewReason.NOT_FROM_PLAY,
+                ReviewReason.UNKNOWN_SOURCE,
+                ReviewReason.DEBUG_SIGNATURE,
+                ReviewReason.SIGNATURE_CHANGED,
+                ReviewReason.REINSTALLED,
+                ReviewReason.CAUTION,
+            ),
+            items.map { it.first },
+        )
+        assertEquals(listOf(false, true, false, false, true, false), items.map { it.second })
+        // 要注意だけのアプリ
+        assertEquals(
+            listOf(ReviewReason.CAUTION),
+            ReviewReason.explanationItems(ReviewReason.of(emptySet(), ReviewStatus.CAUTION)).filter { it.second }.map { it.first },
+        )
+        // 当てはまるものがなくても6つ出す
+        assertTrue(ReviewReason.explanationItems(emptyList()).none { it.second })
+        assertEquals(ReviewReason.entries.toSet(), ReviewReason.EXPLANATION_ORDER.toSet())
+    }
+
+    @Test
     fun everyWarning_hasAReason() {
         AppWarning.entries.forEach { warning ->
             assertEquals(1, ReviewReason.of(setOf(warning), ReviewStatus.UNCONFIRMED).size)

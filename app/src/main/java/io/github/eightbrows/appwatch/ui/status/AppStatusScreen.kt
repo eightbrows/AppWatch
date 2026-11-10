@@ -78,11 +78,14 @@ import io.github.eightbrows.appwatch.ui.components.StatusMark
 import io.github.eightbrows.appwatch.ui.components.AppIcon
 import io.github.eightbrows.appwatch.ui.components.AppSearchField
 import io.github.eightbrows.appwatch.ui.components.ReasonChip
+import io.github.eightbrows.appwatch.ui.components.DateForm
+import io.github.eightbrows.appwatch.ui.components.formatDate
+import io.github.eightbrows.appwatch.ui.components.withDaysAgo
+import androidx.compose.ui.text.AnnotatedString
 import io.github.eightbrows.appwatch.model.AppSearch
 import io.github.eightbrows.appwatch.model.ReviewReason
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
-import io.github.eightbrows.appwatch.ui.components.formatDateTime
 import io.github.eightbrows.appwatch.ui.components.formatShortDate
 import io.github.eightbrows.appwatch.ui.components.labelRes
 import io.github.eightbrows.appwatch.ui.components.toLocalDateTime
@@ -581,23 +584,29 @@ private fun SourceLine(entry: AppStatusEntry, withSource: Boolean) {
     val removedAt = entry.removedAt
     val kind = entry.kind
     val source = entry.source
-    val text = when {
+    // 文と、「何日前」を添える日時（添えないときは null）
+    val (text, agoTime) = when {
         !entry.isPresent && removedAt != null ->
-            stringResource(R.string.status_row_removed, formatShortDate(removedAt.toLocalDateTime()))
-        !entry.isPresent && kind == null -> stringResource(R.string.status_row_not_installed)
+            stringResource(R.string.status_row_removed, formatShortDate(removedAt.toLocalDateTime())) to removedAt
+        !entry.isPresent && kind == null -> stringResource(R.string.status_row_not_installed) to null
         kind == AppKind.USER_INSTALLED && source != null -> {
-            val date = entry.firstInstallTime?.takeIf { it > 0 }?.let { formatDateTime(it.toLocalDateTime()) }
+            val installed = entry.firstInstallTime?.takeIf { it > 0 }
+            val date = installed?.let { formatDate(it, DateForm.LIST) }
             when {
-                !withSource -> date
-                date != null -> stringResource(R.string.status_row_source_date, stringResource(source.labelRes()), date)
-                else -> stringResource(source.labelRes())
+                !withSource -> date to installed
+                date != null -> stringResource(R.string.status_row_source_date, stringResource(source.labelRes()), date) to installed
+                else -> stringResource(source.labelRes()) to null
             }
         }
-        kind != null -> stringResource(kind.labelRes())
-        else -> null
+        kind != null -> stringResource(kind.labelRes()) to null
+        else -> null to null
     }
     if (text != null) {
-        Text(text = text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = if (agoTime != null) withDaysAgo(text, agoTime) else AnnotatedString(text),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

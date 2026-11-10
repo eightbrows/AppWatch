@@ -7,8 +7,19 @@
     <string name="common_back">Back</string>
     <string name="admin_badge">For helper</string>
     <!-- 日時の書式（java.time.format.DateTimeFormatter の形式。表示の言語の Locale で使う） -->
-    <string name="format_date_time">MMM d, H:mm</string>
-    <string name="format_date_with_year">MMM d, yyyy</string>
+    <string name="format_date_time">EEE, MMM d, H:mm</string>
+    <string name="format_date_with_year">EEE, MMM d, yyyy</string>
+    <string name="format_list_date_time">EEE, MMM d, H:mm</string>
+    <string name="format_list_date_with_year">EEE, MMM d, yyyy</string>
+    <!-- 日付の「何日前」（暦の日で数える） -->
+    <string name="date_today">today</string>
+    <string name="date_yesterday">yesterday</string>
+    <plurals name="date_days_ago">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <!-- 「22:47 · today」の間で折り返さない（何日前だけが次の行に行かないように） -->
+    <string name="date_with_ago">%1$s\u00A0·\u00A0%2$s</string>
     <plurals name="count_apps">
         <item quantity="one">%1$d app</item>
         <item quantity="other">%1$d apps</item>
@@ -69,6 +80,21 @@
     <string name="reason_debug_signature">Developer signature</string>
     <string name="reason_not_from_play">Not from Google Play</string>
     <string name="reason_unknown_source">Unknown source</string>
+    <!-- 注意の説明（下から出る画面） -->
+    <string name="reason_more">Why</string>
+    <string name="reason_open_explanation">Open the explanation</string>
+    <string name="reason_sheet_title">Why %1$s needs review</string>
+    <string name="reason_sheet_lead">Checked items apply to this app. If you don\'t know why, please talk to your helper.</string>
+    <string name="reason_sheet_caution_title">Caution (set by your helper)</string>
+    <string name="reason_sheet_close">Close</string>
+    <string name="reason_applies">Applies</string>
+    <string name="reason_not_applies">Doesn\'t apply</string>
+    <string name="reason_desc_not_from_play">This app was installed from somewhere other than the Google Play Store (a website, a file someone sent, and so on).</string>
+    <string name="reason_desc_unknown_source">The phone has no record of where this app was installed from.</string>
+    <string name="reason_desc_debug_signature">This app was built for its makers to test. Apps that are normally handed out almost never are.</string>
+    <string name="reason_desc_signature_changed">The name is the same, but the maker\'s mark has changed. It may have been replaced by an app made by someone else.</string>
+    <string name="reason_desc_reinstalled">An app that was deleted once is on the phone again. Be careful if you didn\'t reinstall it yourself.</string>
+    <string name="reason_desc_caution">Your helper decided this app needs caution. Deleting it is recommended.</string>
 
     <!-- 入手元 -->
     <!-- 「Google」と「Play」の間で折り返さない -->
@@ -107,6 +133,7 @@
     <string name="settings_health_check">Status check</string>
     <string name="health_all_ok">All OK</string>
     <string name="health_needs_attention">Needs attention</string>
+    <string name="health_version">Version %1$s</string>
 
     <string name="settings_section_display">Display</string>
     <string name="settings_theme">Theme</string>
@@ -140,7 +167,7 @@
     <!-- ホーム画面のウィジェット（仕様書 6章） -->
     <string name="widget_description">Shows one important notice, such as apps that need review</string>
     <!-- 日時の書式（ウィジェット用。java.time.format.DateTimeFormatter の形式） -->
-    <string name="format_widget_date_time">M/d H:mm</string>
+    <string name="format_widget_date_time">EEE M/d H:mm</string>
     <string name="widget_last_check">Last check %1$s</string>
     <string name="widget_last_check_none">Last check —</string>
     <!-- 英語の見出しには「|」を入れない（普通の空白で改行してよい。WidgetText.keepWords） -->
@@ -356,8 +383,8 @@
     <string name="detail_discard_body">Changes to the status and the note won\'t be saved.</string>
     <string name="detail_discard_confirm">Don\'t save</string>
     <string name="detail_discard_cancel">Keep editing</string>
-    <string name="format_short_date">M/d</string>
-    <string name="format_short_date_with_year">yyyy/M/d</string>
+    <string name="format_short_date">EEE M/d</string>
+    <string name="format_short_date_with_year">EEE yyyy/M/d</string>
     <!-- これまでの経緯の1行 -->
     <string name="history_added">Added</string>
     <string name="history_reinstalled_same">Reinstalled (same signature)</string>
@@ -566,8 +593,8 @@
     </plurals>
     <string name="imported_no_caution">No Caution</string>
     <string name="imported_device">%1$s · %2$s</string>
-    <string name="imported_times">As of %1$s · imported %2$s</string>
-    <string name="imported_time_short">MM/dd HH:mm</string>
+    <string name="imported_snapshot">As of %1$s</string>
+    <string name="imported_imported_at">Imported %1$s</string>
     <string name="imported_open_status">Status</string>
     <string name="imported_open_history">History</string>
     <string name="imported_more">…</string>

@@ -51,15 +51,15 @@ import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.transfer.ImportOutcome
 import io.github.eightbrows.appwatch.data.transfer.ImportedDataset
 import io.github.eightbrows.appwatch.ui.components.AdminTopBar
-import io.github.eightbrows.appwatch.ui.components.formatSnapshotTime
-import io.github.eightbrows.appwatch.ui.components.toLocalDateTime
+import io.github.eightbrows.appwatch.ui.components.DateForm
+import io.github.eightbrows.appwatch.ui.components.formatDate
+import io.github.eightbrows.appwatch.ui.components.withDaysAgo
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import io.github.eightbrows.appwatch.ui.transfer.ImportFlowDialogs
 import io.github.eightbrows.appwatch.ui.transfer.TransferController
 import io.github.eightbrows.appwatch.ui.transfer.TransferNotice
 import io.github.eightbrows.appwatch.ui.transfer.rememberImportFlow
 import kotlinx.coroutines.launch
-import java.time.format.DateTimeFormatter
 
 /** 取り込んだデータ（12_imported_data.png、仕様書 7章）。設定メニューと、ファイルを開いたときの取り込みの後から開く。 */
 @Composable
@@ -201,8 +201,6 @@ private fun DatasetCard(
     onDelete: () -> Unit,
 ) {
     val colors = AppWatchTheme.colors
-    val shortPattern = stringResource(R.string.imported_time_short)
-    val shortFormatter = remember(shortPattern) { DateTimeFormatter.ofPattern(shortPattern) }
     Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -237,12 +235,14 @@ private fun DatasetCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            // 「時点」と「取り込み」は、それぞれ曜日と何日前を添えて1行ずつ
             Text(
-                text = stringResource(
-                    R.string.imported_times,
-                    formatSnapshotTime(dataset.exportedAt),
-                    dataset.importedAt.toLocalDateTime().format(shortFormatter),
-                ),
+                text = withDaysAgo(stringResource(R.string.imported_snapshot, formatDate(dataset.exportedAt, DateForm.LIST)), dataset.exportedAt),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = withDaysAgo(stringResource(R.string.imported_imported_at, formatDate(dataset.importedAt, DateForm.LIST)), dataset.importedAt),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

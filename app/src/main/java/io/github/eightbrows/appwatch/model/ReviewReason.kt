@@ -38,6 +38,16 @@ enum class ReviewReason(val isCaution: Boolean = false) {
         fun forTop(app: AppSummary): List<ReviewReason> =
             if (app.reviewStatus == ReviewStatus.OK) emptyList() else of(app.warnings, app.reviewStatus, isSelf = app.isSelf)
 
+        /**
+         * 注意の説明（下から出る画面）の並び。札の優先の順とは別に、いつも同じ順で6つを並べる。
+         */
+        val EXPLANATION_ORDER: List<ReviewReason> =
+            listOf(NOT_FROM_PLAY, UNKNOWN_SOURCE, DEBUG_SIGNATURE, SIGNATURE_CHANGED, REINSTALLED, CAUTION)
+
+        /** 注意の説明の6つの行と、それぞれがこのアプリに当てはまるか（[applying] は札に出している理由）。 */
+        fun explanationItems(applying: Collection<ReviewReason>): List<Pair<ReviewReason, Boolean>> =
+            EXPLANATION_ORDER.map { it to (it in applying) }
+
         /** 入手元の札を出すときは、説明の文に入手元を重ねて書かない（日時などだけにする）。 */
         fun hidesSourceText(shown: List<ReviewReason>): Boolean = shown.any { it.isSource }
 

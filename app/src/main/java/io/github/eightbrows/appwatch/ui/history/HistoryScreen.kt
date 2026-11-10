@@ -78,6 +78,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.eightbrows.appwatch.MainActivity
 import io.github.eightbrows.appwatch.R
+import io.github.eightbrows.appwatch.ui.components.DateForm
+import io.github.eightbrows.appwatch.ui.components.formatDate
+import io.github.eightbrows.appwatch.ui.components.withDaysAgo
+import androidx.compose.ui.text.AnnotatedString
 import io.github.eightbrows.appwatch.data.history.DateRange
 import io.github.eightbrows.appwatch.data.history.HistoryEmpty
 import io.github.eightbrows.appwatch.data.history.HistoryKind
@@ -299,9 +303,6 @@ private fun HistoryList(
     onToggleKind: (HistoryKind) -> Unit,
     onOpenDetail: (String) -> Unit,
 ) {
-    val sameYear = result.range.start.year == result.range.end.year
-    val timePattern = stringResource(if (sameYear) R.string.history_row_time else R.string.history_row_time_with_year)
-    val timeFormatter = remember(timePattern) { DateTimeFormatter.ofPattern(timePattern) }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
@@ -321,7 +322,8 @@ private fun HistoryList(
             ChangeRow(
                 change = row,
                 texts = texts,
-                time = Instant.ofEpochMilli(row.occurredAt).atZone(zone).format(timeFormatter),
+                // 行の日時は曜日付き（何日前は ChangeRow で添える）。共有の文字は今までどおり曜日・何日前なし
+                time = formatDate(row.occurredAt, DateForm.LIST),
                 isFirst = index == 0,
                 isLast = index == result.rows.lastIndex,
                 onClick = if (row.type == ChangeType.RESET) null else ({ onOpenDetail(row.packageName) }),
@@ -594,7 +596,7 @@ private fun ChangeRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 if (change.type == ChangeType.RESET) {
                     Text(stringResource(R.string.history_reset_text), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    RowDetail(stringResource(R.string.status_row_source_date, time, stringResource(R.string.history_reset_detail)))
+                    RowDetail(withDaysAgo(stringResource(R.string.status_row_source_date, time, stringResource(R.string.history_reset_detail)), change.occurredAt))
                     return@Column
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically) {
@@ -620,7 +622,10 @@ private fun ChangeRow(
                     else -> null
                 }
                 RowDetail(
-                    text = if (extra != null) stringResource(R.string.status_row_source_date, detected, extra) else detected,
+                    text = withDaysAgo(
+                        if (extra != null) stringResource(R.string.status_row_source_date, detected, extra) else detected,
+                        change.occurredAt,
+                    ),
                     color = if (isSignature) colors.warning else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -631,6 +636,11 @@ private fun ChangeRow(
 
 @Composable
 private fun RowDetail(text: String, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
+    Text(text = text, style = MaterialTheme.typography.bodySmall, color = color)
+}
+
+@Composable
+private fun RowDetail(text: AnnotatedString, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
     Text(text = text, style = MaterialTheme.typography.bodySmall, color = color)
 }
 

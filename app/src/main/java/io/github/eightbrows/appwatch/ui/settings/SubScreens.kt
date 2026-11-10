@@ -34,24 +34,32 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.settings.CheckInterval
-import io.github.eightbrows.appwatch.ui.components.AdminTopBar
-import io.github.eightbrows.appwatch.ui.components.formatDateTime
+import io.github.eightbrows.appwatch.ui.components.ScreenTopBar
+import io.github.eightbrows.appwatch.ui.components.formatDate
+import io.github.eightbrows.appwatch.ui.components.withDaysAgo
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
 
 // 設定メニューから開く画面（動作チェック、ライセンス、後のステップで作る画面の仮の画面）。
 
-/** 設定メニューから開く画面の共通の形（上部の「戻る・題名・管理者用」と、スクロールする中身）。 */
+/**
+ * 設定メニューから開く画面の共通の形（上部の「戻る・題名・管理者用」と、スクロールする中身）。
+ * 動作チェックはトップからも開くので、[showAdminBadge] を false にして「管理者用」の印を出さない。
+ */
 @Composable
-private fun AdminPage(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+private fun AdminPage(
+    title: String,
+    onBack: () -> Unit,
+    showAdminBadge: Boolean = true,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        AdminTopBar(title = title, onBack = onBack)
+        ScreenTopBar(title = title, onBack = onBack, showAdminBadge = showAdminBadge)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -85,7 +93,20 @@ private fun SectionLabel(text: String) {
 
 /** 「項目　値」の1行。 */
 @Composable
-private fun InfoRow(label: String, value: String, valueColor: Color? = null, bold: Boolean = false) {
+private fun InfoRow(label: String, value: String, valueColor: Color? = null, bold: Boolean = false) =
+    InfoRow(label, AnnotatedString(value), valueColor, bold)
+
+/**
+ * [valueWraps] が true なら、項目名を折り返さず、長い値（日時など）の方を右寄せで折り返す。
+ */
+@Composable
+private fun InfoRow(
+    label: String,
+    value: AnnotatedString,
+    valueColor: Color? = null,
+    bold: Boolean = false,
+    valueWraps: Boolean = false,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -96,7 +117,7 @@ private fun InfoRow(label: String, value: String, valueColor: Color? = null, bol
             text = label,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
+            modifier = if (valueWraps) Modifier else Modifier.weight(1f),
         )
         Spacer(Modifier.width(8.dp))
         Text(
@@ -104,6 +125,8 @@ private fun InfoRow(label: String, value: String, valueColor: Color? = null, bol
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             color = valueColor ?: MaterialTheme.colorScheme.onSurface,
+            textAlign = if (valueWraps) TextAlign.End else null,
+            modifier = if (valueWraps) Modifier.weight(1f) else Modifier,
         )
     }
 }
@@ -124,16 +147,19 @@ data class HealthCheckState(
     val checkInterval: CheckInterval,
     val checksInLast7Days: Int,
     val periodicCheckRegistered: Boolean,
+    /** 下部に出すアプリのバージョン */
+    val versionName: String,
 )
 
 /**
  * 動作チェック（仕様書 6章「設定メニュー」）：各設定の状態、最終チェック日時、チェック間隔、直近7日のチェック回数、
  * 定期チェックが登録されているか。判定はウィジェットの「設定の確認が必要です」「停止」と同じ条件。
+ * 設定メニューからもトップからも開く同じ画面で、「管理者用」の印は出さない。下部にアプリのバージョンを出す。
  */
 @Composable
 fun HealthCheckScreen(state: HealthCheckState, onBack: () -> Unit) {
     val colors = AppWatchTheme.colors
-    AdminPage(title = stringResource(R.string.settings_health_check), onBack = onBack) {
+    AdminPage(title = stringResource(R.string.settings_health_check), onBack = onBack, showAdminBadge = false) {
         // 全体の結果
         Text(
             text = stringResource(if (state.allOk) R.string.health_all_ok else R.string.health_needs_attention),
@@ -157,14 +183,14 @@ fun HealthCheckScreen(state: HealthCheckState, onBack: () -> Unit) {
 
         SectionLabel(stringResource(R.string.health_section_check))
         Card {
-            val lastCheck = state.lastCheckAt?.let {
-                formatDateTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()))
-            } ?: stringResource(R.string.health_never_checked)
+            val lastCheck = state.lastCheckAt?.let { withDaysAgo(formatDate(it), it) }
+                ?: AnnotatedString(stringResource(R.string.health_never_checked))
             InfoRow(
                 label = stringResource(R.string.health_last_check),
                 value = lastCheck,
                 valueColor = if (state.stopped) colors.warning else null,
                 bold = state.stopped,
+                valueWraps = true,
             )
             Divider()
             InfoRow(stringResource(R.string.settings_check_interval), stringResource(state.checkInterval.labelRes))
@@ -188,6 +214,15 @@ fun HealthCheckScreen(state: HealthCheckState, onBack: () -> Unit) {
                 color = colors.onWarningContainer,
             )
         }
+        Text(
+            text = stringResource(R.string.health_version, state.versionName),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp, bottom = 8.dp),
+        )
     }
 }
 

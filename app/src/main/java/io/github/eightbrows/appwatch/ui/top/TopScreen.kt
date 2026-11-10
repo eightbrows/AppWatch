@@ -74,6 +74,11 @@ import io.github.eightbrows.appwatch.model.removeAction
 import io.github.eightbrows.appwatch.ui.components.AppIcon
 import io.github.eightbrows.appwatch.ui.components.AppSearchField
 import io.github.eightbrows.appwatch.ui.components.ReasonChips
+import io.github.eightbrows.appwatch.ui.components.ReasonExplanationSheet
+import io.github.eightbrows.appwatch.ui.components.withDaysAgo
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.stateDescription
 import io.github.eightbrows.appwatch.model.ReviewReason
 import io.github.eightbrows.appwatch.ui.components.SegmentedToggle
 import io.github.eightbrows.appwatch.ui.components.StatusMark
@@ -94,6 +99,10 @@ data class TopActions(
     /** アプリの詳細を開く（カード・行を押したとき、「詳しく」） */
     val onShowDetails: (AppSummary) -> Unit,
     val onRetry: () -> Unit,
+    /** 動作チェックの画面を開く（押すだけで開く） */
+    val onOpenHealthCheck: () -> Unit = {},
+    /** 札を押したときに注意の説明を開く（TopScreen の中で決める） */
+    val onExplainReasons: (AppSummary) -> Unit = {},
 )
 
 /**
@@ -108,8 +117,13 @@ fun TopScreen(
     lastCheckAt: LocalDateTime?,
     actions: TopActions,
     modifier: Modifier = Modifier,
+    /** 動作チェックが「確認が必要」か（動作チェックのボタンにオレンジの点を付ける） */
+    healthNeedsAttention: Boolean = false,
 ) {
     var tab by rememberSaveable { mutableStateOf(TopTab.NEEDS_REVIEW) }
+    // 注意の説明を出しているアプリ（パッケージ名）
+    var explainFor by rememberSaveable { mutableStateOf<String?>(null) }
+    val cardActions = remember(actions) { actions.copy(onExplainReasons = { explainFor = it.packageName }) }
     // 検索の文字は保存しない（画面を離れたら空に戻す）
     var query by remember { mutableStateOf("") }
     val shown = remember(lists, query) { lists?.filtered(query) }
@@ -130,7 +144,13 @@ fun TopScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(key = "header") {
-            TopHeader(lastCheckAt = lastCheckAt, isLoading = isLoading, onOpenSettings = actions.onOpenSettings)
+            TopHeader(
+                lastCheckAt = lastCheckAt,
+                isLoading = isLoading,
+                healthNeedsAttention = healthNeedsAttention,
+                onOpenHealthCheck = actions.onOpenHealthCheck,
+                onOpenSettings = actions.onOpenSettings,
+            )
         }
         item(key = "search") {
             AppSearchField(query = query, onQueryChange = { query = it }, modifier = Modifier.fillMaxWidth())
@@ -164,11 +184,21 @@ fun TopScreen(
             else -> {
                 if (loadFailed) item(key = "refresh_failed") { LoadFailed(actions.onRetry) }
                 when (tab) {
-                    TopTab.NEEDS_REVIEW -> needsReviewContent(shown, searching, actions)
-                    TopTab.ALL -> allContent(shown, searching, actions)
+                    TopTab.NEEDS_REVIEW -> needsReviewContent(shown, searching, cardActions)
+                    TopTab.ALL -> allContent(shown, searching, cardActions)
                 }
             }
         }
+    }
+
+    // 札を押したときの注意の説明（トップに出している札と同じ理由にチェック）
+    val explained = explainFor?.let { pkg -> lists?.all?.firstOrNull { it.packageName == pkg } }
+    if (explained != null) {
+        ReasonExplanationSheet(
+            appName = explained.name,
+            applying = ReviewReason.forTop(explained),
+            onDismiss = { explainFor = null },
+        )
     }
 }
 
@@ -221,7 +251,13 @@ private fun LazyListScope.allContent(lists: TopLists, searching: Boolean, action
 }
 
 @Composable
-private fun TopHeader(lastCheckAt: LocalDateTime?, isLoading: Boolean, onOpenSettings: () -> Unit) {
+private fun TopHeader(
+    lastCheckAt: LocalDateTime?,
+    isLoading: Boolean,
+    healthNeedsAttention: Boolean,
+    onOpenHealthCheck: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     Row(verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f)) {
             Text(
@@ -231,8 +267,8 @@ private fun TopHeader(lastCheckAt: LocalDateTime?, isLoading: Boolean, onOpenSet
                 modifier = Modifier.semantics { heading() },
             )
             val status = when {
-                lastCheckAt != null -> stringResource(R.string.top_last_check, formatDateTime(lastCheckAt))
-                isLoading -> stringResource(R.string.top_loading)
+                lastCheckAt != null -> withDaysAgo(stringResource(R.string.top_last_check, formatDateTime(lastCheckAt)), lastCheckAt)
+                isLoading -> AnnotatedString(stringResource(R.string.top_loading))
                 else -> null
             }
             if (status != null) {
@@ -243,7 +279,53 @@ private fun TopHeader(lastCheckAt: LocalDateTime?, isLoading: Boolean, onOpenSet
                 )
             }
         }
+        HealthCheckButton(needsAttention = healthNeedsAttention, onClick = onOpenHealthCheck)
         LongPressSettingsButton(onLongPress = onOpenSettings)
+    }
+}
+
+/**
+ * 動作チェックを開くボタン（歯車の左。押すだけで開く）。盾にチェックの形。
+ * 動作チェックが「確認が必要」のときは、右上に小さなオレンジの点を付ける（読み上げでも状態を伝える）。
+ */
+@Composable
+private fun HealthCheckButton(needsAttention: Boolean, onClick: () -> Unit) {
+    val colors = AppWatchTheme.colors
+    val description = stringResource(R.string.settings_health_check)
+    val state = stringResource(R.string.health_needs_attention)
+    val ringColor = MaterialTheme.colorScheme.background
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics {
+                contentDescription = description
+                if (needsAttention) stateDescription = state
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box {
+            Icon(
+                painter = painterResource(R.drawable.ic_health),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(26.dp),
+            )
+            if (needsAttention) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 3.dp, y = (-2).dp)
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(ringColor)
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .background(colors.warningStrong),
+                )
+            }
+        }
     }
 }
 
@@ -397,7 +479,7 @@ private fun NewAppCard(app: AppSummary, actions: TopActions) {
                 }
             }
 
-            ReasonChips(reasons)
+            ReasonChips(reasons, onClick = { actions.onExplainReasons(app) })
 
             if (isCaution && !app.adminMemo.isNullOrBlank()) {
                 AdminMemoBox(app.adminMemo)
@@ -471,13 +553,14 @@ private fun NameLabel(text: String) {
 }
 
 @Composable
-private fun addedText(app: AppSummary, withSource: Boolean): String {
+private fun addedText(app: AppSummary, withSource: Boolean): AnnotatedString {
     val date = formatDateTime(app.installedAt)
-    return if (withSource) {
+    val text = if (withSource) {
         stringResource(R.string.app_added_at_with_source, date, stringResource(app.source.labelRes()))
     } else {
         stringResource(R.string.app_added_at, date)
     }
+    return withDaysAgo(text, app.installedAt)
 }
 
 @Composable
@@ -581,7 +664,7 @@ private fun AppRow(app: AppSummary, showStatus: Boolean, actions: TopActions) {
                     // プリインストール・システムは追加日時や入手元に意味がないので、種類を出す
                     RowDetail(stringResource(app.kind.labelRes()))
                 }
-                ReasonChips(reasons, Modifier.padding(top = 6.dp))
+                ReasonChips(reasons, Modifier.padding(top = 6.dp), onClick = { actions.onExplainReasons(app) })
             }
             when (app.removeAction) {
                 RemoveAction.UNINSTALL -> RowButton(
@@ -599,6 +682,15 @@ private fun AppRow(app: AppSummary, showStatus: Boolean, actions: TopActions) {
             }
         }
     }
+}
+
+@Composable
+private fun RowDetail(text: AnnotatedString) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

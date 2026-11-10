@@ -94,23 +94,11 @@ fun FilterChip.labelRes(): Int = when (this) {
 /** エポックミリ秒を端末の時間帯の日時にする。 */
 fun Long.toLocalDateTime(): LocalDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
 
-/** 短い日付（今年なら「10/02」、それより前なら「2025/10/02」）。これまでの経緯・警告の説明に使う。 */
+/** 曜日付きの短い日付（今年なら「11/8(土)」、それより前なら「2025/9/3(水)」）。警告の説明の中の日付に使う。 */
 @Composable
 fun formatShortDate(dateTime: LocalDateTime): String {
     val sameYear = dateTime.year == LocalDate.now().year
     val pattern = stringResource(if (sameYear) R.string.format_short_date else R.string.format_short_date_with_year)
-    val formatter = remember(pattern) { DateTimeFormatter.ofPattern(pattern) }
-    return formatter.format(dateTime)
-}
-
-/**
- * 日時を strings.xml の書式で文字にする。
- * 今年なら月日と時刻（format_date_time）、それより前なら年月日（format_date_with_year）。
- */
-@Composable
-fun formatDateTime(dateTime: LocalDateTime): String {
-    val sameYear = dateTime.year == LocalDate.now().year
-    val pattern = stringResource(if (sameYear) R.string.format_date_time else R.string.format_date_with_year)
     val configuration = LocalConfiguration.current
     val formatter = remember(pattern, configuration) {
         val locale = ConfigurationCompat.getLocales(configuration)[0] ?: Locale.getDefault()
@@ -118,3 +106,10 @@ fun formatDateTime(dateTime: LocalDateTime): String {
     }
     return formatter.format(dateTime)
 }
+
+/**
+ * 曜日付きの日時（strings.xml の書式）。
+ * 今年なら月日と時刻（format_date_time）、それより前なら年月日（format_date_with_year）。
+ */
+@Composable
+fun formatDateTime(dateTime: LocalDateTime): String = formatDate(dateTime.toEpochMillis(), DateForm.LONG)

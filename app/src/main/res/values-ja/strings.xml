@@ -6,8 +6,18 @@
     <string name="common_back">戻る</string>
     <string name="admin_badge">管理者用</string>
     <!-- 日時の書式（java.time.format.DateTimeFormatter の形式） -->
-    <string name="format_date_time">M月d日 H:mm</string>
-    <string name="format_date_with_year">yyyy年M月d日</string>
+    <string name="format_date_time">M月d日(E) H:mm</string>
+    <string name="format_date_with_year">yyyy年M月d日(E)</string>
+    <string name="format_list_date_time">M/d(E) H:mm</string>
+    <string name="format_list_date_with_year">yyyy/M/d(E)</string>
+    <!-- 日付の「何日前」（暦の日で数える） -->
+    <string name="date_today">今日</string>
+    <string name="date_yesterday">昨日</string>
+    <plurals name="date_days_ago">
+        <item quantity="other">%d日前</item>
+    </plurals>
+    <!-- 「22:47 ・ 今日」の間で折り返さない（何日前だけが次の行に行かないように） -->
+    <string name="date_with_ago">%1$s\u00A0・\u00A0%2$s</string>
     <plurals name="count_apps">
         <item quantity="other">%1$d件</item>
     </plurals>
@@ -67,6 +77,21 @@
     <string name="reason_debug_signature">開発用の署名</string>
     <string name="reason_not_from_play">Google Play 以外から入った</string>
     <string name="reason_unknown_source">入手元が分からない</string>
+    <!-- 注意の説明（下から出る画面） -->
+    <string name="reason_more">説明</string>
+    <string name="reason_open_explanation">説明を開く</string>
+    <string name="reason_sheet_title">%1$s が確認の対象になった理由</string>
+    <string name="reason_sheet_lead">チェックの付いたものが、このアプリに当てはまります。心当たりがなければ、管理者に相談して下さい。</string>
+    <string name="reason_sheet_caution_title">要注意（管理者が設定）</string>
+    <string name="reason_sheet_close">閉じる</string>
+    <string name="reason_applies">当てはまります</string>
+    <string name="reason_not_applies">当てはまりません</string>
+    <string name="reason_desc_not_from_play">Google Play ストア以外（ウェブサイト・送られてきたファイルなど）から入れたアプリです。</string>
+    <string name="reason_desc_unknown_source">どこから入れたのか、スマートフォンに記録が残っていないアプリです。</string>
+    <string name="reason_desc_debug_signature">アプリを作る人が試すための作り方のアプリです。ふつうに配られているアプリには、まずありません。</string>
+    <string name="reason_desc_signature_changed">名前は同じでも、作った人の印が前と変わりました。別の人が作ったアプリに入れ替わったおそれがあります。</string>
+    <string name="reason_desc_reinstalled">一度削除したアプリが、また入っています。自分で入れ直していなければ注意して下さい。</string>
+    <string name="reason_desc_caution">管理者が「注意が必要」と決めたアプリです。削除をおすすめします。</string>
 
     <!-- 入手元 -->
     <!-- 「Google」と「Play」の間で折り返さない -->
@@ -104,6 +129,7 @@
     <string name="settings_health_check">動作チェック</string>
     <string name="health_all_ok">すべて正常</string>
     <string name="health_needs_attention">確認が必要</string>
+    <string name="health_version">バージョン %1$s</string>
 
     <string name="settings_section_display">表示</string>
     <string name="settings_theme">テーマ</string>
@@ -137,7 +163,7 @@
     <!-- ホーム画面のウィジェット（仕様書 6章） -->
     <string name="widget_description">確認が必要なアプリなど、大事なお知らせを1つ表示します</string>
     <!-- 日時の書式（ウィジェット用。java.time.format.DateTimeFormatter の形式） -->
-    <string name="format_widget_date_time">M/d H:mm</string>
+    <string name="format_widget_date_time">M/d(E) H:mm</string>
     <string name="widget_last_check">最終チェック %1$s</string>
     <string name="widget_last_check_none">最終チェック —</string>
     <!-- ウィジェットの見出しは、2行になるときに言葉の途中で改行しないよう、改行してよい所に「|」を入れる（仕様書 6章）。
@@ -344,8 +370,8 @@
     <string name="detail_discard_body">確認の状態と管理者メモの変更は保存されません。</string>
     <string name="detail_discard_confirm">保存しないで戻る</string>
     <string name="detail_discard_cancel">編集を続ける</string>
-    <string name="format_short_date">M/d</string>
-    <string name="format_short_date_with_year">yyyy/M/d</string>
+    <string name="format_short_date">M/d(E)</string>
+    <string name="format_short_date_with_year">yyyy/M/d(E)</string>
     <!-- これまでの経緯の1行 -->
     <string name="history_added">追加を検出</string>
     <string name="history_reinstalled_same">再インストールを検出（署名は前回と同じ）</string>
@@ -547,8 +573,8 @@
     </plurals>
     <string name="imported_no_caution">要注意なし</string>
     <string name="imported_device">%1$s ・ %2$s</string>
-    <string name="imported_times">%1$s 時点 ・ 取り込み %2$s</string>
-    <string name="imported_time_short">MM/dd HH:mm</string>
+    <string name="imported_snapshot">%1$s 時点</string>
+    <string name="imported_imported_at">取り込み %1$s</string>
     <string name="imported_open_status">確認状態</string>
     <string name="imported_open_history">履歴と比較</string>
     <string name="imported_more">…</string>

@@ -76,9 +76,13 @@ import io.github.eightbrows.appwatch.ui.components.ViewingBand
 import io.github.eightbrows.appwatch.ui.components.ViewingFooter
 import io.github.eightbrows.appwatch.ui.components.AppIcon
 import io.github.eightbrows.appwatch.ui.components.ReasonChips
+import io.github.eightbrows.appwatch.ui.components.ReasonExplanationSheet
+import io.github.eightbrows.appwatch.ui.components.formatDate
+import io.github.eightbrows.appwatch.ui.components.withDaysAgo
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.foundation.clickable
 import io.github.eightbrows.appwatch.model.AppSearch
 import io.github.eightbrows.appwatch.model.ReviewReason
-import io.github.eightbrows.appwatch.ui.components.formatDateTime
 import io.github.eightbrows.appwatch.ui.components.formatShortDate
 import io.github.eightbrows.appwatch.ui.components.labelRes
 import io.github.eightbrows.appwatch.ui.components.toLocalDateTime
@@ -130,6 +134,8 @@ fun AppDetailRoute(
     var pressedOk by rememberSaveable { mutableStateOf(false) }
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var confirmUnregister by rememberSaveable { mutableStateOf(false) }
+    // 注意の説明（下から出る画面）を出しているか
+    var showExplanation by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(entry) {
         if (!initialized && entry != null) {
             status = entry.status
@@ -174,7 +180,7 @@ fun AppDetailRoute(
         ) {
             if (forHelper) selection?.let { ViewingBand(it) }
             Header(entry, loadIcon = !viewing)
-            WarningBox(entry, current.events)
+            WarningBox(entry, current.events, onExplain = { showExplanation = true })
             SectionLabel(stringResource(R.string.detail_status))
             if (editable) {
                 StatusButtons(
@@ -227,6 +233,14 @@ fun AppDetailRoute(
                 onDelete(entry)
             },
             onUnregister = { confirmUnregister = true },
+        )
+    }
+
+    if (showExplanation && entry != null) {
+        ReasonExplanationSheet(
+            appName = entry.name,
+            applying = ReviewReason.of(entry.warnings, entry.status, isSelf = entry.isSelf),
+            onDismiss = { showExplanation = false },
         )
     }
 
@@ -308,7 +322,7 @@ internal fun Header(entry: AppStatusEntry, loadIcon: Boolean = true) {
             val removedAt = entry.removedAt
             when {
                 !entry.isPresent && removedAt != null ->
-                    DetailText(stringResource(R.string.status_row_removed, formatShortDate(removedAt.toLocalDateTime())))
+                    DetailText(withDaysAgo(stringResource(R.string.status_row_removed, formatShortDate(removedAt.toLocalDateTime())), removedAt))
                 !entry.isPresent && entry.kind == null -> DetailText(stringResource(R.string.status_row_not_installed))
             }
             val kind = entry.kind
@@ -316,7 +330,7 @@ internal fun Header(entry: AppStatusEntry, loadIcon: Boolean = true) {
             val installed = entry.firstInstallTime?.takeIf { it > 0 }
             when {
                 kind == AppKind.USER_INSTALLED && source != null && installed != null -> DetailText(
-                    stringResource(R.string.detail_installed, stringResource(source.labelRes()), formatDateTime(installed.toLocalDateTime())),
+                    withDaysAgo(stringResource(R.string.detail_installed, stringResource(source.labelRes()), formatDate(installed)), installed),
                 )
                 kind != null -> DetailText(stringResource(kind.labelRes()))
             }
@@ -328,6 +342,11 @@ internal fun Header(entry: AppStatusEntry, loadIcon: Boolean = true) {
             )
         }
     }
+}
+
+@Composable
+internal fun DetailText(text: AnnotatedString) {
+    Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
@@ -354,19 +373,24 @@ internal fun AbsentMark(name: String, size: Dp = 56.dp) {
 /**
  * 警告の欄。理由はトップ・確認状態の画面と同じ札で出し、再インストール・署名の変更は日付の説明を添える。
  * 要注意は赤、それ以外で警告があれば橙の枠。本アプリ自身には警告の札を出さないので、要注意でなければ欄ごと出さない。
+ * 見出しの右に「説明 ›」を出し、欄のどこを押しても注意の説明（[onExplain]）を開く。
  */
 @Composable
-internal fun WarningBox(entry: AppStatusEntry, events: List<AppChange>) {
+internal fun WarningBox(entry: AppStatusEntry, events: List<AppChange>, onExplain: () -> Unit) {
     val colors = AppWatchTheme.colors
     val isCaution = entry.status == ReviewStatus.CAUTION
     val reasons = ReviewReason.of(entry.warnings, entry.status, isSelf = entry.isSelf)
     if (reasons.isEmpty()) return
     val accent = if (isCaution) colors.danger else colors.warning
+    val clickLabel = stringResource(R.string.reason_open_explanation)
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.5.dp, if (isCaution) colors.danger else colors.warningBorder),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(onClickLabel = clickLabel, role = Role.Button, onClick = onExplain),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -380,7 +404,15 @@ internal fun WarningBox(entry: AppStatusEntry, events: List<AppChange>) {
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = accent,
+                    modifier = Modifier.weight(1f),
                 )
+                Text(
+                    text = stringResource(R.string.reason_more),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = accent,
+                )
+                Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
             }
             ReasonChips(reasons)
             // 札と同じ順（以前に削除 → 署名の変更）。札を出していない警告の説明は出さない
@@ -470,19 +502,17 @@ internal fun History(events: List<AppChange>) {
                 )
             }
             events.forEach { event ->
-                Row(Modifier.semantics(mergeDescendants = true) {}) {
-                    Text(
-                        text = formatShortDate(event.occurredAt.toLocalDateTime()),
-                        modifier = Modifier.width(64.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                Column(Modifier.semantics(mergeDescendants = true) {}) {
                     Text(
                         text = historyText(event, events),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = withDaysAgo(formatDate(event.occurredAt), event.occurredAt),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

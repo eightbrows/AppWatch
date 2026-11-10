@@ -53,6 +53,11 @@ private fun rememberHealth(controller: SettingsController, resumeCount: Int): Pa
     return input to HealthCheck.checksInLastDays(scanDays, LocalDate.now())
 }
 
+/** 動作チェックが「すべて正常」か（トップの動作チェックのボタンのオレンジの点に使う）。 */
+@Composable
+fun rememberHealthAllOk(controller: SettingsController, resumeCount: Int): Boolean =
+    HealthCheck.evaluate(rememberHealth(controller, resumeCount).first).allOk
+
 /** 設定メニュー（値を集めて SettingsMenuScreen に渡す）。 */
 @Composable
 fun SettingsMenuRoute(
@@ -131,6 +136,7 @@ fun HealthCheckRoute(controller: SettingsController, resumeCount: Int, onBack: (
             checkInterval = interval,
             checksInLast7Days = checksInLast7Days,
             periodicCheckRegistered = input.periodicCheckRegistered,
+            versionName = BuildConfig.VERSION_NAME,
         ),
         onBack = onBack,
     )

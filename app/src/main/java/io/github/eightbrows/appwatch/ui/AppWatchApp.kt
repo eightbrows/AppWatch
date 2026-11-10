@@ -26,6 +26,7 @@ import io.github.eightbrows.appwatch.ui.settings.LicenseRoute
 import io.github.eightbrows.appwatch.ui.settings.SettingsController
 import io.github.eightbrows.appwatch.ui.settings.SettingsDestination
 import io.github.eightbrows.appwatch.ui.settings.SettingsMenuRoute
+import io.github.eightbrows.appwatch.ui.settings.rememberHealthAllOk
 import io.github.eightbrows.appwatch.ui.setup.SetupController
 import io.github.eightbrows.appwatch.ui.setup.SetupScreen
 import io.github.eightbrows.appwatch.ui.status.AppDetailRoute
@@ -297,11 +298,13 @@ fun AppWatchApp(
                 val lastCheckAt = remember(top.lastCheckAt) {
                     top.lastCheckAt?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) }
                 }
+                val healthAllOk = rememberHealthAllOk(settingsController, resumeCount)
                 TopScreen(
                     lists = lists,
                     isLoading = top.check.isChecking,
                     loadFailed = top.check.failed,
                     lastCheckAt = lastCheckAt,
+                    healthNeedsAttention = !healthAllOk,
                     actions = TopActions(
                         onOpenSettings = { navigator.navigate(Screen.SETTINGS_MENU) },
                         onDelete = { app ->
@@ -316,6 +319,7 @@ fun AppWatchApp(
                             navigator.navigate(Screen.USER_DETAIL)
                         },
                         onRetry = onRetryCheck,
+                        onOpenHealthCheck = { navigator.navigate(Screen.HEALTH_CHECK) },
                     ),
                 )
             }
