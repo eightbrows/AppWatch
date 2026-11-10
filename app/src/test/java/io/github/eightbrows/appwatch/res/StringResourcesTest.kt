@@ -91,6 +91,58 @@ class StringResourcesTest {
         assertTrue("「|」がある: $withMark", withMark.isEmpty())
     }
 
+    /**
+     * Android が表示する文字に近い形にする：\" \' \n   の escape を戻し、escape されていない「"」（文字列を囲む印）は消す。
+     */
+    private fun displayed(raw: String): String {
+        val sb = StringBuilder()
+        var i = 0
+        while (i < raw.length) {
+            val c = raw[i]
+            when {
+                c == '\\' && i + 1 < raw.length -> {
+                    when (val next = raw[i + 1]) {
+                        'n' -> sb.append('\n')
+                        't' -> sb.append('\t')
+                        'u' -> {
+                            sb.append(raw.substring(i + 2, i + 6).toInt(16).toChar())
+                            i += 4
+                        }
+                        else -> sb.append(next)
+                    }
+                    i += 2
+                    continue
+                }
+                c == '"' -> Unit // escape されていない引用符は、文字列を囲む印なので表示されない
+                else -> sb.append(c)
+            }
+            i++
+        }
+        return sb.toString()
+    }
+
+    @Test
+    fun 引用符とかぎかっこの対応() {
+        val problems = mutableListOf<String>()
+        english.forEach { (name, entry) ->
+            entry.texts.values.map(::displayed).forEach { text ->
+                if (text.count { it == '"' } % 2 != 0) problems += "en $name: $text"
+                if (text.count { it == '“' } != text.count { it == '”' }) problems += "en $name: $text"
+            }
+        }
+        japanese.forEach { (name, entry) ->
+            entry.texts.values.map(::displayed).forEach { text ->
+                if (text.count { it == '「' } != text.count { it == '」' }) problems += "ja $name: $text"
+                if (text.count { it == '『' } != text.count { it == '』' }) problems += "ja $name: $text"
+                if (text.count { it == '（' } != text.count { it == '）' }) problems += "ja $name: $text"
+            }
+        }
+        assertTrue("引用符・かっこが対になっていない: $problems", problems.isEmpty())
+        // 例：英語の終わりの引用符が表示に残ること
+        assertEquals("Set %1\$s to \"%2\$s\"", displayed(english.getValue("notice_saved_status").texts.getValue("")))
+        assertEquals(" · ", displayed(english.getValue("history_share_count_separator").texts.getValue("")))
+    }
+
     @Test
     fun 書式の引数を読み取れる() {
         assertEquals(setOf("1s", "2d"), formatArgs("%1\$s を %2\$d 件"))

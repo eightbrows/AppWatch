@@ -271,7 +271,7 @@
     <string name="filter_label_device">Device:</string>
     <string name="filter_label_registered">Reg.:</string>
     <string name="filter_label_state">State:</string>
-    <string name="filter_status_unconfirmed">New</string>
+    <string name="filter_status_unconfirmed">Unreviewed</string>
     <string name="filter_status_caution">Caution</string>
     <string name="filter_status_ok">OK</string>
     <string name="filter_kind_user">User</string>

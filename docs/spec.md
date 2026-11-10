@@ -16,7 +16,7 @@
 | アプリ名 | 英語：AppWatch／日本語：アプリ見守当番 |
 | パッケージ名 | `io.github.eightbrows.appwatch` |
 | データファイルの拡張子 | `.appwatch` |
-| 配布 | GitHub Releases のみ（Google Play では配布しない） |
+| 配布 | GitHub Releases のみ（Google Play では配布しない）。`YYYYMMDD-RNN` のタグを push すると、GitHub Actions が正式版の APK を作って Release に置く |
 | リポジトリ | https://github.com/eightbrows/AppWatch |
 | 公式サイト | https://eightbrows.github.io/ |
 | ライセンス | Apache-2.0 |

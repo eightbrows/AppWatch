@@ -7,7 +7,7 @@ plugins {
 
 // バージョン（仕様書 6章）。手で書き換えるのは versionName だけ。
 // 形式は YYYYMMDD-DNN（開発版）／YYYYMMDD-RNN（正式版）。
-val appVersionName = "20261109-D01"
+val appVersionName = "20261109-D02"
 
 // versionCode は versionName の数字部分から作る（20261031-D04 → 2026103104）。
 // 日付と通し番号が増えれば必ず大きくなるので、上書きインストールで困らない。
@@ -34,12 +34,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // 正式版の署名：鍵の場所とパスワードは環境変数から読む（GitHub Actions が Secrets から渡す）。
+    // 環境変数がないとき（手元のビルド）は署名を設定せず、assembleRelease は署名なしの APK になる。
+    val releaseKeystore = providers.environmentVariable("APPWATCH_KEYSTORE_FILE").orNull
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = providers.environmentVariable("APPWATCH_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("APPWATCH_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("APPWATCH_KEY_PASSWORD").orNull
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // R8 でコードと使っていないリソースを縮める（keep の決まりは各部品が持つもので足りる）
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
             }
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {

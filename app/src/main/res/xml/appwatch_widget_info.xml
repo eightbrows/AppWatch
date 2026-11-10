@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ホーム画面のウィジェット（4×2）。updatePeriodMillis はウィジェット自体の予備の定期更新（30分、Android が許す最短）。
      targetCell は Android 12 以上で使われ、11 以下は minWidth・minHeight で大きさが決まる。
-     previewImage はウィジェットの一覧・追加の確認に出る見本（「確認が必要なアプリは0件」の状態をライトで撮ったもの）。 -->
+     previewImage はウィジェットの一覧・追加の確認に出る見本（「確認が必要なアプリは0件」の状態をライトで撮ったもの）。
+     英語の見本は drawable-nodpi、日本語の見本は drawable-ja-nodpi（端末の言語で選ばれる）。 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:description="@string/widget_description"
