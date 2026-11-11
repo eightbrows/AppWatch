@@ -78,7 +78,7 @@ class AppStatusRulesTest {
 
     @Test
     fun 一つの行がすべてオフなら何も出ない() {
-        val enabled = all - FilterChip.DEVICE_PRESENT - FilterChip.DEVICE_ABSENT - FilterChip.REGISTERED - FilterChip.DISABLED
+        val enabled = all - FilterChip.DEVICE_PRESENT - FilterChip.DEVICE_ABSENT
         assertFalse(AppStatusRules.matchesFilter(entry("a"), enabled))
         assertFalse(AppStatusRules.matchesFilter(entry("b", present = false), enabled))
         // 種類が分からない（事前登録だけ）アプリも、種類の行がすべてオフなら出ない
@@ -100,13 +100,17 @@ class AppStatusRulesTest {
     }
 
     @Test
-    fun 端末と登録と状態は一つの行としてどれかに当たればよい() {
-        val onlyDisabled = all - FilterChip.DEVICE_PRESENT - FilterChip.DEVICE_ABSENT - FilterChip.REGISTERED
+    fun 端末と登録と状態は別々の組としてすべてに当たる必要がある() {
+        // 状態：無効だけ（有効をオフ）
+        val onlyDisabled = all - FilterChip.ENABLED
         assertTrue(AppStatusRules.matchesFilter(entry("d", enabled = false), onlyDisabled))
         assertFalse(AppStatusRules.matchesFilter(entry("e"), onlyDisabled))
-        val onlyAbsent = all - FilterChip.DEVICE_PRESENT - FilterChip.REGISTERED - FilterChip.DISABLED
+        // 端末：なしだけ
+        val onlyAbsent = all - FilterChip.DEVICE_PRESENT
         assertTrue(AppStatusRules.matchesFilter(entry("f", present = false), onlyAbsent))
         assertFalse(AppStatusRules.matchesFilter(entry("g"), onlyAbsent))
+        // 「無効」をオフにすると無効のアプリが消える（今までは「端末：あり」に当たって消えなかった）
+        assertFalse(AppStatusRules.matchesFilter(entry("h", enabled = false), all - FilterChip.DISABLED))
     }
 
     // ---- 検索 ----

@@ -5,6 +5,11 @@
     <string name="mark_ok" translatable="false">✓</string>
     <string name="mark_caution" translatable="false">!</string>
     <string name="mark_info" translatable="false">i</string>
+    <!-- 履歴と比較のアイコンの右下の、変化の種類の印 -->
+    <string name="history_symbol_added" translatable="false">+</string>
+    <string name="history_symbol_removed" translatable="false">−</string>
+    <string name="history_symbol_updated" translatable="false">↑</string>
+    <string name="history_symbol_disabled" translatable="false">‖</string>
     <string name="language_japanese" translatable="false">日本語</string>
     <string name="language_english" translatable="false">English</string>
     <string name="settings_website_url" translatable="false">https://eightbrows.github.io/</string>

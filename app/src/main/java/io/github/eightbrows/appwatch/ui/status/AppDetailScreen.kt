@@ -78,6 +78,7 @@ import io.github.eightbrows.appwatch.ui.components.StatusMark
 import io.github.eightbrows.appwatch.ui.components.ViewingBand
 import io.github.eightbrows.appwatch.ui.components.ViewingFooter
 import io.github.eightbrows.appwatch.ui.components.AppIcon
+import io.github.eightbrows.appwatch.ui.components.AbsentMark
 import io.github.eightbrows.appwatch.ui.components.ReasonChips
 import io.github.eightbrows.appwatch.ui.components.ReasonExplanationSheet
 import io.github.eightbrows.appwatch.ui.components.formatDate
@@ -376,22 +377,6 @@ internal fun DetailText(text: AnnotatedString) {
 @Composable
 internal fun DetailText(text: String) {
     Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-
-/** 端末にないアプリの、アイコンの代わりの灰色の印。 */
-@Composable
-internal fun AbsentMark(name: String, size: Dp = 56.dp) {
-    val description = stringResource(R.string.detail_absent_mark)
-    Box(
-        modifier = Modifier
-            .size(size)
-            .clip(RoundedCornerShape(size * 0.22f))
-            .background(AppWatchTheme.colors.unconfirmed.copy(alpha = 0.35f))
-            .clearAndSetSemantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = name.take(1), color = Color.White, fontSize = (size.value * 0.43f).sp, fontWeight = FontWeight.Bold)
-    }
 }
 
 /**

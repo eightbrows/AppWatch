@@ -75,7 +75,8 @@ import io.github.eightbrows.appwatch.ui.components.AdminTopBar
 import io.github.eightbrows.appwatch.ui.components.DataSwitcher
 import io.github.eightbrows.appwatch.ui.components.ViewingFooter
 import io.github.eightbrows.appwatch.ui.components.StatusMark
-import io.github.eightbrows.appwatch.ui.components.AppIcon
+import io.github.eightbrows.appwatch.ui.components.AppIconWithMark
+import io.github.eightbrows.appwatch.ui.components.ROW_MARK_SIZE
 import io.github.eightbrows.appwatch.ui.components.AppSearchField
 import io.github.eightbrows.appwatch.ui.components.ReasonChip
 import io.github.eightbrows.appwatch.ui.components.DateForm
@@ -342,29 +343,32 @@ private fun SearchRow(query: String, onQueryChange: (String) -> Unit, onPreRegis
     }
 }
 
-/** 絞り込み（5行）。ラベルは末尾にコロンを付ける（仕様書 6章）。 */
+/**
+ * 絞り込み。ラベルは末尾にコロンを付ける（仕様書 6章）。
+ * 5行目は「端末：」「登録：」「状態：」の3つの組を並べ、幅が足りなければ組ごとに次の行へ送る（組の途中では折り返さない）。
+ */
 @Composable
 private fun Filters(enabled: Set<FilterChip>, onToggle: (FilterChip) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        FilterRow.entries.forEach { row ->
-            val chips = FilterChip.entries.filter { it.row == row }
+        listOf(FilterRow.STATUS, FilterRow.KIND, FilterRow.SOURCE, FilterRow.WARNING).forEach { row ->
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                if (row == FilterRow.DEVICE) {
-                    // 5行目は「端末：あり なし」「登録：事前登録」「状態：無効」を1行に並べる
-                    FilterLabel(R.string.filter_label_device)
-                    ChipView(FilterChip.DEVICE_PRESENT, enabled, onToggle)
-                    ChipView(FilterChip.DEVICE_ABSENT, enabled, onToggle)
-                    FilterLabel(R.string.filter_label_registered, start = 6.dp)
-                    ChipView(FilterChip.REGISTERED, enabled, onToggle)
-                    FilterLabel(R.string.filter_label_state, start = 6.dp)
-                    ChipView(FilterChip.DISABLED, enabled, onToggle)
-                } else {
+                FilterLabel(row.labelRes())
+                FilterChip.entries.filter { it.row == row }.forEach { ChipView(it, enabled, onToggle) }
+            }
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            listOf(FilterRow.DEVICE, FilterRow.REGISTRATION, FilterRow.STATE).forEach { row ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     FilterLabel(row.labelRes())
-                    chips.forEach { ChipView(it, enabled, onToggle) }
+                    FilterChip.entries.filter { it.row == row }.forEach { ChipView(it, enabled, onToggle) }
                 }
             }
         }
@@ -377,6 +381,8 @@ private fun FilterRow.labelRes(): Int = when (this) {
     FilterRow.SOURCE -> R.string.filter_label_source
     FilterRow.WARNING -> R.string.filter_label_warning
     FilterRow.DEVICE -> R.string.filter_label_device
+    FilterRow.REGISTRATION -> R.string.filter_label_registered
+    FilterRow.STATE -> R.string.filter_label_state
 }
 
 @Composable
@@ -533,47 +539,22 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
     }
 }
 
-/**
- * 行の先頭のアイコンと、右下の角に置いた確認状態の印（印は行の背景の色で縁取る）。
- * 印の中心をアイコンの右下の角に置き、印の大部分をアイコンの外に出す（重なるのは印の 1/4 まで）。
- * 外に出た分も場所を取り、文字と重ならないようにする。
- * 端末にないアプリはアプリの詳細と同じ灰色の頭文字の印、取り込んだデータを見ているとき（[loadIcon] が false）は色付きの頭文字の印。
- * 無効にしたアプリは灰色で薄く出す。
- */
+/** 行の先頭のアイコンと、右下の角の確認状態の印（共通の部品 AppIconWithMark）。無効にしたアプリは灰色で薄く出す。 */
 @Composable
 private fun RowIcon(entry: AppStatusEntry, loadIcon: Boolean, rowColor: Color, modifier: Modifier = Modifier) {
-    Box(modifier.size(ROW_ICON_SIZE + ROW_MARK_OUTER / 2)) {
-        if (entry.isPresent) {
-            AppIcon(
-                name = entry.name,
-                packageName = entry.packageName,
-                size = ROW_ICON_SIZE,
-                versionKey = entry.versionName.orEmpty(),
-                loadIcon = loadIcon,
-                dimmed = !entry.isEnabled,
-            )
-        } else {
-            AbsentMark(entry.name, size = ROW_ICON_SIZE)
-        }
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .size(ROW_MARK_OUTER)
-                .clip(CircleShape)
-                .background(rowColor)
-                .padding(ROW_MARK_RING),
-        ) {
-            StatusMark(status = entry.status, size = ROW_MARK_SIZE)
-        }
+    AppIconWithMark(
+        name = entry.name,
+        packageName = entry.packageName,
+        versionKey = entry.versionName.orEmpty(),
+        present = entry.isPresent,
+        loadIcon = loadIcon,
+        dimmed = !entry.isEnabled,
+        ringColor = rowColor,
+        modifier = modifier,
+    ) {
+        StatusMark(status = entry.status, size = ROW_MARK_SIZE)
     }
 }
-
-private val ROW_ICON_SIZE = 48.dp
-private val ROW_MARK_SIZE = 24.dp
-
-/** 印の縁取り（行の背景の色）。どのアイコンの色の上でも印を見分けられるようにする。 */
-private val ROW_MARK_RING = 2.5.dp
-private val ROW_MARK_OUTER = ROW_MARK_SIZE + ROW_MARK_RING * 2
 
 /**
  * 入手元・日時（後から導入）、種類（プリインストール・システム）、端末にないこと。警告は下の札で出す。

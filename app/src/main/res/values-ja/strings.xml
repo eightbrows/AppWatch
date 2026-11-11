@@ -322,6 +322,8 @@
     <string name="filter_device_present">あり</string>
     <string name="filter_device_absent">なし</string>
     <string name="filter_registered">事前登録</string>
+    <string name="filter_not_registered">なし</string>
+    <string name="filter_enabled">有効</string>
     <string name="filter_disabled">無効</string>
     <plurals name="status_selected_count">
         <item quantity="other">%1$d件選択中</item>
@@ -464,12 +466,6 @@
     <plurals name="history_list_count_hidden">
         <item quantity="other">%1$sを除いて表示中 ・ %2$d件</item>
     </plurals>
-    <string name="history_mark_added">＋追加</string>
-    <string name="history_mark_removed">－削除</string>
-    <string name="history_mark_updated">更新</string>
-    <string name="history_mark_enabled">有効化</string>
-    <string name="history_mark_disabled">無効化</string>
-    <string name="history_mark_signature">署名が\n変わった</string>
     <string name="history_mark_reset">初期化</string>
     <string name="history_reinstall">再インストール</string>
     <string name="history_version_update">v%1$s → v%2$s</string>

@@ -88,6 +88,8 @@ fun FilterChip.labelRes(): Int = when (this) {
     FilterChip.DEVICE_PRESENT -> R.string.filter_device_present
     FilterChip.DEVICE_ABSENT -> R.string.filter_device_absent
     FilterChip.REGISTERED -> R.string.filter_registered
+    FilterChip.NOT_REGISTERED -> R.string.filter_not_registered
+    FilterChip.ENABLED -> R.string.filter_enabled
     FilterChip.DISABLED -> R.string.filter_disabled
 }
 

@@ -330,6 +330,8 @@
     <string name="filter_device_present">Yes</string>
     <string name="filter_device_absent">No</string>
     <string name="filter_registered">Pre-reg.</string>
+    <string name="filter_not_registered">None</string>
+    <string name="filter_enabled">Enabled</string>
     <string name="filter_disabled">Disabled</string>
     <plurals name="status_selected_count">
         <item quantity="one">%1$d selected</item>
@@ -482,12 +484,6 @@
         <item quantity="one">Without %1$s · %2$d change</item>
         <item quantity="other">Without %1$s · %2$d changes</item>
     </plurals>
-    <string name="history_mark_added">+ Added</string>
-    <string name="history_mark_removed">− Removed</string>
-    <string name="history_mark_updated">Updated</string>
-    <string name="history_mark_enabled">Enabled</string>
-    <string name="history_mark_disabled">Disabled</string>
-    <string name="history_mark_signature">Signature\nchanged</string>
     <string name="history_mark_reset">Reset</string>
     <string name="history_reinstall">Reinstalled</string>
     <string name="history_version_update">v%1$s → v%2$s</string>

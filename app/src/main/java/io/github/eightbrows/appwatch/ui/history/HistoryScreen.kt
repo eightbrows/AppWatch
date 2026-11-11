@@ -78,6 +78,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.eightbrows.appwatch.MainActivity
 import io.github.eightbrows.appwatch.R
+import io.github.eightbrows.appwatch.ui.components.AppIconWithMark
+import io.github.eightbrows.appwatch.ui.components.ROW_MARK_SIZE
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.sp
 import io.github.eightbrows.appwatch.ui.components.DateForm
 import io.github.eightbrows.appwatch.ui.components.formatDate
 import io.github.eightbrows.appwatch.ui.components.withDaysAgo
@@ -137,6 +142,11 @@ fun HistoryRoute(
 
     val snackbarHostState = remember { SnackbarHostState() }
     rememberNoticePresenter(statusController, snackbarHostState)
+    // 行のアイコン：この端末のデータを見ているときは、今端末にあるアプリ（パッケージ名 → 有効か）のアイコンを出す
+    val localEntries by remember { statusController.localEntries }.collectAsState(initial = null)
+    val presentApps = remember(localEntries) {
+        localEntries.orEmpty().filter { it.isPresent }.associate { it.packageName to it.isEnabled }
+    }
     val texts = rememberShareTexts()
     val context = LocalContext.current
     val deviceLine = viewing?.let { stringResource(R.string.history_share_device, it.name, it.exportedAt?.let { t -> formatSnapshotTime(t) }.orEmpty()) }
@@ -175,6 +185,8 @@ fun HistoryRoute(
                 result = result,
                 texts = texts,
                 zone = zone,
+                presentApps = presentApps,
+                viewingImported = viewing != null,
                 selection = currentSelection,
                 onSelectDataset = controller::select,
                 buttons = clock.quickButtons,
@@ -293,6 +305,10 @@ private fun HistoryList(
     result: HistoryResult,
     texts: HistoryShareTexts,
     zone: ZoneId,
+    /** 今この端末にあるアプリ（パッケージ名 → 有効か） */
+    presentApps: Map<String, Boolean>,
+    /** 取り込んだデータを見ているか（そのときはアイコンの代わりに頭文字の印） */
+    viewingImported: Boolean,
     selection: DataSelection,
     onSelectDataset: (String) -> Unit,
     buttons: List<QuickRange>,
@@ -322,6 +338,10 @@ private fun HistoryList(
             ChangeRow(
                 change = row,
                 texts = texts,
+                // 取り込んだデータは別の端末のアプリなので、色付きの頭文字の印（端末にあるものとして扱う）
+                present = viewingImported || row.packageName in presentApps,
+                enabled = presentApps[row.packageName] ?: true,
+                loadIcon = !viewingImported,
                 // 行の日時は曜日付き（何日前は ChangeRow で添える）。共有の文字は今までどおり曜日・何日前なし
                 time = formatDate(row.occurredAt, DateForm.LIST),
                 isFirst = index == 0,
@@ -562,6 +582,10 @@ private fun EmptyCard(reason: HistoryEmpty, checkCount: Int) {
 private fun ChangeRow(
     change: AppChange,
     texts: HistoryShareTexts,
+    /** アプリが今端末にあるか（ないときは灰色の頭文字の印） */
+    present: Boolean,
+    enabled: Boolean,
+    loadIcon: Boolean,
     time: String,
     isFirst: Boolean,
     isLast: Boolean,
@@ -591,8 +615,25 @@ private fun ChangeRow(
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            TypeMark(change.type)
-            Spacer(Modifier.width(12.dp))
+            if (change.type == ChangeType.RESET) {
+                // 初期化の行は、今までどおりの印
+                ResetMark()
+                Spacer(Modifier.width(12.dp))
+            } else {
+                // アプリのアイコン（確認状態の画面と同じ大きさ）と、右下に変化の種類の印
+                AppIconWithMark(
+                    name = change.name,
+                    packageName = change.packageName,
+                    versionKey = change.versionName.orEmpty(),
+                    present = present,
+                    loadIcon = loadIcon,
+                    dimmed = !enabled,
+                    ringColor = if (isSignature) colors.warningContainer else MaterialTheme.colorScheme.surface,
+                ) {
+                    TypeBadge(change.type)
+                }
+                Spacer(Modifier.width(8.dp))
+            }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 if (change.type == ChangeType.RESET) {
                     Text(stringResource(R.string.history_reset_text), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -600,6 +641,8 @@ private fun ChangeRow(
                     return@Column
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                    // 変化の種類の言葉（印の色・記号だけに頼らない）
+                    TypeLabel(change.type)
                     Text(
                         text = change.name,
                         style = MaterialTheme.typography.titleMedium,
@@ -660,23 +703,15 @@ private fun ReinstallBadge() {
     )
 }
 
-/** 種類の印（追加・削除・更新・有効化・無効化・署名が変わった・初期化）。 */
+/** 初期化の行の印（アイコンの代わり）。 */
 @Composable
-private fun TypeMark(type: ChangeType) {
+private fun ResetMark() {
     val colors = AppWatchTheme.colors
-    val scheme = MaterialTheme.colorScheme
-    val (label, container, content) = when (type) {
-        ChangeType.ADDED -> Triple(R.string.history_mark_added, scheme.primaryContainer, scheme.onPrimaryContainer)
-        ChangeType.REMOVED -> Triple(R.string.history_mark_removed, colors.warningContainer, colors.onWarningContainer)
-        ChangeType.UPDATED -> Triple(R.string.history_mark_updated, scheme.secondaryContainer, scheme.onSecondaryContainer)
-        ChangeType.ENABLED -> Triple(R.string.history_mark_enabled, scheme.surfaceVariant, scheme.onSurfaceVariant)
-        ChangeType.DISABLED -> Triple(R.string.history_mark_disabled, scheme.surfaceVariant, scheme.onSurfaceVariant)
-        ChangeType.SIGNATURE_CHANGED -> Triple(R.string.history_mark_signature, colors.warningBorder.copy(alpha = 0.3f), colors.onWarningContainer)
-        else -> Triple(R.string.history_mark_reset, colors.dangerContainer, colors.onDangerContainer)
-    }
+    val container = colors.dangerContainer
+    val content = colors.onDangerContainer
     Box(Modifier.width(64.dp), contentAlignment = Alignment.TopCenter) {
         Text(
-            text = stringResource(label),
+            text = stringResource(R.string.history_mark_reset),
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
@@ -688,6 +723,71 @@ private fun TypeMark(type: ChangeType) {
             textAlign = TextAlign.Center,
         )
     }
+}
+
+/** 変化の種類ごとの色（言葉の札と、アイコンの右下の印）。 */
+@Composable
+private fun typeColors(type: ChangeType): Pair<Color, Color> {
+    val colors = AppWatchTheme.colors
+    val scheme = MaterialTheme.colorScheme
+    return when (type) {
+        ChangeType.ADDED -> scheme.primary to scheme.onPrimary
+        ChangeType.REMOVED -> colors.warningStrong to Color.White
+        ChangeType.UPDATED -> scheme.secondary to scheme.onSecondary
+        ChangeType.ENABLED -> colors.ok to colors.onOk
+        ChangeType.DISABLED -> colors.unconfirmed to Color.White
+        ChangeType.SIGNATURE_CHANGED -> colors.danger to colors.onDanger
+        else -> colors.unconfirmed to Color.White
+    }
+}
+
+/** アイコンの右下の、変化の種類の印（＋ − ↑ ✓ ‖ !）。言葉は行の中の札で出すので、読み上げは札に任せる。 */
+@Composable
+private fun TypeBadge(type: ChangeType) {
+    val (container, content) = typeColors(type)
+    val symbol = when (type) {
+        ChangeType.ADDED -> R.string.history_symbol_added
+        ChangeType.REMOVED -> R.string.history_symbol_removed
+        ChangeType.UPDATED -> R.string.history_symbol_updated
+        ChangeType.ENABLED -> R.string.mark_ok
+        ChangeType.DISABLED -> R.string.history_symbol_disabled
+        else -> R.string.mark_caution
+    }
+    Box(
+        modifier = Modifier
+            .size(ROW_MARK_SIZE)
+            .clip(CircleShape)
+            .background(container)
+            .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(stringResource(symbol), color = content, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** 変化の種類の言葉の札（名前の前）。 */
+@Composable
+private fun TypeLabel(type: ChangeType) {
+    val (container, content) = typeColors(type)
+    val label = when (type) {
+        ChangeType.ADDED -> R.string.history_type_added
+        ChangeType.REMOVED -> R.string.history_type_removed
+        ChangeType.UPDATED -> R.string.history_type_updated
+        ChangeType.ENABLED -> R.string.history_type_enabled
+        ChangeType.DISABLED -> R.string.history_type_disabled
+        ChangeType.SIGNATURE_CHANGED -> R.string.history_type_signature
+        else -> R.string.history_type_reset
+    }
+    Text(
+        text = stringResource(label),
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(container)
+            .padding(horizontal = 6.dp, vertical = 1.dp),
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        color = content,
+    )
 }
 
 /** 下部に固定の「この結果を共有」。表示中の行がないときは押せない。 */
