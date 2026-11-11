@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- ウィジェットの背景（要注意：赤枠） -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="@color/widget_surface" />
-    <stroke android:width="3dp" android:color="@color/widget_caution" />
-    <corners android:radius="22dp" />
-</shape>

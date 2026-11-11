@@ -4,6 +4,7 @@
     <string name="mark_unconfirmed" translatable="false">\?</string>
     <string name="mark_ok" translatable="false">✓</string>
     <string name="mark_caution" translatable="false">!</string>
+    <string name="mark_info" translatable="false">i</string>
     <string name="language_japanese" translatable="false">日本語</string>
     <string name="language_english" translatable="false">English</string>
     <string name="settings_website_url" translatable="false">https://eightbrows.github.io/</string>

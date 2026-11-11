@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ウィジェットの色（ダーク）。 -->
+<!-- ウィジェットの色（ダーク）。縁・札・見出しは暗い壁紙でも見えるよう明るめ、丸はライトと同じ。 -->
 <resources>
-    <color name="widget_surface">#2A2826</color>
-    <color name="widget_caution">#FF8A80</color>
-    <color name="widget_warning">#F2B37E</color>
-    <color name="widget_neutral">#C4C7CC</color>
-    <color name="widget_circle_caution">#C6352C</color>
-    <color name="widget_circle_warning">#C75A1E</color>
-    <color name="widget_circle_neutral">#80868B</color>
-    <color name="widget_circle_ok">#388E3C</color>
+    <color name="widget_surface">#1F1E1D</color>
+    <color name="widget_secondary">#B4AFA8</color>
+    <color name="widget_red">#F0706A</color>
+    <color name="widget_red_title">#F7A39E</color>
+    <color name="widget_circle_red">#B42318</color>
+    <color name="widget_gray">#9CA3AF</color>
+    <color name="widget_gray_title">#D1D5DB</color>
+    <color name="widget_circle_gray">#6B7280</color>
+    <color name="widget_orange">#F08A4B</color>
+    <color name="widget_orange_title">#F6B48A</color>
+    <color name="widget_circle_orange">#C2410C</color>
+    <color name="widget_blue">#7FA7F0</color>
+    <color name="widget_blue_title">#A9C4F5</color>
+    <color name="widget_circle_blue">#1F4FA8</color>
+    <color name="widget_green">#6CC28F</color>
+    <color name="widget_green_title">#9FD8B4</color>
+    <color name="widget_circle_green">#2E7D4F</color>
 </resources>

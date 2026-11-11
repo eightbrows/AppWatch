@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ウィジェットの枠と丸の色（ライト）。ダークは values-night/colors.xml。文字の色は AppWatchWidget.kt の WidgetColors（値をそろえる）。 -->
+<!-- ウィジェットの色（ライト）。ダークは values-night/colors.xml。状態ごとに 縁・札（widget_*）、見出し（widget_*_title）、丸（widget_circle_*）。 -->
 <resources>
     <color name="widget_surface">#FFFFFF</color>
-    <color name="widget_caution">#B3261E</color>
-    <color name="widget_warning">#B8480F</color>
-    <color name="widget_neutral">#5F6368</color>
-    <color name="widget_circle_caution">#B3261E</color>
-    <color name="widget_circle_warning">#B8480F</color>
-    <color name="widget_circle_neutral">#5F6368</color>
-    <color name="widget_circle_ok">#2E7D32</color>
+    <color name="widget_secondary">#5A5F66</color>
+    <color name="widget_red">#B42318</color>
+    <color name="widget_red_title">#912018</color>
+    <color name="widget_circle_red">#B42318</color>
+    <color name="widget_gray">#6B7280</color>
+    <color name="widget_gray_title">#374151</color>
+    <color name="widget_circle_gray">#6B7280</color>
+    <color name="widget_orange">#C2410C</color>
+    <color name="widget_orange_title">#9A3412</color>
+    <color name="widget_circle_orange">#C2410C</color>
+    <color name="widget_blue">#1F4FA8</color>
+    <color name="widget_blue_title">#163A7D</color>
+    <color name="widget_circle_blue">#1F4FA8</color>
+    <color name="widget_green">#2E7D4F</color>
+    <color name="widget_green_title">#1E5A38</color>
+    <color name="widget_circle_green">#2E7D4F</color>
 </resources>

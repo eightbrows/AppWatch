@@ -46,13 +46,13 @@
     <string name="action_delete_app">削除する</string>
     <string name="action_details">詳しく</string>
     <string name="action_delete">削除</string>
-    <string name="delete_dialog_title">%1$sを削除しますか？</string>
+    <string name="delete_dialog_title">「%1$s」を削除しますか？</string>
     <string name="delete_dialog_body">次に Android の確認が出ます。「OK」を押すと削除されます。</string>
     <string name="delete_dialog_cancel">やめる</string>
     <string name="delete_dialog_confirm">削除する</string>
     <string name="delete_dialog_self_body">このアプリを削除すると、見守りが止まり、これまでの記録も消えます。削除する前に管理者に相談して下さい。</string>
-    <string name="delete_result_deleted">%1$sを削除しました</string>
-    <string name="delete_result_not_deleted">%1$sは削除されませんでした</string>
+    <string name="delete_result_deleted">「%1$s」を削除しました</string>
+    <string name="delete_result_not_deleted">「%1$s」は削除されませんでした</string>
     <string name="action_app_info">Android のアプリ情報</string>
     <string name="action_app_info_short">アプリ情報</string>
     <string name="error_cannot_open_screen">画面を開けませんでした</string>
@@ -80,7 +80,7 @@
     <!-- 注意の説明（下から出る画面） -->
     <string name="reason_more">説明</string>
     <string name="reason_open_explanation">説明を開く</string>
-    <string name="reason_sheet_title">%1$s が確認の対象になった理由</string>
+    <string name="reason_sheet_title">「%1$s」が確認の対象になった理由</string>
     <string name="reason_sheet_lead">チェックの付いたものが、このアプリに当てはまります。心当たりがなければ、管理者に相談して下さい。</string>
     <string name="reason_sheet_caution_title">要注意（管理者が設定）</string>
     <string name="reason_sheet_close">閉じる</string>
@@ -182,6 +182,8 @@
     <string name="widget_settings_note">管理者に設定の確認を依頼して下さい</string>
     <string name="widget_setup_title">管理者に|初回設定を|依頼して下さい</string>
     <string name="widget_setup_note">初回設定が完了していません</string>
+    <!-- 4×2 の時だけ出す（確認が必要なアプリがない時） -->
+    <string name="widget_clear_note">このままお使い下さい</string>
     <string name="widget_clear_title">確認が必要な|アプリは0件</string>
     <!-- 低い形（4×1）の見出し。1行に入る短い言い方（「|」は使わない） -->
     <plurals name="widget_caution_title_short">
@@ -329,7 +331,7 @@
     </plurals>
     <string name="status_select_all_visible">表示中をすべて選択</string>
     <string name="status_clear_selection">選択を外す</string>
-    <string name="status_select_app">%1$s を選ぶ</string>
+    <string name="status_select_app">「%1$s」を選ぶ</string>
     <string name="status_action_unconfirmed">未確認に戻す</string>
     <string name="status_empty">当てはまるアプリはありません。絞り込みや検索を変えて下さい。</string>
     <string name="format_version">v%1$s</string>
@@ -358,9 +360,9 @@
         <item quantity="other">%1$d件を未確認に戻しました</item>
     </plurals>
     <string name="notice_no_change">変更はありませんでした（既に同じ確認状態です）</string>
-    <string name="notice_saved_status">%1$sを「%2$s」にしました</string>
-    <string name="notice_saved_memo">%1$sの管理者メモを保存しました</string>
-    <string name="notice_saved_both">%1$sを「%2$s」にし、管理者メモを保存しました</string>
+    <string name="notice_saved_status">「%1$s」を『%2$s』にしました</string>
+    <string name="notice_saved_memo">「%1$s」の管理者メモを保存しました</string>
+    <string name="notice_saved_both">「%1$s」を『%2$s』にし、管理者メモを保存しました</string>
 
     <!-- アプリの詳細 -->
     <string name="detail_title">アプリの詳細</string>
@@ -435,8 +437,8 @@
     </plurals>
     <string name="prereg_registered_empty">まだありません</string>
     <string name="prereg_registered_at">登録 %1$s</string>
-    <string name="notice_pre_registered">%1$sを「要注意」として登録しました</string>
-    <string name="notice_unregistered">%1$sの登録を解除しました</string>
+    <string name="notice_pre_registered">「%1$s」を『要注意』として登録しました</string>
+    <string name="notice_unregistered">「%1$s」の登録を解除しました</string>
 
     <!-- 履歴と比較（仕様書 6章、09_history_compare.png） -->
     <string name="history_from_label">比較元（この日から）</string>

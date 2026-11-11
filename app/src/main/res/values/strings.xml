@@ -187,6 +187,8 @@
     <string name="widget_settings_note">Ask your helper to check the settings</string>
     <string name="widget_setup_title">Ask your helper to set up the app</string>
     <string name="widget_setup_note">Setup isn\'t finished</string>
+    <!-- 4×2 の時だけ出す（確認が必要なアプリがない時） -->
+    <string name="widget_clear_note">You\'re all set</string>
     <string name="widget_clear_title">No apps to review</string>
     <!-- 低い形（4×1）の見出し。1行に入る短い言い方 -->
     <plurals name="widget_caution_title_short">

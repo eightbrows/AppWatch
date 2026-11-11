@@ -42,6 +42,8 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.color.ColorProvider
+import android.content.res.Configuration
+import androidx.annotation.ColorRes
 import androidx.glance.unit.ColorProvider as FixedColor
 import io.github.eightbrows.appwatch.MainActivity
 import io.github.eightbrows.appwatch.R
@@ -89,52 +91,58 @@ class AppWatchWidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 /**
- * 文字の色（ライト／ダーク）。端末のダークモードに従う。
- * 枠と丸の色は res/values・values-night の colors.xml にあり、値をそろえてある。
+ * res の colors.xml の色を、ライト（values）とダーク（values-night）の両方で読んで、端末のダークモードに従う色にする。
+ * 色は colors.xml だけに置き、ここでは値を持たない。
  */
-private object WidgetColors {
-    val secondary = ColorProvider(day = Color(0xFF5F5B55), night = Color(0xFFBDB8B1))
-    val caution = ColorProvider(day = Color(0xFFB3261E), night = Color(0xFFFF8A80))
-    val warning = ColorProvider(day = Color(0xFFB8480F), night = Color(0xFFF2B37E))
-    val neutral = ColorProvider(day = Color(0xFF5F6368), night = Color(0xFFC4C7CC))
-    val ok = ColorProvider(day = Color(0xFF2E7D32), night = Color(0xFF81C784))
+private fun dayNight(context: Context, @ColorRes id: Int): androidx.glance.unit.ColorProvider {
+    fun colorFor(night: Boolean): Color {
+        val config = Configuration(context.resources.configuration)
+        val mode = if (night) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+        config.uiMode = (config.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or mode
+        return Color(context.createConfigurationContext(config).getColor(id))
+    }
+    return ColorProvider(day = colorFor(false), night = colorFor(true))
 }
 
-/** 状態ごとの見た目。 */
+/** 状態ごとの見た目。色は res の colors.xml（values・values-night）にあり、端末のダークモードに従う。 */
 private data class WidgetStyle(
+    /** 縁（角丸の線）と中の色 */
     @DrawableRes val background: Int,
+    /** 左上の札（縁と同じ色・太さの縁取りの角丸） */
+    @DrawableRes val label: Int,
     @DrawableRes val circle: Int,
     /** 丸の中の絵。null なら [symbol] の文字を出す */
     @DrawableRes val icon: Int?,
     val symbol: String,
+    /** 札の文字の色（縁と同じ色） */
+    val labelColor: androidx.glance.unit.ColorProvider,
     val titleColor: androidx.glance.unit.ColorProvider,
 )
 
-private fun styleOf(context: Context, status: WidgetStatus): WidgetStyle = when (status) {
-    WidgetStatus.CAUTION_APPS -> WidgetStyle(
-        R.drawable.widget_bg_caution, R.drawable.widget_circle_caution, null,
-        context.getString(R.string.mark_caution), WidgetColors.caution,
-    )
-    WidgetStatus.CHECK_STOPPED -> WidgetStyle(
-        R.drawable.widget_bg_warning, R.drawable.widget_circle_warning, R.drawable.ic_widget_schedule,
-        "", WidgetColors.warning,
-    )
-    WidgetStatus.NEEDS_REVIEW -> WidgetStyle(
-        R.drawable.widget_bg_warning, R.drawable.widget_circle_warning, null,
-        context.getString(R.string.mark_unconfirmed), WidgetColors.warning,
-    )
-    WidgetStatus.SETTINGS_NEEDED -> WidgetStyle(
-        R.drawable.widget_bg_warning, R.drawable.widget_circle_warning, R.drawable.ic_widget_settings,
-        "", WidgetColors.warning,
-    )
-    WidgetStatus.SETUP_REQUIRED -> WidgetStyle(
-        R.drawable.widget_bg_neutral, R.drawable.widget_circle_neutral, R.drawable.ic_widget_list,
-        "", WidgetColors.neutral,
-    )
-    WidgetStatus.ALL_CLEAR -> WidgetStyle(
-        R.drawable.widget_bg_ok, R.drawable.widget_circle_ok, R.drawable.ic_widget_check,
-        "", WidgetColors.ok,
-    )
+private fun styleOf(context: Context, status: WidgetStatus): WidgetStyle {
+    val (background, label, circle) = when (WidgetLook.toneOf(status)) {
+        WidgetTone.RED -> Triple(R.drawable.widget_bg_red, R.drawable.widget_label_red, R.drawable.widget_circle_red)
+        WidgetTone.GRAY -> Triple(R.drawable.widget_bg_gray, R.drawable.widget_label_gray, R.drawable.widget_circle_gray)
+        WidgetTone.ORANGE -> Triple(R.drawable.widget_bg_orange, R.drawable.widget_label_orange, R.drawable.widget_circle_orange)
+        WidgetTone.BLUE -> Triple(R.drawable.widget_bg_blue, R.drawable.widget_label_blue, R.drawable.widget_circle_blue)
+        WidgetTone.GREEN -> Triple(R.drawable.widget_bg_green, R.drawable.widget_label_green, R.drawable.widget_circle_green)
+    }
+    val (labelColor, titleColor) = when (WidgetLook.toneOf(status)) {
+        WidgetTone.RED -> R.color.widget_red to R.color.widget_red_title
+        WidgetTone.GRAY -> R.color.widget_gray to R.color.widget_gray_title
+        WidgetTone.ORANGE -> R.color.widget_orange to R.color.widget_orange_title
+        WidgetTone.BLUE -> R.color.widget_blue to R.color.widget_blue_title
+        WidgetTone.GREEN -> R.color.widget_green to R.color.widget_green_title
+    }
+    val (icon, symbol) = when (WidgetLook.markOf(status)) {
+        WidgetMark.EXCLAMATION -> null to context.getString(R.string.mark_caution)
+        WidgetMark.PAUSE -> R.drawable.ic_widget_pause to ""
+        WidgetMark.QUESTION -> null to context.getString(R.string.mark_unconfirmed)
+        WidgetMark.GEAR -> R.drawable.ic_widget_settings to ""
+        WidgetMark.INFO -> null to context.getString(R.string.mark_info)
+        WidgetMark.CHECK -> R.drawable.ic_widget_check to ""
+    }
+    return WidgetStyle(background, label, circle, icon, symbol, dayNight(context, labelColor), dayNight(context, titleColor))
 }
 
 /** 見出し。2行になるときに言葉の途中で改行しないようにする（strings.xml の「|」の所でだけ改行）。 */
@@ -171,7 +179,7 @@ private fun noteOf(context: Context, status: WidgetStatus): String? = when (stat
     WidgetStatus.NEEDS_REVIEW -> context.getString(R.string.widget_review_note)
     WidgetStatus.SETTINGS_NEEDED -> context.getString(R.string.widget_settings_note)
     WidgetStatus.SETUP_REQUIRED -> context.getString(R.string.widget_setup_note)
-    WidgetStatus.ALL_CLEAR -> null
+    WidgetStatus.ALL_CLEAR -> context.getString(R.string.widget_clear_note)
 }
 
 private fun lastCheckText(context: Context, lastCheckAt: Long?): String {
@@ -218,69 +226,109 @@ private fun StatusCircle(style: WidgetStyle, size: Dp, iconSize: Dp, symbolSize:
 /** これより狭い低い形では、見出しの文字を少し小さくする。 */
 private val NARROW_WIDTH = 300.dp
 
-/** 低い形（4×1）：左に状態の印、右に見出し1行と最終チェック。補足の文は出さない。 */
+/** 札を縁の上に載せるための、縁の外側の上の余白（透明）。 */
+private val LABEL_SPACE = 12.dp
+
+/** 札の高さ（縁取りを含む）。札の縦の真ん中が縁の線に来るよう、上から LABEL_TOP の所に置く。 */
+private val LABEL_HEIGHT = 22.dp
+
+/** 札の上端（縁の線の真ん中 ＝ 12dp ＋ 縁の太さの半分 から、札の高さの半分だけ上）。 */
+private val LABEL_TOP = 2.dp
+
+/**
+ * ウィジェットの枠：上に札の分の余白（透明）、その下に縁（状態の色の角丸の線）、左上に「アプリ見守当番」の札を縁の上に重ねる。
+ * 全体を押すとアプリを開く。[content] は縁の内側に描く。
+ */
 @Composable
-private fun LowContent(context: Context, state: WidgetState) {
-    val style = styleOf(context, state.status)
-    Row(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .background(ImageProvider(style.background))
-            .padding(horizontal = 14.dp, vertical = 6.dp)
-            .clickable(actionStartActivity<MainActivity>()),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        StatusCircle(style, size = 36.dp, iconSize = 22.dp, symbolSize = 20.sp)
-        Spacer(GlanceModifier.width(12.dp))
-        // 幅の狭いホーム画面（5列など）では、見出しが1行に入るよう文字を少し小さくする
-        val titleSize = if (LocalSize.current.width < NARROW_WIDTH) 15.sp else 16.sp
-        Column(modifier = GlanceModifier.defaultWeight()) {
-            Text(
-                text = shortTitleOf(context, state),
-                style = TextStyle(color = style.titleColor, fontSize = titleSize, fontWeight = FontWeight.Bold),
-                maxLines = 1,
-            )
-            Text(
-                text = lastCheckText(context, state.lastCheckAt),
-                style = TextStyle(color = WidgetColors.secondary, fontSize = 12.sp),
-                maxLines = 1,
-            )
+private fun WidgetFrame(context: Context, style: WidgetStyle, content: @Composable () -> Unit) {
+    Box(modifier = GlanceModifier.fillMaxSize().clickable(actionStartActivity<MainActivity>())) {
+        Box(modifier = GlanceModifier.fillMaxSize().padding(top = LABEL_SPACE)) {
+            Box(modifier = GlanceModifier.fillMaxSize().background(ImageProvider(style.background))) {
+                content()
+            }
+        }
+        Box(modifier = GlanceModifier.padding(start = 14.dp, top = LABEL_TOP)) {
+            Box(
+                modifier = GlanceModifier
+                    .height(LABEL_HEIGHT)
+                    .background(ImageProvider(style.label))
+                    .padding(horizontal = 9.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = context.getString(R.string.app_name),
+                    style = TextStyle(color = style.labelColor, fontSize = 12.sp, fontWeight = FontWeight.Bold),
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
 
-/** 高い形（4×2）：今までの形（見出し・補足の文・最終チェック）。 */
+/** 低い形（4×1）：左に状態の印、右に見出し1行と最終チェック。補足の文は出さない。 */
 @Composable
-private fun TallContent(context: Context, state: WidgetState) {
+private fun LowContent(context: Context, state: WidgetState) {
     val style = styleOf(context, state.status)
-    val secondary = WidgetColors.secondary
-    Column(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .background(ImageProvider(style.background))
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .clickable(actionStartActivity<MainActivity>()),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            StatusCircle(style, size = 40.dp, iconSize = 24.dp, symbolSize = 22.sp)
+    // 幅の狭いホーム画面（5列など）では、見出しが1行に入るよう文字を少し小さくする
+    val titleSize = if (LocalSize.current.width < NARROW_WIDTH) 15.sp else 16.sp
+    val secondary = dayNight(context, R.color.widget_secondary)
+    WidgetFrame(context, style) {
+        Row(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StatusCircle(style, size = 36.dp, iconSize = 22.dp, symbolSize = 20.sp)
             Spacer(GlanceModifier.width(12.dp))
             Column(modifier = GlanceModifier.defaultWeight()) {
                 Text(
-                    text = titleOf(context, state),
-                    style = TextStyle(color = style.titleColor, fontSize = 17.sp, fontWeight = FontWeight.Bold),
-                    maxLines = 2,
+                    text = shortTitleOf(context, state),
+                    style = TextStyle(color = style.titleColor, fontSize = titleSize, fontWeight = FontWeight.Bold),
+                    maxLines = 1,
                 )
-                noteOf(context, state.status)?.let { note ->
-                    Text(text = note, style = TextStyle(color = secondary, fontSize = 12.sp), maxLines = 3)
-                }
+                Text(
+                    text = lastCheckText(context, state.lastCheckAt),
+                    style = TextStyle(color = secondary, fontSize = 12.sp),
+                    maxLines = 1,
+                )
             }
         }
-        Spacer(GlanceModifier.height(8.dp))
-        Text(
-            text = lastCheckText(context, state.lastCheckAt),
-            style = TextStyle(color = secondary, fontSize = 12.sp),
-            maxLines = 1,
-        )
+    }
+}
+
+/** 高い形（4×2）：見出し・補足の文・最終チェック。 */
+@Composable
+private fun TallContent(context: Context, state: WidgetState) {
+    val style = styleOf(context, state.status)
+    val secondary = dayNight(context, R.color.widget_secondary)
+    WidgetFrame(context, style) {
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                StatusCircle(style, size = 40.dp, iconSize = 24.dp, symbolSize = 22.sp)
+                Spacer(GlanceModifier.width(12.dp))
+                Column(modifier = GlanceModifier.defaultWeight()) {
+                    Text(
+                        text = titleOf(context, state),
+                        style = TextStyle(color = style.titleColor, fontSize = 17.sp, fontWeight = FontWeight.Bold),
+                        maxLines = 2,
+                    )
+                    noteOf(context, state.status)?.let { note ->
+                        Text(text = note, style = TextStyle(color = secondary, fontSize = 12.sp), maxLines = 3)
+                    }
+                }
+            }
+            Spacer(GlanceModifier.height(8.dp))
+            Text(
+                text = lastCheckText(context, state.lastCheckAt),
+                style = TextStyle(color = secondary, fontSize = 12.sp),
+                maxLines = 1,
+            )
+        }
     }
 }
