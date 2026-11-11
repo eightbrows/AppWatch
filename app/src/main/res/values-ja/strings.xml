@@ -88,8 +88,8 @@
     <string name="reason_not_applies">当てはまりません</string>
     <string name="reason_desc_not_from_play">Google Play ストア以外（ウェブサイト・送られてきたファイルなど）から入れたアプリです。</string>
     <string name="reason_desc_unknown_source">どこから入れたのか、スマートフォンに記録が残っていないアプリです。</string>
-    <string name="reason_desc_debug_signature">アプリを作る人が試すための作り方のアプリです。ふつうに配られているアプリには、まずありません。</string>
-    <string name="reason_desc_signature_changed">名前は同じでも、作った人の印が前と変わりました。別の人が作ったアプリに入れ替わったおそれがあります。</string>
+    <string name="reason_desc_debug_signature">アプリを作る人が試すための作り方のアプリです。普通に配られているアプリには、まずありません。</string>
+    <string name="reason_desc_signature_changed">名前は同じでも、作った人の印が前と変わりました。別の人が作ったアプリに入れ替わった恐れがあります。</string>
     <string name="reason_desc_reinstalled">一度削除したアプリが、また入っています。自分で入れ直していなければ注意して下さい。</string>
     <string name="reason_desc_caution">管理者が「注意が必要」と決めたアプリです。削除をおすすめします。</string>
 
@@ -143,7 +143,7 @@
 
     <string name="settings_section_permissions">権限</string>
     <string name="perm_query_all">アプリ一覧の取得</string>
-    <string name="perm_query_all_desc">インストール済みアプリの確認に使用</string>
+    <string name="perm_query_all_desc">インストール済みのアプリの確認に使います</string>
     <string name="perm_delete">アプリの削除</string>
     <string name="perm_delete_desc">削除時は毎回確認が表示されます</string>
     <string name="perm_battery">電池の最適化から除外</string>
@@ -180,9 +180,20 @@
     <string name="widget_review_note">削除しない場合は、管理者に確認を依頼して下さい</string>
     <string name="widget_settings_title">設定の確認が|必要です</string>
     <string name="widget_settings_note">管理者に設定の確認を依頼して下さい</string>
-    <string name="widget_setup_title">管理者に|初期設定を|依頼して下さい</string>
-    <string name="widget_setup_note">初期設定が完了していません</string>
+    <string name="widget_setup_title">管理者に|初回設定を|依頼して下さい</string>
+    <string name="widget_setup_note">初回設定が完了していません</string>
     <string name="widget_clear_title">確認が必要な|アプリは0件</string>
+    <!-- 低い形（4×1）の見出し。1行に入る短い言い方（「|」は使わない） -->
+    <plurals name="widget_caution_title_short">
+        <item quantity="other">要注意のアプリ %1$d件</item>
+    </plurals>
+    <string name="widget_stopped_title_short">チェックが停止中</string>
+    <plurals name="widget_review_title_short">
+        <item quantity="other">確認が必要なアプリ %1$d件</item>
+    </plurals>
+    <string name="widget_settings_title_short">設定の確認が必要</string>
+    <string name="widget_setup_title_short">初回設定が必要です</string>
+    <string name="widget_clear_title_short">確認が必要なアプリなし</string>
 
     <!-- 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png） -->
     <string name="setup_progress">初回設定　%1$d / %2$d</string>
@@ -223,7 +234,7 @@
     <string name="setup_widget_title">ウィジェットの追加</string>
     <string name="setup_widget_section">ホーム画面</string>
     <string name="setup_widget_card_title">ウィジェットを追加</string>
-    <string name="setup_widget_card_desc">状態がひと目で分かります。タップで追加の確認が出ます</string>
+    <string name="setup_widget_card_desc">状態が一目で分かります。タップすると追加の確認が出ます。</string>
     <string name="setup_widget_add">追加する</string>
     <string name="setup_widget_added">追加済み</string>
     <string name="setup_widget_unsupported">このホーム画面では、ボタンで追加できません。ホーム画面の何もないところを長押しし、「ウィジェット」から「アプリ見守当番」を選んで置いて下さい。</string>
@@ -338,7 +349,7 @@
         <item quantity="other">%1$d件を問題なしにしました（警告のある%2$d件は変えていません）</item>
     </plurals>
     <plurals name="notice_bulk_all_warned">
-        <item quantity="other">警告のあるアプリは、まとめて問題なしにできません（%1$d件）。詳細の画面で1件ずつ確認して下さい</item>
+        <item quantity="other">警告のあるアプリは、まとめて問題なしにできません（%1$d件）。詳細の画面で1件ずつ確認して下さい。</item>
     </plurals>
     <plurals name="notice_bulk_caution">
         <item quantity="other">%1$d件を要注意にしました</item>
@@ -346,10 +357,10 @@
     <plurals name="notice_bulk_unconfirmed">
         <item quantity="other">%1$d件を未確認に戻しました</item>
     </plurals>
-    <string name="notice_no_change">変更はありませんでした（すでに同じ確認状態です）</string>
-    <string name="notice_saved_status">%1$sを『%2$s』にしました</string>
+    <string name="notice_no_change">変更はありませんでした（既に同じ確認状態です）</string>
+    <string name="notice_saved_status">%1$sを「%2$s」にしました</string>
     <string name="notice_saved_memo">%1$sの管理者メモを保存しました</string>
-    <string name="notice_saved_both">%1$sを『%2$s』にし、管理者メモを保存しました</string>
+    <string name="notice_saved_both">%1$sを「%2$s」にし、管理者メモを保存しました</string>
 
     <!-- アプリの詳細 -->
     <string name="detail_title">アプリの詳細</string>
@@ -382,12 +393,12 @@
     <string name="history_disabled">無効化を検出</string>
     <string name="history_signature_changed">署名の変更を検出</string>
     <string name="history_reset">記録を初期化</string>
-    <string name="history_status_set">『%1$s』に設定</string>
-    <string name="history_status_signature">署名が変わったため『%1$s』に戻した</string>
-    <string name="history_status_undo">取り消し：『%1$s』→『%2$s』</string>
+    <string name="history_status_set">「%1$s」に設定</string>
+    <string name="history_status_signature">署名が変わったため「%1$s」に変更</string>
+    <string name="history_status_undo">取り消し：「%1$s」→「%2$s」</string>
     <string name="history_memo_changed">管理者メモを変更</string>
     <string name="history_memo_removed">管理者メモを削除</string>
-    <string name="history_memo_undo">取り消し：管理者メモを元に戻した</string>
+    <string name="history_memo_undo">取り消し：管理者メモの変更</string>
 
     <!-- アプリの詳細（本人） -->
     <string name="detail_status_by_admin">（管理者が設定）</string>
@@ -404,7 +415,7 @@
     <string name="history_unregistered_undo">取り消し：事前登録の解除</string>
 
     <!-- 注意アプリの事前登録（管理者） -->
-    <string name="prereg_howto_title">登録のしかた</string>
+    <string name="prereg_howto_title">登録の仕方</string>
     <string name="prereg_howto_1">1. Google Play で対象のアプリを開く</string>
     <string name="prereg_howto_2">2. 右上の「⋮」→「共有」→「%1$s」を選ぶ</string>
     <string name="prereg_howto_3">Google Play の URL やパッケージ名を下に直接入力することもできます</string>
@@ -415,7 +426,7 @@
     <string name="prereg_name_label">アプリ名</string>
     <string name="prereg_name_note">共有された文面から自動で入力します。取り出せない場合は手入力して下さい（空でも登録できます）</string>
     <string name="prereg_memo_hint">任意。本人にも表示されます</string>
-    <string name="prereg_already_registered">すでに登録されています</string>
+    <string name="prereg_already_registered">既に登録されています</string>
     <string name="prereg_installed">この端末に入っています（今の確認状態：%1$s）</string>
     <string name="prereg_installed_before">以前この端末に入っていました（今の確認状態：%1$s）</string>
     <string name="prereg_register">「要注意」として登録</string>
@@ -423,7 +434,8 @@
         <item quantity="other">登録済み（端末にない）%1$d件</item>
     </plurals>
     <string name="prereg_registered_empty">まだありません</string>
-    <string name="notice_pre_registered">%1$sを『要注意』として登録しました</string>
+    <string name="prereg_registered_at">登録 %1$s</string>
+    <string name="notice_pre_registered">%1$sを「要注意」として登録しました</string>
     <string name="notice_unregistered">%1$sの登録を解除しました</string>
 
     <!-- 履歴と比較（仕様書 6章、09_history_compare.png） -->
@@ -530,7 +542,7 @@
     <!-- 取り込みの選択（11_import_choice.png） -->
     <string name="import_error_title">ファイルを取り込めません</string>
     <string name="import_error_not_appwatch">AppWatch のファイルではありません</string>
-    <string name="import_error_too_new">新しいアプリで書き出されたファイルです。アプリを更新して下さい</string>
+    <string name="import_error_too_new">新しいアプリで書き出されたファイルです。アプリを更新して下さい。</string>
     <string name="import_error_cannot_open">ファイルを開けませんでした</string>
     <string name="import_error_close">閉じる</string>
     <string name="import_title">データを取り込みます</string>
@@ -543,7 +555,7 @@
     <string name="import_view_only_own">この端末のデータです。閲覧のみでは取り込めません。</string>
     <string name="import_restore">この端末に復元</string>
     <string name="import_restore_desc">この端末のデータを、ファイルの内容で置き換えます。機種変更や初期化の後に使います。</string>
-    <string name="import_cancel">中止</string>
+    <string name="import_cancel">やめる</string>
     <string name="import_confirm">取り込む</string>
     <string name="import_working">取り込んでいます…</string>
     <string name="import_done">%1$sを取り込みました</string>
@@ -556,7 +568,7 @@
     <string name="restore_yes_desc">確認状態と経緯は引き継ぎ、今の端末のアプリを新しい基準にします。履歴に「初期化」を1件記録します。</string>
     <string name="restore_no">いいえ</string>
     <string name="restore_no_desc">データをそのまま戻し、次のチェックで差分を記録します。</string>
-    <string name="restore_cancel">中止</string>
+    <string name="restore_cancel">やめる</string>
     <string name="restore_working">復元しています…</string>
     <string name="restore_done">復元しました</string>
     <string name="restore_failed">復元できませんでした。この端末のデータは元のままです。</string>
@@ -587,6 +599,6 @@
     <string name="imported_delete_ok">削除する</string>
     <string name="imported_deleted">%1$sを削除しました</string>
     <string name="imported_note">「…」から名前の変更と削除ができます。新しいファイルを取り込むと、同じ端末のデータは上書きされます。</string>
-    <string name="imported_howto">見守る端末の「設定」→「データの書き出し・取り込み」で書き出したファイルをこの端末に送り、下の「ファイルを取り込む」から開いて下さい。</string>
+    <string name="imported_howto">本人の端末の「設定」→「データの書き出し・取り込み」で書き出したファイルをこの端末に送り、下の「ファイルを取り込む」から開いて下さい。</string>
     <string name="imported_import_button">ファイルを取り込む</string>
 </resources>

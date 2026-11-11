@@ -13,7 +13,7 @@
 
 - 定期チェック（30分〜24時間ごと）と、アプリの追加・削除・更新・無効化・署名の変化の記録
 - 「確認が必要なアプリ」の表示（理由の札・検索・アプリの詳細）と、確認のうえで Android の削除へ（削除の結果も表示）
-- ホーム画面のウィジェット（4×2）
+- ホーム画面のウィジェット（4×1。縦に広げられます）
 - 管理者用：アプリの確認状態、注意アプリの事前登録（Google Play の「共有」から）、履歴と比較
 - データの書き出し・取り込み（閲覧のみ／この端末に復元）
 - 日本語・英語、ライト・ダークのテーマ
@@ -63,7 +63,7 @@ AppWatch is an Android app for people who aren't used to smartphones. It regular
 
 - Periodic checks (every 30 minutes to 24 hours) that record added, removed, updated and disabled apps and signature changes
 - A list of apps that need review (with the reasons, a search and app details), and deleting them after a confirmation (the result is shown too)
-- A home screen widget (4×2)
+- A home screen widget (4×1; it can be made taller)
 - For helpers: app status, pre-registering apps (from Google Play's "Share"), and history
 - Export and import of data (view only, or restore to this device)
 - Japanese and English, light and dark themes

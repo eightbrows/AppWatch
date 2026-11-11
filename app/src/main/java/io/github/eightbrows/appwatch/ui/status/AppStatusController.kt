@@ -82,6 +82,9 @@ class AppStatusController(context: Context) {
     /** この端末のデータの行（事前登録の画面で、登録済み・端末にあるかを調べる）。 */
     val localEntries: Flow<List<AppStatusEntry>> = repository.observeStatusEntries()
 
+    /** この端末のデータで、事前登録しているアプリの登録した日（事前登録の一覧に出す）。 */
+    val preRegisteredDates: Flow<Map<String, Long>> = repository.observePreRegisteredDates()
+
     val filterEnabled: Flow<Set<FilterChip>> = app.settingsRepository.statusFilterEnabled
 
     fun setFilterEnabled(enabled: Set<FilterChip>) {

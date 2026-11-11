@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ホーム画面のウィジェット（4×2）。updatePeriodMillis はウィジェット自体の予備の定期更新（30分、Android が許す最短）。
-     targetCell は Android 12 以上で使われ、11 以下は minWidth・minHeight で大きさが決まる。
-     previewImage はウィジェットの一覧・追加の確認に出る見本（「確認が必要なアプリは0件」の状態をライトで撮ったもの）。
+<!-- ホーム画面のウィジェット（標準は 4×1。縦に 4×2 まで広げられる。高さに合わせて表示の形を変える：AppWatchWidget）。
+     updatePeriodMillis はウィジェット自体の予備の定期更新（30分、Android が許す最短）。
+     targetCell・maxResizeHeight は Android 12 以上で使われ、11 以下は minWidth・minHeight で大きさが決まる。
+     maxResizeHeight はマスの高さで割って切り上げた段数まで広げられる（エミュレータでは 180dp でも3段になった）。
+     マスの高さが 75dp 以上の端末で2段までになる高さにしてある。
+     すでに 4×2 で置いてあるウィジェットは、その大きさのまま今までの形で表示される。
+     previewImage はウィジェットの一覧・追加の確認に出る見本（「確認が必要なアプリは0件」の状態を、低い形・ライトで撮ったもの）。
      英語の見本は drawable-nodpi、日本語の見本は drawable-ja-nodpi（端末の言語で選ばれる）。 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -9,12 +13,13 @@
     android:initialLayout="@layout/glance_default_loading_layout"
     android:previewImage="@drawable/widget_preview"
     android:minWidth="250dp"
-    android:minHeight="100dp"
+    android:minHeight="40dp"
     android:minResizeWidth="180dp"
-    android:minResizeHeight="100dp"
+    android:minResizeHeight="40dp"
+    android:maxResizeHeight="150dp"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
-    android:targetCellHeight="2"
+    android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen"
     tools:ignore="UnusedAttribute" />

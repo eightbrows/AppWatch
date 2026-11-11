@@ -87,6 +87,10 @@ interface AppRecordDao {
     )
     fun observeDeviceEvents(datasetId: String): Flow<List<AppEventEntity>>
 
+    /** 事前登録・解除の記録（事前登録の一覧に登録した日を出す）。 */
+    @Query("SELECT * FROM app_event WHERE dataset_id = :datasetId AND type IN ('PRE_REGISTERED', 'UNREGISTERED') ORDER BY occurred_at, id")
+    fun observeRegistrationEvents(datasetId: String): Flow<List<AppEventEntity>>
+
     /** 1回の操作で記録した変化（「元に戻す」）。 */
     @Query("SELECT * FROM app_event WHERE dataset_id = :datasetId AND operation_id = :operationId ORDER BY id")
     suspend fun getEventsByOperation(datasetId: String, operationId: String): List<AppEventEntity>

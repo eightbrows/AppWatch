@@ -57,6 +57,9 @@ import io.github.eightbrows.appwatch.data.status.ShareParser
 import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.ui.components.AdminTopBar
 import io.github.eightbrows.appwatch.ui.components.StatusMark
+import io.github.eightbrows.appwatch.ui.components.formatShortDate
+import io.github.eightbrows.appwatch.ui.components.toLocalDateTime
+import io.github.eightbrows.appwatch.ui.components.withDaysAgo
 import io.github.eightbrows.appwatch.ui.components.labelRes
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import kotlinx.coroutines.launch
@@ -77,6 +80,7 @@ fun PreRegisterRoute(
     onOpenDetail: (String) -> Unit,
 ) {
     val entries by remember { controller.localEntries }.collectAsState(initial = null)
+    val registeredDates by remember { controller.preRegisteredDates }.collectAsState(initial = emptyMap())
     var input by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
     var memo by rememberSaveable { mutableStateOf("") }
@@ -169,7 +173,7 @@ fun PreRegisterRoute(
                     colors = fieldColors(),
                 )
                 FieldLabel(pluralStringResource(R.plurals.prereg_registered_list, registeredAbsent.size, registeredAbsent.size))
-                RegisteredList(registeredAbsent, onOpenDetail)
+                RegisteredList(registeredAbsent, registeredDates, onOpenDetail)
                 Spacer(Modifier.height(72.dp))
             }
             SnackbarHost(
@@ -294,9 +298,9 @@ private fun ExistingNotes(entry: AppStatusEntry) {
     }
 }
 
-/** 登録済み（端末にない）の一覧。行を押すと管理者用の詳細を開く。 */
+/** 登録済み（端末にない）の一覧。各行に登録した日（曜日・何日前）を出す。行を押すと管理者用の詳細を開く。 */
 @Composable
-private fun RegisteredList(entries: List<AppStatusEntry>, onOpenDetail: (String) -> Unit) {
+private fun RegisteredList(entries: List<AppStatusEntry>, registeredDates: Map<String, Long>, onOpenDetail: (String) -> Unit) {
     Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Column {
             if (entries.isEmpty()) {
@@ -328,6 +332,13 @@ private fun RegisteredList(entries: List<AppStatusEntry>, onOpenDetail: (String)
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
+                        registeredDates[entry.packageName]?.let { at ->
+                            Text(
+                                text = withDaysAgo(stringResource(R.string.prereg_registered_at, formatShortDate(at.toLocalDateTime())), at),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }

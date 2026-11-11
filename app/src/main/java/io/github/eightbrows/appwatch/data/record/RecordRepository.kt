@@ -194,6 +194,12 @@ class RecordRepository(
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeStatusEntries(): Flow<List<AppStatusEntry>> = observeLocalDatasetId().flatMapLatest { observeStatusEntries(it) }
 
+    /** この端末のデータで、事前登録しているアプリの登録した日（パッケージ名 → 日時）。 */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observePreRegisteredDates(): Flow<Map<String, Long>> = observeLocalDatasetId().flatMapLatest { datasetId ->
+        recordDao.observeRegistrationEvents(datasetId).map { events -> PreRegistration.registeredDates(events.map { it.toChange() }) }
+    }
+
     /** アプリの確認状態の画面の行（端末にないアプリは、確認状態・管理者メモ・事前登録が残っているものだけ）。[datasetId] で読むデータを選ぶ。 */
     fun observeStatusEntries(datasetId: String): Flow<List<AppStatusEntry>> =
         combine(recordDao.observeCurrent(datasetId), policyDao.observeAll(datasetId)) { current, policies ->

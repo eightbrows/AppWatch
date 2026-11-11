@@ -70,7 +70,7 @@
     <!-- 警告 -->
     <string name="warning_not_from_play">Not from Google Play</string>
     <string name="warning_unknown_source">Unknown source</string>
-    <string name="warning_debug_signature">Debug signature</string>
+    <string name="warning_debug_signature">Developer signature</string>
     <string name="warning_signature_changed">Signature changed</string>
     <string name="warning_reinstalled">You deleted this app before</string>
     <!-- 確認が必要になった理由の札（トップ・アプリの詳細・確認状態の画面） -->
@@ -188,6 +188,19 @@
     <string name="widget_setup_title">Ask your helper to set up the app</string>
     <string name="widget_setup_note">Setup isn\'t finished</string>
     <string name="widget_clear_title">No apps to review</string>
+    <!-- 低い形（4×1）の見出し。1行に入る短い言い方 -->
+    <plurals name="widget_caution_title_short">
+        <item quantity="one">%1$d Caution app</item>
+        <item quantity="other">%1$d Caution apps</item>
+    </plurals>
+    <string name="widget_stopped_title_short">Checks stopped</string>
+    <plurals name="widget_review_title_short">
+        <item quantity="one">%1$d app to review</item>
+        <item quantity="other">%1$d apps to review</item>
+    </plurals>
+    <string name="widget_settings_title_short">Settings need checking</string>
+    <string name="widget_setup_title_short">Setup needed</string>
+    <string name="widget_clear_title_short">No apps to review</string>
 
     <!-- 初回設定（仕様書 6章、画面サンプル 15_initial_setup.png） -->
     <string name="setup_progress">Setup  %1$d / %2$d</string>
@@ -224,12 +237,12 @@
     <string name="setup_category_unknown_desc">Installed by user · unknown source</string>
     <string name="setup_category_self">This app (%1$s)</string>
     <string name="setup_category_self_desc">AppWatch itself</string>
-    <string name="setup_check_note">Apps with warnings (such as a debug signature) stay \"Not reviewed\". You can change them one by one later.</string>
+    <string name="setup_check_note">Apps with warnings (such as a developer signature) stay \"Not reviewed\". You can change them one by one later.</string>
 
     <string name="setup_widget_title">Add the widget</string>
     <string name="setup_widget_section">Home screen</string>
     <string name="setup_widget_card_title">Add widget</string>
-    <string name="setup_widget_card_desc">Shows the status at a glance. Tap to confirm adding it</string>
+    <string name="setup_widget_card_desc">Shows the status at a glance. Tap to confirm adding it.</string>
     <string name="setup_widget_add">Add</string>
     <string name="setup_widget_added">Added</string>
     <string name="setup_widget_unsupported">This home screen can\'t add widgets with a button. Press and hold an empty spot on the home screen, choose \"Widgets\", and place \"AppWatch\".</string>
@@ -348,8 +361,8 @@
         <item quantity="other">Set %1$d apps to OK (%2$d with warnings not changed)</item>
     </plurals>
     <plurals name="notice_bulk_all_warned">
-        <item quantity="one">Apps with warnings can\'t be set to OK together (%1$d app). Review each one on its details screen</item>
-        <item quantity="other">Apps with warnings can\'t be set to OK together (%1$d apps). Review each one on its details screen</item>
+        <item quantity="one">Apps with warnings can\'t be set to OK together (%1$d app). Review each one on its details screen.</item>
+        <item quantity="other">Apps with warnings can\'t be set to OK together (%1$d apps). Review each one on its details screen.</item>
     </plurals>
     <plurals name="notice_bulk_caution">
         <item quantity="one">Set %1$d app to Caution</item>
@@ -400,7 +413,7 @@
     <string name="history_status_undo">Undone: \"%1$s\" → \"%2$s\"</string>
     <string name="history_memo_changed">Note changed</string>
     <string name="history_memo_removed">Note deleted</string>
-    <string name="history_memo_undo">Undone: note restored</string>
+    <string name="history_memo_undo">Undone: note change</string>
 
     <!-- アプリの詳細（本人） -->
     <string name="detail_status_by_admin">(set by your helper)</string>
@@ -437,6 +450,7 @@
         <item quantity="other">Registered, not on device: %1$d</item>
     </plurals>
     <string name="prereg_registered_empty">None yet</string>
+    <string name="prereg_registered_at">Registered %1$s</string>
     <string name="notice_pre_registered">Registered %1$s as \"Caution\"</string>
     <string name="notice_unregistered">Removed the registration of %1$s</string>
 
@@ -548,7 +562,7 @@
     <!-- 取り込みの選択（11_import_choice.png） -->
     <string name="import_error_title">Can\'t import the file</string>
     <string name="import_error_not_appwatch">This isn\'t an AppWatch file</string>
-    <string name="import_error_too_new">This file was exported by a newer version. Please update the app</string>
+    <string name="import_error_too_new">This file was exported by a newer version. Please update the app.</string>
     <string name="import_error_cannot_open">Couldn\'t open the file</string>
     <string name="import_error_close">Close</string>
     <string name="import_title">Import data</string>
@@ -607,6 +621,6 @@
     <string name="imported_delete_ok">Delete</string>
     <string name="imported_deleted">Deleted %1$s</string>
     <string name="imported_note">Use \"…\" to rename or delete. Importing a newer file from the same device replaces its data.</string>
-    <string name="imported_howto">On the monitored device, export a file in Settings → Export / Import, send it to this device, and open it with \"Import a file\" below.</string>
+    <string name="imported_howto">On the user\'s device, export a file in Settings → Export / Import, send it to this device, and open it with \"Import a file\" below.</string>
     <string name="imported_import_button">Import a file</string>
 </resources>
