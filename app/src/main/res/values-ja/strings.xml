@@ -173,7 +173,7 @@
     </plurals>
     <string name="widget_caution_note">削除しない場合は、管理者に相談して下さい</string>
     <string name="widget_stopped_title">チェックが|停止しています</string>
-    <string name="widget_stopped_note">アプリを起動しても改善しない場合は、管理者に連絡して下さい</string>
+    <string name="widget_stopped_note">アプリを開いても直らない時は、管理者に連絡して下さい</string>
     <plurals name="widget_review_title">
         <item quantity="other">確認が必要な|アプリ %1$d件</item>
     </plurals>
@@ -514,7 +514,7 @@
         <item quantity="other">（取り込んだデータ %1$d件）</item>
     </plurals>
     <string name="data_snapshot_time">yyyy/MM/dd HH:mm</string>
-    <string name="data_viewing_band">閲覧中：%1$s（%2$s 時点）</string>
+    <string name="data_viewing_band">閲覧中：「%1$s」（%2$s 時点）</string>
     <string name="data_viewing_read_only">閲覧中のデータは変更できません</string>
     <string name="detail_memo_none">（管理者メモなし）</string>
     <string name="history_quick_since_last">前回以降</string>
@@ -560,7 +560,7 @@
     <string name="import_cancel">やめる</string>
     <string name="import_confirm">取り込む</string>
     <string name="import_working">取り込んでいます…</string>
-    <string name="import_done">%1$sを取り込みました</string>
+    <string name="import_done">「%1$s」を取り込みました</string>
     <string name="import_failed">取り込めませんでした</string>
 
     <!-- 復元（14_restore_confirm.png） -->
@@ -592,14 +592,14 @@
     <string name="imported_open_status">確認状態</string>
     <string name="imported_open_history">履歴と比較</string>
     <string name="imported_more">…</string>
-    <string name="imported_more_desc">%1$sのその他の操作</string>
+    <string name="imported_more_desc">「%1$s」のその他の操作</string>
     <string name="imported_rename">名前の変更</string>
     <string name="imported_delete">削除</string>
     <string name="imported_rename_ok">変更する</string>
     <string name="imported_delete_title">「%1$s」を削除しますか？</string>
     <string name="imported_delete_body">取り込んだデータを削除します。この端末の記録と、元の端末の記録は変わりません。</string>
     <string name="imported_delete_ok">削除する</string>
-    <string name="imported_deleted">%1$sを削除しました</string>
+    <string name="imported_deleted">「%1$s」を削除しました</string>
     <string name="imported_note">「…」から名前の変更と削除ができます。新しいファイルを取り込むと、同じ端末のデータは上書きされます。</string>
     <string name="imported_howto">本人の端末の「設定」→「データの書き出し・取り込み」で書き出したファイルをこの端末に送り、下の「ファイルを取り込む」から開いて下さい。</string>
     <string name="imported_import_button">ファイルを取り込む</string>

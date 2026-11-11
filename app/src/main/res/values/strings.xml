@@ -177,7 +177,7 @@
     </plurals>
     <string name="widget_caution_note">Not deleting? Please talk to your helper</string>
     <string name="widget_stopped_title">Checks have stopped</string>
-    <string name="widget_stopped_note">If opening the app doesn\'t help, please contact your helper</string>
+    <string name="widget_stopped_note">If opening the app doesn\'t help, tell your helper</string>
     <plurals name="widget_review_title">
         <item quantity="one">%1$d app to review</item>
         <item quantity="other">%1$d apps to review</item>

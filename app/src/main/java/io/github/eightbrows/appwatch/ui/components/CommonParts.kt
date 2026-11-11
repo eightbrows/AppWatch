@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -71,9 +72,18 @@ fun AdminTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier
     ScreenTopBar(title = title, onBack = onBack, modifier = modifier, showAdminBadge = true)
 }
 
-/** 画面の上部（戻る・題名）。[showAdminBadge] が true なら右上に「管理者用」の印を出す。 */
+/**
+ * 画面の上部（戻る・題名）。[showAdminBadge] が true なら右上に「管理者用」の印を出す。
+ * [actions] は右端に置くもの（本人用のアプリの詳細の、長押しで管理者用の詳細を開く歯車）。
+ */
 @Composable
-fun ScreenTopBar(title: String, onBack: () -> Unit, showAdminBadge: Boolean, modifier: Modifier = Modifier) {
+fun ScreenTopBar(
+    title: String,
+    onBack: () -> Unit,
+    showAdminBadge: Boolean,
+    modifier: Modifier = Modifier,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -97,6 +107,7 @@ fun ScreenTopBar(title: String, onBack: () -> Unit, showAdminBadge: Boolean, mod
             color = MaterialTheme.colorScheme.onBackground,
         )
         if (showAdminBadge) AdminBadge()
+        actions()
     }
 }
 

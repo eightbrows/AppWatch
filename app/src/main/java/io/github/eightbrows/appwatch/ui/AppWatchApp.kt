@@ -181,6 +181,13 @@ fun AppWatchApp(
 
     // アプリの詳細（管理者）で開いているアプリのパッケージ名
     var detailPackage by rememberSaveable { mutableStateOf<String?>(null) }
+    // アプリの詳細（管理者）を本人用の詳細の歯車から開いたか（そのときはいつもこの端末のデータを見る）
+    var detailLocalOnly by rememberSaveable { mutableStateOf(false) }
+    val openHelperDetail: (String) -> Unit = { packageName ->
+        detailPackage = packageName
+        detailLocalOnly = false
+        navigator.navigate(Screen.APP_DETAIL)
+    }
     // アプリの詳細（本人）で開いているアプリのパッケージ名
     var userDetailPackage by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -218,10 +225,7 @@ fun AppWatchApp(
             Screen.APP_STATUS -> AppStatusRoute(
                 controller = statusController,
                 onBack = goBack,
-                onOpenDetail = { packageName ->
-                    detailPackage = packageName
-                    navigator.navigate(Screen.APP_DETAIL)
-                },
+                onOpenDetail = openHelperDetail,
                 onPreRegister = { navigator.navigate(Screen.PRE_REGISTER) },
             )
 
@@ -237,6 +241,7 @@ fun AppWatchApp(
                         onBack = goBack,
                         onDelete = requestDelete,
                         onOpenAppInfo = openAppInfo,
+                        localOnly = detailLocalOnly,
                     )
                 }
             }
@@ -247,10 +252,7 @@ fun AppWatchApp(
                 onSharedTextConsumed = onSharedTextConsumed,
                 // 共有で開いたとき（最初の画面）は、戻ると画面を閉じて共有元に戻る
                 onBack = { if (!goBackOrFalse()) onFinish() },
-                onOpenDetail = { packageName ->
-                    detailPackage = packageName
-                    navigator.navigate(Screen.APP_DETAIL)
-                },
+                onOpenDetail = openHelperDetail,
             )
 
             Screen.USER_DETAIL -> {
@@ -266,6 +268,12 @@ fun AppWatchApp(
                         onBack = goBack,
                         onDelete = requestDelete,
                         onOpenAppInfo = openAppInfo,
+                        // 右上の歯車の長押し：このアプリの管理者用の詳細（この端末のデータ）を開く
+                        onOpenHelperDetail = {
+                            detailPackage = packageName
+                            detailLocalOnly = true
+                            navigator.navigate(Screen.APP_DETAIL)
+                        },
                     )
                 }
             }
@@ -274,10 +282,7 @@ fun AppWatchApp(
                 controller = historyController,
                 statusController = statusController,
                 onBack = goBack,
-                onOpenDetail = { packageName ->
-                    detailPackage = packageName
-                    navigator.navigate(Screen.APP_DETAIL)
-                },
+                onOpenDetail = openHelperDetail,
             )
 
             Screen.EXPORT_IMPORT -> ExportImportRoute(

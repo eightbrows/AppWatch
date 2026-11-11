@@ -71,6 +71,9 @@ import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.ui.components.ScreenTopBar
+import io.github.eightbrows.appwatch.ui.top.LongPressSettingsButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import io.github.eightbrows.appwatch.ui.components.StatusMark
 import io.github.eightbrows.appwatch.ui.components.ViewingBand
 import io.github.eightbrows.appwatch.ui.components.ViewingFooter
@@ -114,14 +117,22 @@ fun AppDetailRoute(
     /** 削除の確認を出す */
     onDelete: (AppStatusEntry) -> Unit,
     onOpenAppInfo: (AppStatusEntry) -> Unit,
+    /**
+     * 管理者用で、いつもこの端末のデータを見るか（本人用の詳細の歯車から開いたとき）。
+     * 確認状態の画面で取り込んだデータを選んでいても、本人の端末のアプリの詳細を開く。
+     */
+    localOnly: Boolean = false,
+    /** 本人用：右上の歯車を長押ししたとき、このアプリの管理者用の詳細を開く */
+    onOpenHelperDetail: () -> Unit = {},
 ) {
     val forHelper = viewer == DetailViewer.HELPER
-    val detail by remember(packageName, viewer) {
-        if (forHelper) controller.detail(packageName) else controller.localDetail(packageName)
+    val useLocal = !forHelper || localOnly
+    val detail by remember(packageName, viewer, useLocal) {
+        if (useLocal) controller.localDetail(packageName) else controller.detail(packageName)
     }.collectAsState(initial = null)
     val selection by remember { controller.selection }.collectAsState(initial = null)
     // 取り込んだデータを見ているときは、見るだけ（保存・アプリ情報・削除・登録の解除を出さない）
-    val viewing = forHelper && selection?.isViewingImported == true
+    val viewing = forHelper && !useLocal && selection?.isViewingImported == true
     // 確認状態・管理者メモを編集できるか（管理者が、この端末のデータを見ているとき）
     val editable = forHelper && !viewing
     val entry = detail?.entry
@@ -157,13 +168,25 @@ fun AppDetailRoute(
     val tryBack: () -> Unit = { if (isDirty) confirmDiscard = true else onBack() }
     BackHandler(enabled = isDirty) { confirmDiscard = true }
 
+    // 本人用：管理者用の詳細で保存・解除して戻ってきたら、この画面で「元に戻す」付きのお知らせを出す
+    val snackbarHostState = remember { SnackbarHostState() }
+    if (!forHelper) rememberNoticePresenter(controller, snackbarHostState)
+
     Column(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .imePadding(),
     ) {
-        ScreenTopBar(title = stringResource(R.string.detail_title), onBack = tryBack, showAdminBadge = forHelper)
+        ScreenTopBar(
+            title = stringResource(R.string.detail_title),
+            onBack = tryBack,
+            showAdminBadge = forHelper,
+            actions = {
+                // 本人用：トップと同じ歯車。長押しで、このアプリの管理者用の詳細を開く
+                if (!forHelper) LongPressSettingsButton(onLongPress = onOpenHelperDetail)
+            },
+        )
         val current = detail
         if (current == null || entry == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -178,7 +201,7 @@ fun AppDetailRoute(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (forHelper) selection?.let { ViewingBand(it) }
+            if (forHelper && !useLocal) selection?.let { ViewingBand(it) }
             Header(entry, loadIcon = !viewing)
             WarningBox(entry, current.events, onExplain = { showExplanation = true })
             SectionLabel(stringResource(R.string.detail_status))
@@ -219,6 +242,7 @@ fun AppDetailRoute(
             ViewingFooter()
             return@Column
         }
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(horizontal = 8.dp))
         BottomButtons(
             entry = entry,
             viewer = viewer,

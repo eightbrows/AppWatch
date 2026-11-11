@@ -80,7 +80,8 @@ fun ImportedDataRoute(
     var renameTarget by rememberSaveable { mutableStateOf<String?>(null) }
     var deleteTarget by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // 取り込み・削除の後のお知らせ
+    // 取り込み・削除の後のお知らせ。
+    // お知らせを消すと notice が変わってこの LaunchedEffect が止まるので、表示は画面の scope で行う（止まるとお知らせが出なかった）
     LaunchedEffect(notice) {
         val current = notice ?: return@LaunchedEffect
         controller.consumeNotice()
@@ -88,7 +89,7 @@ fun ImportedDataRoute(
             is TransferNotice.Imported -> resources.getString(R.string.import_done, current.name)
             is TransferNotice.Deleted -> resources.getString(R.string.imported_deleted, current.name)
         }
-        snackbarHostState.showSnackbar(text)
+        scope.launch { snackbarHostState.showSnackbar(text) }
     }
 
     Column(
