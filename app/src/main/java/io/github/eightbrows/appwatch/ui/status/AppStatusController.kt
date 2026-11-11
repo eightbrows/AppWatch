@@ -6,7 +6,7 @@ import io.github.eightbrows.appwatch.data.record.AppDetail
 import io.github.eightbrows.appwatch.data.record.PolicyEdit
 import io.github.eightbrows.appwatch.data.status.AppStatusEntry
 import io.github.eightbrows.appwatch.data.status.AppStatusRules
-import io.github.eightbrows.appwatch.data.status.FilterChip
+import io.github.eightbrows.appwatch.data.status.FilterItem
 import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.data.transfer.DataSelection
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -85,9 +85,9 @@ class AppStatusController(context: Context) {
     /** この端末のデータで、事前登録しているアプリの登録した日（事前登録の一覧に出す）。 */
     val preRegisteredDates: Flow<Map<String, Long>> = repository.observePreRegisteredDates()
 
-    val filterEnabled: Flow<Set<FilterChip>> = app.settingsRepository.statusFilterEnabled
+    val filterEnabled: Flow<Set<FilterItem>> = app.settingsRepository.statusFilterEnabled
 
-    fun setFilterEnabled(enabled: Set<FilterChip>) {
+    fun setFilterEnabled(enabled: Set<FilterItem>) {
         app.appScope.launch { app.settingsRepository.setStatusFilterEnabled(enabled) }
     }
 

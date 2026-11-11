@@ -12,8 +12,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import io.github.eightbrows.appwatch.data.status.AppStatusRules
-import io.github.eightbrows.appwatch.data.status.FilterChip
+import io.github.eightbrows.appwatch.data.status.FilterItem
+import io.github.eightbrows.appwatch.data.status.StatusFilter
 
 /** DataStore のファイル名。自動バックアップの対象（res/xml の backup_rules・data_extraction_rules）にも書いてある。 */
 internal const val SETTINGS_DATASTORE_NAME = "settings"
@@ -78,21 +78,19 @@ class SettingsRepository(context: Context) {
         }
     }
 
-    /** アプリの確認状態の画面の絞り込み。オフにした選択肢を保存する（保存がなければ「システム」だけオフ）。 */
-    val statusFilterEnabled: Flow<Set<FilterChip>> = dataStore.data
+    /**
+     * アプリの確認状態の画面の絞り込み。オフにした項目の名前を保存する（保存がなければ「システム」だけオフ）。
+     * 前の版の名前は読み替える（[StatusFilter.LEGACY_NAMES]）。
+     */
+    val statusFilterEnabled: Flow<Set<FilterItem>> = dataStore.data
         .map { prefs ->
-            val off = prefs[KEY_STATUS_FILTER_OFF]
-                ?.mapNotNull { saved -> FilterChip.entries.firstOrNull { it.name == saved } }
-                ?.toSet()
-                ?: AppStatusRules.DEFAULT_OFF
-            AppStatusRules.enabledFrom(off)
+            val off = prefs[KEY_STATUS_FILTER_OFF]?.let { StatusFilter.offFromSaved(it) } ?: StatusFilter.DEFAULT_OFF
+            StatusFilter.enabledFrom(off)
         }
         .distinctUntilChanged()
 
-    suspend fun setStatusFilterEnabled(enabled: Set<FilterChip>) {
-        dataStore.edit { prefs ->
-            prefs[KEY_STATUS_FILTER_OFF] = (FilterChip.entries.toSet() - enabled).mapTo(HashSet()) { it.name }
-        }
+    suspend fun setStatusFilterEnabled(enabled: Set<FilterItem>) {
+        dataStore.edit { prefs -> prefs[KEY_STATUS_FILTER_OFF] = StatusFilter.savedNames(enabled) }
     }
 
     /** 選択中のデータの番号（仕様書 7章）。保存がなければ null（「この端末」）。 */

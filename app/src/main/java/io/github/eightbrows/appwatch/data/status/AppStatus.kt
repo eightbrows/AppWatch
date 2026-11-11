@@ -37,44 +37,7 @@ data class AppStatusEntry(
     val signatureChangedAt: Long?,
 )
 
-/**
- * 絞り込みの行・組（仕様書 6章の表）。同じ行（組）の中は「どれかに当たる」、行（組）どうしは「すべてに当たる」。
- * 最後の行は「端末」「登録」「状態」の3つの組に分け、それぞれを別の組として効かせる。
- */
-enum class FilterRow { STATUS, KIND, SOURCE, WARNING, DEVICE, REGISTRATION, STATE }
-
-/** 絞り込みの選択肢（チップ）。 */
-enum class FilterChip(val row: FilterRow) {
-    STATUS_UNCONFIRMED(FilterRow.STATUS),
-    STATUS_CAUTION(FilterRow.STATUS),
-    STATUS_OK(FilterRow.STATUS),
-    KIND_USER(FilterRow.KIND),
-    KIND_PREINSTALLED(FilterRow.KIND),
-    KIND_SYSTEM(FilterRow.KIND),
-    SOURCE_PLAY(FilterRow.SOURCE),
-    SOURCE_OTHER(FilterRow.SOURCE),
-    SOURCE_UNKNOWN(FilterRow.SOURCE),
-    WARNING_NONE(FilterRow.WARNING),
-    WARNING_DEBUG(FilterRow.WARNING),
-    WARNING_SIGNATURE(FilterRow.WARNING),
-    WARNING_REINSTALL(FilterRow.WARNING),
-
-    // 5行目は「端末：あり／なし」「登録：事前登録／なし」「状態：有効／無効」の3つの組（どの組も全部の場合を選べる）
-    DEVICE_PRESENT(FilterRow.DEVICE),
-    DEVICE_ABSENT(FilterRow.DEVICE),
-    REGISTERED(FilterRow.REGISTRATION),
-    NOT_REGISTERED(FilterRow.REGISTRATION),
-    ENABLED(FilterRow.STATE),
-    DISABLED(FilterRow.STATE),
-}
-
 object AppStatusRules {
-
-    /** 絞り込みの初期値：「システム」だけオフ（仕様書 6章）。 */
-    val DEFAULT_OFF: Set<FilterChip> = setOf(FilterChip.KIND_SYSTEM)
-
-    /** オフの選択肢から、オンの選択肢を求める（保存はオフの方で行う。新しい選択肢が増えても初期値はオン）。 */
-    fun enabledFrom(off: Set<FilterChip>): Set<FilterChip> = FilterChip.entries.toSet() - off
 
     // ---- 一覧の行を作る ----
 
@@ -152,61 +115,8 @@ object AppStatusRules {
 
     // ---- 絞り込み・検索・並び ----
 
-    /** その行で、アプリが当たる選択肢。種類・入手元が分からないアプリ（事前登録だけ）は、その行では常に当たる（null）。 */
-    internal fun chipsOf(entry: AppStatusEntry, row: FilterRow): Set<FilterChip>? = when (row) {
-        FilterRow.STATUS -> setOf(
-            when (entry.status) {
-                ReviewStatus.UNCONFIRMED -> FilterChip.STATUS_UNCONFIRMED
-                ReviewStatus.CAUTION -> FilterChip.STATUS_CAUTION
-                ReviewStatus.OK -> FilterChip.STATUS_OK
-            },
-        )
-        FilterRow.KIND -> entry.kind?.let {
-            setOf(
-                when (it) {
-                    AppKind.USER_INSTALLED -> FilterChip.KIND_USER
-                    AppKind.PREINSTALLED -> FilterChip.KIND_PREINSTALLED
-                    AppKind.SYSTEM -> FilterChip.KIND_SYSTEM
-                },
-            )
-        }
-        // 入手：は後から導入のアプリだけに効かせる（プリインストール・システムは種類で見るので、この行では外さない）
-        FilterRow.SOURCE -> if (entry.kind != AppKind.USER_INSTALLED) ALWAYS else entry.source?.let {
-            setOf(
-                when (it) {
-                    InstallSource.GOOGLE_PLAY -> FilterChip.SOURCE_PLAY
-                    InstallSource.OTHER -> FilterChip.SOURCE_OTHER
-                    InstallSource.UNKNOWN -> FilterChip.SOURCE_UNKNOWN
-                },
-            )
-        }
-        // 警告の行は、署名・再導入に関わる警告で見る（Google Play 以外・入手元が分からない は「入手：」の行で絞れる）
-        FilterRow.WARNING -> buildSet {
-            if (AppWarning.DEBUG_SIGNATURE in entry.warnings) add(FilterChip.WARNING_DEBUG)
-            if (AppWarning.SIGNATURE_CHANGED in entry.warnings) add(FilterChip.WARNING_SIGNATURE)
-            if (AppWarning.REINSTALLED in entry.warnings) add(FilterChip.WARNING_REINSTALL)
-            if (isEmpty()) add(FilterChip.WARNING_NONE)
-        }
-        FilterRow.DEVICE -> setOf(if (entry.isPresent) FilterChip.DEVICE_PRESENT else FilterChip.DEVICE_ABSENT)
-        FilterRow.REGISTRATION -> setOf(if (entry.isPreRegistered) FilterChip.REGISTERED else FilterChip.NOT_REGISTERED)
-        // 状態：（有効・無効）は端末にあるアプリで見る。端末にないアプリには有効・無効がないので、
-        // 種類が分からないアプリと同じく「この組のどれかがオンなら当たる」
-        FilterRow.STATE -> if (!entry.isPresent) null else setOf(if (entry.isEnabled) FilterChip.ENABLED else FilterChip.DISABLED)
-    }
-
-    /** その行では外さない（行のチップのオン・オフに関係なく当たる）印。 */
-    private val ALWAYS: Set<FilterChip> = emptySet()
-
-    /**
-     * 絞り込みに当たるか。行（組）ごとに、オンの選択肢のどれかに当たること。1つの行がすべてオフなら何も当たらない。
-     * - 種類が分からない（事前登録だけで一度も入っていない）アプリ、状態：の端末にないアプリは、その行のどれかがオンなら当たる
-     * - 入手：の行はプリインストール・システム（と種類が分からないアプリ）には効かず、この行では外さない
-     */
-    fun matchesFilter(entry: AppStatusEntry, enabled: Set<FilterChip>): Boolean =
-        FilterRow.entries.all { row ->
-            val chips = chipsOf(entry, row) ?: return@all enabled.any { it.row == row }
-            chips === ALWAYS || chips.any { it in enabled }
-        }
+    /** 絞り込みに当たるか（ツリーの決まりは [StatusFilter]）。 */
+    fun matchesFilter(entry: AppStatusEntry, enabled: Set<FilterItem>): Boolean = StatusFilter.matches(entry, enabled)
 
     /** 検索：アプリ名・パッケージ名の部分一致（大文字・小文字を区別しない）。空なら全部。 */
     fun matchesQuery(entry: AppStatusEntry, query: String): Boolean =
@@ -222,7 +132,7 @@ object AppStatusRules {
     }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }.thenBy { it.packageName }
 
     /** 絞り込み・検索をして並べた、画面に出す行。 */
-    fun visible(entries: List<AppStatusEntry>, enabled: Set<FilterChip>, query: String): List<AppStatusEntry> =
+    fun visible(entries: List<AppStatusEntry>, enabled: Set<FilterItem>, query: String): List<AppStatusEntry> =
         entries.filter { matchesFilter(it, enabled) && matchesQuery(it, query) }.sortedWith(ORDER)
 
     // ---- まとめて「問題なし」 ----

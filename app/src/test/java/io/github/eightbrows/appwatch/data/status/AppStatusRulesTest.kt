@@ -45,14 +45,14 @@ class AppStatusRulesTest {
         signatureChangedAt = null,
     )
 
-    private val all = FilterChip.entries.toSet()
+    private val all = FilterItem.entries.toSet()
 
     // ---- 絞り込み ----
 
     @Test
     fun 初期値はシステムだけオフ() {
-        val enabled = AppStatusRules.enabledFrom(AppStatusRules.DEFAULT_OFF)
-        assertEquals(all - FilterChip.KIND_SYSTEM, enabled)
+        val enabled = StatusFilter.enabledFrom(StatusFilter.DEFAULT_OFF)
+        assertEquals(all - FilterItem.KIND_SYSTEM, enabled)
         assertFalse(AppStatusRules.matchesFilter(entry("sys", kind = AppKind.SYSTEM), enabled))
         assertTrue(AppStatusRules.matchesFilter(entry("user"), enabled))
         assertTrue(AppStatusRules.matchesFilter(entry("pre", kind = AppKind.PREINSTALLED), enabled))
@@ -60,7 +60,7 @@ class AppStatusRulesTest {
 
     @Test
     fun 同じ行の中はどれかに当たればよい() {
-        val enabled = all - FilterChip.STATUS_OK
+        val enabled = all - FilterItem.STATUS_OK
         assertTrue(AppStatusRules.matchesFilter(entry("a", status = ReviewStatus.UNCONFIRMED), enabled))
         assertTrue(AppStatusRules.matchesFilter(entry("b", status = ReviewStatus.CAUTION), enabled))
         assertFalse(AppStatusRules.matchesFilter(entry("c", status = ReviewStatus.OK), enabled))
@@ -69,8 +69,8 @@ class AppStatusRulesTest {
     @Test
     fun 行どうしはすべてに当たる必要がある() {
         // 確認：要注意だけ、入手：Play外だけ
-        val enabled = all - FilterChip.STATUS_UNCONFIRMED - FilterChip.STATUS_OK -
-            FilterChip.SOURCE_PLAY - FilterChip.SOURCE_UNKNOWN
+        val enabled = all - FilterItem.STATUS_UNCONFIRMED - FilterItem.STATUS_OK -
+            FilterItem.SOURCE_PLAY - FilterItem.SOURCE_UNKNOWN
         assertTrue(AppStatusRules.matchesFilter(entry("a", status = ReviewStatus.CAUTION, source = InstallSource.OTHER), enabled))
         assertFalse(AppStatusRules.matchesFilter(entry("b", status = ReviewStatus.CAUTION, source = InstallSource.GOOGLE_PLAY), enabled))
         assertFalse(AppStatusRules.matchesFilter(entry("c", status = ReviewStatus.UNCONFIRMED, source = InstallSource.OTHER), enabled))
@@ -78,18 +78,19 @@ class AppStatusRulesTest {
 
     @Test
     fun 一つの行がすべてオフなら何も出ない() {
-        val enabled = all - FilterChip.DEVICE_PRESENT - FilterChip.DEVICE_ABSENT
+        val enabled = all - FilterItem.DEVICE_PRESENT - FilterItem.DEVICE_ABSENT
         assertFalse(AppStatusRules.matchesFilter(entry("a"), enabled))
         assertFalse(AppStatusRules.matchesFilter(entry("b", present = false), enabled))
-        // 種類が分からない（事前登録だけ）アプリも、種類の行がすべてオフなら出ない
-        val noKind = all - FilterChip.KIND_USER - FilterChip.KIND_PREINSTALLED - FilterChip.KIND_SYSTEM
-        assertFalse(AppStatusRules.matchesFilter(entry("c", kind = null, source = null, present = false, preRegistered = true), noKind))
+        // 種類の組がすべてオフなら端末にあるアプリは出ない。端末にないアプリ（事前登録だけ）には種類は効かない
+        val noKind = all - FilterItem.KIND_USER - FilterItem.KIND_PREINSTALLED - FilterItem.KIND_SYSTEM
+        assertFalse(AppStatusRules.matchesFilter(entry("c"), noKind))
+        assertTrue(AppStatusRules.matchesFilter(entry("d", kind = null, source = null, present = false, preRegistered = true), noKind))
     }
 
     @Test
     fun 警告の行は署名と再導入の警告で見る() {
-        val onlyNone = all - FilterChip.WARNING_DEBUG - FilterChip.WARNING_SIGNATURE - FilterChip.WARNING_REINSTALL
-        val onlyReinstall = all - FilterChip.WARNING_NONE - FilterChip.WARNING_DEBUG - FilterChip.WARNING_SIGNATURE
+        val onlyNone = all - FilterItem.WARNING_DEBUG - FilterItem.WARNING_SIGNATURE - FilterItem.WARNING_REINSTALL
+        val onlyReinstall = all - FilterItem.WARNING_NONE - FilterItem.WARNING_DEBUG - FilterItem.WARNING_SIGNATURE
         val reinstalled = entry("r", warnings = setOf(AppWarning.REINSTALLED, AppWarning.NOT_FROM_PLAY))
         val notFromPlay = entry("n", warnings = setOf(AppWarning.NOT_FROM_PLAY))
         assertFalse(AppStatusRules.matchesFilter(reinstalled, onlyNone))
@@ -100,17 +101,19 @@ class AppStatusRulesTest {
     }
 
     @Test
-    fun 端末と登録と状態は別々の組としてすべてに当たる必要がある() {
+    fun 状態は端末にあるアプリだけに効く() {
         // 状態：無効だけ（有効をオフ）
-        val onlyDisabled = all - FilterChip.ENABLED
+        val onlyDisabled = all - FilterItem.ENABLED
         assertTrue(AppStatusRules.matchesFilter(entry("d", enabled = false), onlyDisabled))
         assertFalse(AppStatusRules.matchesFilter(entry("e"), onlyDisabled))
-        // 端末：なしだけ
-        val onlyAbsent = all - FilterChip.DEVICE_PRESENT
+        // 端末にないアプリには状態は効かない
+        assertTrue(AppStatusRules.matchesFilter(entry("e2", present = false), onlyDisabled))
+        // 端末にないだけ
+        val onlyAbsent = all - FilterItem.DEVICE_PRESENT
         assertTrue(AppStatusRules.matchesFilter(entry("f", present = false), onlyAbsent))
         assertFalse(AppStatusRules.matchesFilter(entry("g"), onlyAbsent))
         // 「無効」をオフにすると無効のアプリが消える（今までは「端末：あり」に当たって消えなかった）
-        assertFalse(AppStatusRules.matchesFilter(entry("h", enabled = false), all - FilterChip.DISABLED))
+        assertFalse(AppStatusRules.matchesFilter(entry("h", enabled = false), all - FilterItem.DISABLED))
     }
 
     // ---- 検索 ----
@@ -132,7 +135,7 @@ class AppStatusRulesTest {
             entry("com.example.qrscan", name = "QRスキャン", status = ReviewStatus.OK),
             entry("com.example.weather", name = "天気ナビ", status = ReviewStatus.CAUTION),
         )
-        val noOk = all - FilterChip.STATUS_OK
+        val noOk = all - FilterItem.STATUS_OK
         assertEquals(listOf("com.example.qrreader"), AppStatusRules.visible(entries, noOk, "qr").map { it.packageName })
     }
 

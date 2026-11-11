@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import io.github.eightbrows.appwatch.R
@@ -54,8 +55,14 @@ fun ReasonChip(reason: ReviewReason, modifier: Modifier = Modifier) {
     } else {
         colors.warningChip to colors.onWarningChip
     }
+    LabelChip(text = stringResource(reason.labelRes()), container = container, content = content, modifier = modifier)
+}
+
+/** 札（理由の札と同じ形）。確認状態の画面の「無効」（灰）・「事前登録」（青）にも使う。 */
+@Composable
+fun LabelChip(text: String, container: Color, content: Color, modifier: Modifier = Modifier) {
     Text(
-        text = stringResource(reason.labelRes()),
+        text = text,
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(container)

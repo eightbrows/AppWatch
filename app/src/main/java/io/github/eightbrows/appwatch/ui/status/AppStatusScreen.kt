@@ -16,14 +16,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,7 +54,6 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -66,8 +63,9 @@ import androidx.compose.ui.unit.dp
 import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.status.AppStatusEntry
 import io.github.eightbrows.appwatch.data.status.AppStatusRules
-import io.github.eightbrows.appwatch.data.status.FilterChip
-import io.github.eightbrows.appwatch.data.status.FilterRow
+import io.github.eightbrows.appwatch.data.status.FilterCondition
+import io.github.eightbrows.appwatch.data.status.StatusFilter
+import io.github.eightbrows.appwatch.ui.components.LabelChip
 import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.data.transfer.DataSelection
@@ -86,7 +84,6 @@ import androidx.compose.ui.text.AnnotatedString
 import io.github.eightbrows.appwatch.model.AppSearch
 import io.github.eightbrows.appwatch.model.ReviewReason
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.CircleShape
 import io.github.eightbrows.appwatch.ui.components.formatShortDate
 import io.github.eightbrows.appwatch.ui.components.labelRes
 import io.github.eightbrows.appwatch.ui.components.toLocalDateTime
@@ -110,6 +107,8 @@ fun AppStatusRoute(
     val readOnly = selection?.isViewingImported == true
     val enabled by remember { controller.filterEnabled }.collectAsState(initial = null)
     var query by rememberSaveable { mutableStateOf("") }
+    // 下から出す絞り込みの画面を開いているか
+    var showFilter by rememberSaveable { mutableStateOf(false) }
     // 選んだアプリ（パッケージ名）。画面の回転でも消えないように保存する
     var selected by rememberSaveable { mutableStateOf(listOf<String>()) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -122,6 +121,8 @@ fun AppStatusRoute(
         if (currentEntries == null || currentEnabled == null) emptyList()
         else AppStatusRules.visible(currentEntries, currentEnabled, query)
     }
+    // 絞り込みの各項目の件数（ほかの条件・検索に関係しない）
+    val counts = remember(currentEntries) { StatusFilter.counts(currentEntries.orEmpty()) }
     // 絞り込みや検索で見えなくなったアプリは、まとめて変える対象にしない
     val selectedVisible = remember(visible, selected, readOnly) {
         val set = if (readOnly) emptySet() else selected.toSet()
@@ -146,15 +147,15 @@ fun AppStatusRoute(
                         controller.selectDataset(id)
                     },
                     readOnly = readOnly,
-                    enabled = currentEnabled,
+                    conditions = StatusFilter.conditions(currentEnabled),
+                    changedCount = StatusFilter.changedCount(currentEnabled),
                     query = query,
                     selected = selectedVisible.mapTo(HashSet()) { it.packageName },
                     onQueryChange = { query = it },
                     onPreRegister = onPreRegister,
-                    onToggleChip = { chip ->
-                        val next = if (chip in currentEnabled) currentEnabled - chip else currentEnabled + chip
-                        controller.setFilterEnabled(next)
-                    },
+                    onOpenFilter = { showFilter = true },
+                    onClearCondition = { controller.setFilterEnabled(StatusFilter.clear(currentEnabled, it)) },
+                    onResetFilter = { controller.setFilterEnabled(StatusFilter.DEFAULT_ENABLED) },
                     onToggleSelect = { packageName ->
                         selected = if (packageName in selected) selected - packageName else selected + packageName
                     },
@@ -173,6 +174,15 @@ fun AppStatusRoute(
             )
         }
         if (readOnly) ViewingFooter()
+        if (showFilter && currentEnabled != null) {
+            StatusFilterSheet(
+                enabled = currentEnabled,
+                counts = counts,
+                visibleCount = visible.size,
+                onChange = controller::setFilterEnabled,
+                onDismiss = { showFilter = false },
+            )
+        }
         if (selectedVisible.isNotEmpty()) {
             BulkActions(
                 onSelect = { status ->
@@ -263,12 +273,15 @@ private fun StatusList(
     selection: DataSelection?,
     onSelectDataset: (String) -> Unit,
     readOnly: Boolean,
-    enabled: Set<FilterChip>,
+    conditions: List<FilterCondition>,
+    changedCount: Int,
     query: String,
     selected: Set<String>,
     onQueryChange: (String) -> Unit,
     onPreRegister: () -> Unit,
-    onToggleChip: (FilterChip) -> Unit,
+    onOpenFilter: () -> Unit,
+    onClearCondition: (FilterCondition) -> Unit,
+    onResetFilter: () -> Unit,
     onToggleSelect: (String) -> Unit,
     onSelectAllVisible: () -> Unit,
     onClearSelection: () -> Unit,
@@ -283,8 +296,11 @@ private fun StatusList(
         if (selection != null && selection.showsSwitcher) {
             item(key = "data") { DataSwitcher(selection, onSelectDataset, Modifier.padding(top = 4.dp)) }
         }
-        item(key = "search") { SearchRow(query, onQueryChange, onPreRegister, preRegisterEnabled = !readOnly) }
-        item(key = "filters") { Filters(enabled, onToggleChip) }
+        item(key = "search") {
+            SearchRow(query, onQueryChange, onPreRegister, changedCount, onOpenFilter, preRegisterEnabled = !readOnly)
+        }
+        // 表示の件数と、初期値と違う条件（✕で外せる札）
+        item(key = "conditions") { ConditionLine(visible.size, conditions, onClearCondition, onResetFilter) }
         if (!readOnly) {
             stickyHeader(key = "selection") {
                 SelectionBar(
@@ -318,106 +334,40 @@ private fun StatusList(
 }
 
 @Composable
-private fun SearchRow(query: String, onQueryChange: (String) -> Unit, onPreRegister: () -> Unit, preRegisterEnabled: Boolean = true) {
+private fun SearchRow(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onPreRegister: () -> Unit,
+    changedCount: Int,
+    onOpenFilter: () -> Unit,
+    preRegisterEnabled: Boolean = true,
+) {
     Row(
         modifier = Modifier.padding(top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         AppSearchField(query = query, onQueryChange = onQueryChange, modifier = Modifier.weight(1f))
+        FilterButton(changedCount = changedCount, onClick = onOpenFilter)
+        // 事前登録は幅の都合で「＋」だけ（読み上げは「事前登録」）
         Button(
             onClick = onPreRegister,
             enabled = preRegisterEnabled,
-            modifier = Modifier.height(48.dp),
+            modifier = Modifier.size(48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.onSurface,
                 contentColor = MaterialTheme.colorScheme.surface,
             ),
-            contentPadding = PaddingValues(horizontal = 12.dp),
+            contentPadding = PaddingValues(0.dp),
         ) {
-            Icon(painter = painterResource(R.drawable.ic_add), contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(4.dp))
-            Text(stringResource(R.string.status_pre_register), style = MaterialTheme.typography.labelMedium, maxLines = 1)
-        }
-    }
-}
-
-/**
- * 絞り込み。ラベルは末尾にコロンを付ける（仕様書 6章）。
- * 5行目は「端末：」「登録：」「状態：」の3つの組を並べ、幅が足りなければ組ごとに次の行へ送る（組の途中では折り返さない）。
- */
-@Composable
-private fun Filters(enabled: Set<FilterChip>, onToggle: (FilterChip) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        listOf(FilterRow.STATUS, FilterRow.KIND, FilterRow.SOURCE, FilterRow.WARNING).forEach { row ->
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
-                FilterLabel(row.labelRes())
-                FilterChip.entries.filter { it.row == row }.forEach { ChipView(it, enabled, onToggle) }
-            }
-        }
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            itemVerticalAlignment = Alignment.CenterVertically,
-        ) {
-            listOf(FilterRow.DEVICE, FilterRow.REGISTRATION, FilterRow.STATE).forEach { row ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    FilterLabel(row.labelRes())
-                    FilterChip.entries.filter { it.row == row }.forEach { ChipView(it, enabled, onToggle) }
-                }
-            }
-        }
-    }
-}
-
-private fun FilterRow.labelRes(): Int = when (this) {
-    FilterRow.STATUS -> R.string.filter_label_status
-    FilterRow.KIND -> R.string.filter_label_kind
-    FilterRow.SOURCE -> R.string.filter_label_source
-    FilterRow.WARNING -> R.string.filter_label_warning
-    FilterRow.DEVICE -> R.string.filter_label_device
-    FilterRow.REGISTRATION -> R.string.filter_label_registered
-    FilterRow.STATE -> R.string.filter_label_state
-}
-
-@Composable
-private fun FilterLabel(res: Int, start: androidx.compose.ui.unit.Dp = 0.dp) {
-    Text(
-        text = stringResource(res),
-        modifier = Modifier.padding(start = start, end = 2.dp),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
-/** 絞り込みの選択肢。オンは青で強調する。 */
-@Composable
-private fun ChipView(chip: FilterChip, enabled: Set<FilterChip>, onToggle: (FilterChip) -> Unit) {
-    val on = chip in enabled
-    val shape = RoundedCornerShape(50)
-    Text(
-        text = stringResource(chip.labelRes()),
-        modifier = Modifier
-            .clip(shape)
-            .background(if (on) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
-            .border(
-                width = if (on) 1.5.dp else 1.dp,
-                color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                shape = shape,
+            Icon(
+                painter = painterResource(R.drawable.ic_add),
+                contentDescription = stringResource(R.string.status_pre_register),
+                modifier = Modifier.size(24.dp),
             )
-            .toggleable(value = on, role = Role.Checkbox, onValueChange = { onToggle(chip) })
-            .heightIn(min = 28.dp)
-            .padding(horizontal = 9.dp, vertical = 4.dp),
-        style = MaterialTheme.typography.bodySmall,
-        fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
-        color = if (on) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-        maxLines = 1,
-    )
+        }
+    }
 }
 
 @Composable
@@ -505,7 +455,6 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     if (entry.isSelf) SmallLabel(stringResource(R.string.app_self_label))
-                    if (entry.isPresent && !entry.isEnabled) SmallLabel(stringResource(R.string.app_disabled_label))
                 }
                 entry.versionName?.takeIf { it.isNotBlank() }?.let {
                     Text(stringResource(R.string.format_version, it), style = MaterialTheme.typography.bodySmall, color = subColor)
@@ -597,13 +546,30 @@ private fun SourceLine(entry: AppStatusEntry, withSource: Boolean) {
  */
 @Composable
 private fun RowWarnings(entry: AppStatusEntry, reasons: List<ReviewReason>) {
-    if (reasons.isEmpty()) return
+    val disabled = entry.isPresent && !entry.isEnabled
+    val preRegisteredOnly = StatusFilter.isPreRegisteredOnly(entry)
+    if (reasons.isEmpty() && !disabled && !preRegisteredOnly) return
     FlowRow(
         modifier = Modifier.padding(top = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
     ) {
+        // 無効（灰）・事前登録だけ（青）の札。警告の札と同じ形
+        if (disabled) {
+            LabelChip(
+                text = stringResource(R.string.app_disabled_label),
+                container = MaterialTheme.colorScheme.surfaceVariant,
+                content = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (preRegisteredOnly) {
+            LabelChip(
+                text = stringResource(R.string.status_badge_pre_registered),
+                container = MaterialTheme.colorScheme.primaryContainer,
+                content = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        }
         reasons.forEach { reason ->
             ReasonChip(reason)
             // 見つけた日は、その札のすぐ後に出す

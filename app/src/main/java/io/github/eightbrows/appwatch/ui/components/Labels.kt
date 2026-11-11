@@ -13,7 +13,7 @@ import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.PermissionState
 import io.github.eightbrows.appwatch.model.ReviewReason
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.data.status.FilterChip
+import io.github.eightbrows.appwatch.data.status.FilterItem
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -70,27 +70,36 @@ fun AppKind.labelRes(): Int = when (this) {
     AppKind.SYSTEM -> R.string.kind_system
 }
 
+/** 絞り込みの項目の名前（下から出す絞り込みの画面）。 */
 @StringRes
-fun FilterChip.labelRes(): Int = when (this) {
-    FilterChip.STATUS_UNCONFIRMED -> R.string.filter_status_unconfirmed
-    FilterChip.STATUS_CAUTION -> R.string.filter_status_caution
-    FilterChip.STATUS_OK -> R.string.filter_status_ok
-    FilterChip.KIND_USER -> R.string.filter_kind_user
-    FilterChip.KIND_PREINSTALLED -> R.string.filter_kind_preinstalled
-    FilterChip.KIND_SYSTEM -> R.string.filter_kind_system
-    FilterChip.SOURCE_PLAY -> R.string.filter_source_play
-    FilterChip.SOURCE_OTHER -> R.string.filter_source_other
-    FilterChip.SOURCE_UNKNOWN -> R.string.filter_source_unknown
-    FilterChip.WARNING_NONE -> R.string.filter_warning_none
-    FilterChip.WARNING_DEBUG -> R.string.filter_warning_debug
-    FilterChip.WARNING_SIGNATURE -> R.string.filter_warning_signature
-    FilterChip.WARNING_REINSTALL -> R.string.filter_warning_reinstall
-    FilterChip.DEVICE_PRESENT -> R.string.filter_device_present
-    FilterChip.DEVICE_ABSENT -> R.string.filter_device_absent
-    FilterChip.REGISTERED -> R.string.filter_registered
-    FilterChip.NOT_REGISTERED -> R.string.filter_not_registered
-    FilterChip.ENABLED -> R.string.filter_enabled
-    FilterChip.DISABLED -> R.string.filter_disabled
+fun FilterItem.labelRes(): Int = when (this) {
+    FilterItem.STATUS_UNCONFIRMED -> R.string.filter_item_unconfirmed
+    FilterItem.STATUS_CAUTION -> R.string.filter_item_caution
+    FilterItem.STATUS_OK -> R.string.filter_item_ok
+    FilterItem.DEVICE_PRESENT -> R.string.filter_item_present
+    FilterItem.ENABLED -> R.string.filter_item_enabled
+    FilterItem.DISABLED -> R.string.filter_item_disabled
+    FilterItem.KIND_USER -> R.string.filter_item_user
+    FilterItem.KIND_PREINSTALLED -> R.string.filter_item_preinstalled
+    FilterItem.KIND_SYSTEM -> R.string.filter_item_system
+    FilterItem.SOURCE_PLAY -> R.string.filter_item_play
+    FilterItem.SOURCE_OTHER -> R.string.filter_item_other
+    FilterItem.SOURCE_UNKNOWN -> R.string.filter_item_unknown
+    FilterItem.WARNING_NONE -> R.string.filter_item_warning_none
+    FilterItem.WARNING_DEBUG -> R.string.filter_item_debug
+    FilterItem.WARNING_SIGNATURE -> R.string.filter_item_signature
+    FilterItem.WARNING_REINSTALL -> R.string.filter_item_reinstall
+    FilterItem.DEVICE_ABSENT -> R.string.filter_item_absent
+    FilterItem.ABSENT_REMOVED -> R.string.filter_item_removed
+    FilterItem.ABSENT_PRE_REGISTERED -> R.string.filter_item_pre_registered
+}
+
+/** 一覧の上の条件の1行で使う名前（「〜を除く」「〜だけ」の中）。ツリーの名前だけでは分かりにくいものを言い換える。 */
+@StringRes
+fun FilterItem.conditionNameRes(): Int = when (this) {
+    FilterItem.WARNING_NONE -> R.string.filter_name_warning_none
+    FilterItem.ABSENT_PRE_REGISTERED -> R.string.filter_name_pre_registered
+    else -> labelRes()
 }
 
 /** エポックミリ秒を端末の時間帯の日時にする。 */
