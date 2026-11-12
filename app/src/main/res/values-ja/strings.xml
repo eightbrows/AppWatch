@@ -297,6 +297,8 @@
 
     <!-- アプリの確認状態（管理者） -->
     <string name="status_search_hint">アプリ名・パッケージ名</string>
+    <!-- 確認状態の画面の検索の案内（ボタンが並ぶので短く） -->
+    <string name="status_search_hint_short">検索</string>
     <string name="status_search_clear">検索の文字を消す</string>
     <string name="status_pre_register">事前登録</string>
     <!-- 確認状態の画面の絞り込み（下から出す画面のツリーと、一覧の上の条件の1行） -->
@@ -305,12 +307,12 @@
         <item quantity="other">絞り込み（初期値と違う条件 %1$d件）</item>
     </plurals>
     <string name="filter_sheet_title">絞り込み</string>
-    <string name="filter_sheet_note">チェックを外すと、その項目と、その下にあるものが表示されなくなります。数字は今の件数です。</string>
-    <string name="filter_group_status">確認状態</string>
+    <string name="filter_sheet_hint">外すと、その下も表示されません</string>
+    <string name="filter_group_status">確認</string>
     <string name="filter_group_state">状態</string>
-    <string name="filter_group_kind">種類</string>
     <string name="filter_group_source">入手</string>
     <string name="filter_group_warning">警告</string>
+    <!-- 絞り込みの画面の項目（チップは短く） -->
     <string name="filter_item_unconfirmed">未確認</string>
     <string name="filter_item_caution">要注意</string>
     <string name="filter_item_ok">問題なし</string>
@@ -320,17 +322,35 @@
     <string name="filter_item_user">後から導入</string>
     <string name="filter_item_preinstalled">プリインストール</string>
     <string name="filter_item_system">システム</string>
-    <string name="filter_item_play">Google Play</string>
-    <string name="filter_item_other">Google Play 以外</string>
-    <string name="filter_item_unknown">入手元が分からない</string>
+    <string name="filter_item_play">Play</string>
+    <string name="filter_item_other">Play以外</string>
+    <string name="filter_item_unknown">不明</string>
     <string name="filter_item_warning_none">なし</string>
-    <string name="filter_item_debug">開発用の署名</string>
-    <string name="filter_item_signature">署名が変わった</string>
-    <string name="filter_item_reinstall">再インストール</string>
+    <string name="filter_item_debug">開発署名</string>
+    <string name="filter_item_signature">署名変更</string>
+    <string name="filter_item_reinstall">再導入</string>
     <string name="filter_item_absent">端末にない</string>
-    <string name="filter_item_removed">削除したアプリ</string>
+    <string name="filter_item_removed">削除した</string>
     <string name="filter_item_pre_registered">事前登録だけ</string>
+    <!-- 一覧の上の条件の札の中の名前（「%1$sを除く」「%1$sだけ」「%1$sを含む」に入る） -->
+    <string name="filter_name_unconfirmed">未確認</string>
+    <string name="filter_name_caution">要注意</string>
+    <string name="filter_name_ok">問題なし</string>
+    <string name="filter_name_present">端末にある</string>
+    <string name="filter_name_enabled">有効</string>
+    <string name="filter_name_disabled">無効</string>
+    <string name="filter_name_user">後から導入</string>
+    <string name="filter_name_preinstalled">プリインストール</string>
+    <string name="filter_name_system">システム</string>
+    <string name="filter_name_play">Google Play</string>
+    <string name="filter_name_other">Google Play 以外</string>
+    <string name="filter_name_unknown">入手元が分からない</string>
     <string name="filter_name_warning_none">警告なし</string>
+    <string name="filter_name_debug">開発用の署名</string>
+    <string name="filter_name_signature">署名が変わった</string>
+    <string name="filter_name_reinstall">再インストール</string>
+    <string name="filter_name_absent">端末にない</string>
+    <string name="filter_name_removed">削除したアプリ</string>
     <string name="filter_name_pre_registered">事前登録のアプリ</string>
     <string name="filter_exclude">%1$sを除く</string>
     <string name="filter_only">%1$sだけ</string>
@@ -349,9 +369,6 @@
     <string name="status_badge_pre_registered">事前登録</string>
     <plurals name="status_selected_count">
         <item quantity="other">%1$d件選択中</item>
-    </plurals>
-    <plurals name="status_visible_count">
-        <item quantity="other">表示中 %1$d件</item>
     </plurals>
     <string name="status_select_all_visible">表示中をすべて選択</string>
     <string name="status_clear_selection">選択を外す</string>

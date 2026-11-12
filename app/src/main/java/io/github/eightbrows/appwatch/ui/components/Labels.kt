@@ -70,7 +70,7 @@ fun AppKind.labelRes(): Int = when (this) {
     AppKind.SYSTEM -> R.string.kind_system
 }
 
-/** 絞り込みの項目の名前（下から出す絞り込みの画面）。 */
+/** 絞り込みの項目の名前（下から出す絞り込みの画面。チップは短い名前）。 */
 @StringRes
 fun FilterItem.labelRes(): Int = when (this) {
     FilterItem.STATUS_UNCONFIRMED -> R.string.filter_item_unconfirmed
@@ -94,12 +94,28 @@ fun FilterItem.labelRes(): Int = when (this) {
     FilterItem.ABSENT_PRE_REGISTERED -> R.string.filter_item_pre_registered
 }
 
-/** 一覧の上の条件の1行で使う名前（「〜を除く」「〜だけ」の中）。ツリーの名前だけでは分かりにくいものを言い換える。 */
+/** 一覧の上の条件の1行で使う名前（「〜を除く」「〜だけ」の中。英語は「Hide 〜」で自然に読める形）。 */
 @StringRes
 fun FilterItem.conditionNameRes(): Int = when (this) {
+    FilterItem.STATUS_UNCONFIRMED -> R.string.filter_name_unconfirmed
+    FilterItem.STATUS_CAUTION -> R.string.filter_name_caution
+    FilterItem.STATUS_OK -> R.string.filter_name_ok
+    FilterItem.DEVICE_PRESENT -> R.string.filter_name_present
+    FilterItem.ENABLED -> R.string.filter_name_enabled
+    FilterItem.DISABLED -> R.string.filter_name_disabled
+    FilterItem.KIND_USER -> R.string.filter_name_user
+    FilterItem.KIND_PREINSTALLED -> R.string.filter_name_preinstalled
+    FilterItem.KIND_SYSTEM -> R.string.filter_name_system
+    FilterItem.SOURCE_PLAY -> R.string.filter_name_play
+    FilterItem.SOURCE_OTHER -> R.string.filter_name_other
+    FilterItem.SOURCE_UNKNOWN -> R.string.filter_name_unknown
     FilterItem.WARNING_NONE -> R.string.filter_name_warning_none
+    FilterItem.WARNING_DEBUG -> R.string.filter_name_debug
+    FilterItem.WARNING_SIGNATURE -> R.string.filter_name_signature
+    FilterItem.WARNING_REINSTALL -> R.string.filter_name_reinstall
+    FilterItem.DEVICE_ABSENT -> R.string.filter_name_absent
+    FilterItem.ABSENT_REMOVED -> R.string.filter_name_removed
     FilterItem.ABSENT_PRE_REGISTERED -> R.string.filter_name_pre_registered
-    else -> labelRes()
 }
 
 /** エポックミリ秒を端末の時間帯の日時にする。 */

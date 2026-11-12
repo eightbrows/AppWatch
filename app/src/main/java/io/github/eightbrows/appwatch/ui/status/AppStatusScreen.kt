@@ -347,7 +347,7 @@ private fun SearchRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AppSearchField(query = query, onQueryChange = onQueryChange, modifier = Modifier.weight(1f))
+        AppSearchField(query = query, onQueryChange = onQueryChange, modifier = Modifier.weight(1f), shortHint = true)
         FilterButton(changedCount = changedCount, onClick = onOpenFilter)
         // 事前登録は幅の都合で「＋」だけ（読み上げは「事前登録」）
         Button(
@@ -392,11 +392,12 @@ private fun SelectionBar(
                 .padding(start = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // 選んでいない時は件数を出さない（上の「表示 n件」と重なるため）。選んでいる時は「n件選択中」
             Text(
                 text = if (selectedCount > 0) {
                     pluralStringResource(R.plurals.status_selected_count, selectedCount, selectedCount)
                 } else {
-                    pluralStringResource(R.plurals.status_visible_count, visibleCount, visibleCount)
+                    ""
                 },
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelMedium,

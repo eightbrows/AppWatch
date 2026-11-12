@@ -304,6 +304,8 @@
 
     <!-- アプリの確認状態（管理者） -->
     <string name="status_search_hint">App or package name</string>
+    <!-- 確認状態の画面の検索の案内（ボタンが並ぶので短く） -->
+    <string name="status_search_hint_short">Search</string>
     <string name="status_search_clear">Clear search</string>
     <string name="status_pre_register">Pre-register</string>
     <!-- 絞り込みのラベルと選択肢は、360dp の幅で1行に収まる短い語にする -->
@@ -314,35 +316,53 @@
         <item quantity="other">Filter, %1$d conditions changed</item>
     </plurals>
     <string name="filter_sheet_title">Filter</string>
-    <string name="filter_sheet_note">Unchecking an item hides it and everything under it. Numbers show how many apps there are now.</string>
-    <string name="filter_group_status">Review status</string>
+    <string name="filter_sheet_hint">Unchecking hides everything under it</string>
+    <string name="filter_group_status">Review</string>
     <string name="filter_group_state">State</string>
-    <string name="filter_group_kind">Type</string>
     <string name="filter_group_source">Source</string>
     <string name="filter_group_warning">Warning</string>
-    <string name="filter_item_unconfirmed">Not reviewed</string>
+    <!-- 絞り込みの画面の項目（チップは短く） -->
+    <string name="filter_item_unconfirmed">Unreviewed</string>
     <string name="filter_item_caution">Caution</string>
     <string name="filter_item_ok">OK</string>
     <string name="filter_item_present">On device</string>
     <string name="filter_item_enabled">Enabled</string>
     <string name="filter_item_disabled">Disabled</string>
-    <string name="filter_item_user">Installed later</string>
+    <string name="filter_item_user">Installed by user</string>
     <string name="filter_item_preinstalled">Preinstalled</string>
     <string name="filter_item_system">System</string>
-    <string name="filter_item_play">Google Play</string>
-    <string name="filter_item_other">Not Google Play</string>
-    <string name="filter_item_unknown">Unknown source</string>
+    <string name="filter_item_play">Play</string>
+    <string name="filter_item_other">Non-Play</string>
+    <string name="filter_item_unknown">Unknown</string>
     <string name="filter_item_warning_none">None</string>
-    <string name="filter_item_debug">Developer signature</string>
-    <string name="filter_item_signature">Signature changed</string>
+    <string name="filter_item_debug">Dev sig.</string>
+    <string name="filter_item_signature">Sig. changed</string>
     <string name="filter_item_reinstall">Reinstalled</string>
     <string name="filter_item_absent">Not on device</string>
-    <string name="filter_item_removed">Removed apps</string>
+    <string name="filter_item_removed">Removed</string>
     <string name="filter_item_pre_registered">Pre-registered only</string>
-    <string name="filter_name_warning_none">No warning</string>
-    <string name="filter_name_pre_registered">Pre-registered apps</string>
+    <!-- 一覧の上の条件の札の中の名前（「Hide %1$s」「Only %1$s」「Show %1$s」に入る） -->
+    <string name="filter_name_unconfirmed">unreviewed apps</string>
+    <string name="filter_name_caution">Caution apps</string>
+    <string name="filter_name_ok">OK apps</string>
+    <string name="filter_name_present">apps on device</string>
+    <string name="filter_name_enabled">enabled apps</string>
+    <string name="filter_name_disabled">disabled apps</string>
+    <string name="filter_name_user">user-installed apps</string>
+    <string name="filter_name_preinstalled">preinstalled apps</string>
+    <string name="filter_name_system">system apps</string>
+    <string name="filter_name_play">Google Play apps</string>
+    <string name="filter_name_other">non-Google Play apps</string>
+    <string name="filter_name_unknown">apps from unknown sources</string>
+    <string name="filter_name_warning_none">apps without warnings</string>
+    <string name="filter_name_debug">developer-signed apps</string>
+    <string name="filter_name_signature">apps with changed signatures</string>
+    <string name="filter_name_reinstall">reinstalled apps</string>
+    <string name="filter_name_absent">apps not on device</string>
+    <string name="filter_name_removed">removed apps</string>
+    <string name="filter_name_pre_registered">pre-registered apps</string>
     <string name="filter_exclude">Hide %1$s</string>
-    <string name="filter_only">%1$s only</string>
+    <string name="filter_only">Only %1$s</string>
     <string name="filter_include">Show %1$s</string>
     <string name="filter_condition_remove">Remove condition: %1$s</string>
     <string name="filter_reset">Reset</string>
@@ -362,10 +382,6 @@
     <plurals name="status_selected_count">
         <item quantity="one">%1$d selected</item>
         <item quantity="other">%1$d selected</item>
-    </plurals>
-    <plurals name="status_visible_count">
-        <item quantity="one">%1$d shown</item>
-        <item quantity="other">%1$d shown</item>
     </plurals>
     <string name="status_select_all_visible">Select all</string>
     <string name="status_clear_selection">Clear</string>

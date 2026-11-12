@@ -31,8 +31,10 @@ import io.github.eightbrows.appwatch.R
 
 /** アプリの検索の窓（アプリ名・パッケージ名）。文字があるときは消すボタンを出す。トップと確認状態の画面で共通。 */
 @Composable
-fun AppSearchField(query: String, onQueryChange: (String) -> Unit, modifier: Modifier = Modifier) {
+fun AppSearchField(query: String, onQueryChange: (String) -> Unit, modifier: Modifier = Modifier, shortHint: Boolean = false) {
+    // 読み上げはいつも「アプリ名・パッケージ名」。見える案内は、ボタンが並ぶ画面では「検索」だけにする
     val hint = stringResource(R.string.status_search_hint)
+    val visibleHint = if (shortHint) stringResource(R.string.status_search_hint_short) else hint
     Row(
         modifier = modifier
             .height(48.dp)
@@ -52,7 +54,7 @@ fun AppSearchField(query: String, onQueryChange: (String) -> Unit, modifier: Mod
         Box(Modifier.weight(1f)) {
             if (query.isEmpty()) {
                 Text(
-                    text = hint,
+                    text = visibleHint,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
