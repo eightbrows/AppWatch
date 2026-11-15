@@ -20,6 +20,7 @@ class TopListsTest {
         isNew: Boolean = false,
         day: Int = 1,
         kind: AppKind = AppKind.USER_INSTALLED,
+        enabled: Boolean = true,
     ) = AppSummary(
         packageName = pkg,
         name = pkg,
@@ -31,7 +32,29 @@ class TopListsTest {
         adminMemo = null,
         installedAt = LocalDateTime.of(2026, 10, day, 0, 0),
         isNew = isNew,
+        isEnabled = enabled,
     )
+
+    @Test
+    fun disabledCautionApps_areNotCards_andEnabledOnesAre() {
+        // 要注意で無効のアプリは対応が済んだものとして、カードに出さない（種類で区別しない）。「すべて」には出る
+        val apps = AppKind.entries.flatMap { kind ->
+            listOf(
+                app("off_${kind.name}", status = ReviewStatus.CAUTION, kind = kind, enabled = false, isNew = true),
+                app("on_${kind.name}", status = ReviewStatus.CAUTION, kind = kind),
+            )
+        }
+        val lists = TopLists.from(apps)
+        assertEquals(AppKind.entries.map { "on_${it.name}" }.toSet(), lists.cards.map { it.packageName }.toSet())
+        assertTrue(lists.unconfirmed.isEmpty())
+        assertEquals(apps.size, lists.all.size)
+        // 署名が変わった警告があっても、要注意で無効ならカードに出さない
+        val signature = app("sig", status = ReviewStatus.CAUTION, warnings = setOf(AppWarning.SIGNATURE_CHANGED), enabled = false)
+        assertTrue(TopLists.from(listOf(signature)).cards.isEmpty())
+        // 要注意でない無効のアプリは今までどおり（新しく入ったアプリならカードに出る）
+        val newDisabled = app("new_off", isNew = true, enabled = false)
+        assertEquals(listOf("new_off"), TopLists.from(listOf(newDisabled)).cards.map { it.packageName })
+    }
 
     @Test
     fun cards_areOrderedCautionThenWarningThenOthers() {

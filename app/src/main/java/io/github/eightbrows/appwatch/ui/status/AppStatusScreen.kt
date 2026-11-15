@@ -55,7 +55,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.status.AppStatusEntry
 import io.github.eightbrows.appwatch.data.status.AppStatusRules
-import io.github.eightbrows.appwatch.data.status.FilterCondition
 import io.github.eightbrows.appwatch.data.status.StatusFilter
 import io.github.eightbrows.appwatch.ui.components.LabelChip
 import io.github.eightbrows.appwatch.model.AppKind
@@ -89,6 +87,16 @@ import io.github.eightbrows.appwatch.ui.components.labelRes
 import io.github.eightbrows.appwatch.ui.components.toLocalDateTime
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.layout.Layout
 
 /**
  * アプリの確認状態（管理者）。画面サンプル 06_app_status.png、仕様書 6章。
@@ -147,15 +155,12 @@ fun AppStatusRoute(
                         controller.selectDataset(id)
                     },
                     readOnly = readOnly,
-                    conditions = StatusFilter.conditions(currentEnabled),
                     changedCount = StatusFilter.changedCount(currentEnabled),
                     query = query,
                     selected = selectedVisible.mapTo(HashSet()) { it.packageName },
                     onQueryChange = { query = it },
                     onPreRegister = onPreRegister,
                     onOpenFilter = { showFilter = true },
-                    onClearCondition = { controller.setFilterEnabled(StatusFilter.clear(currentEnabled, it)) },
-                    onResetFilter = { controller.setFilterEnabled(StatusFilter.DEFAULT_ENABLED) },
                     onToggleSelect = { packageName ->
                         selected = if (packageName in selected) selected - packageName else selected + packageName
                     },
@@ -274,15 +279,12 @@ private fun StatusList(
     selection: DataSelection?,
     onSelectDataset: (String) -> Unit,
     readOnly: Boolean,
-    conditions: List<FilterCondition>,
     changedCount: Int,
     query: String,
     selected: Set<String>,
     onQueryChange: (String) -> Unit,
     onPreRegister: () -> Unit,
     onOpenFilter: () -> Unit,
-    onClearCondition: (FilterCondition) -> Unit,
-    onResetFilter: () -> Unit,
     onToggleSelect: (String) -> Unit,
     onSelectAllVisible: () -> Unit,
     onClearSelection: () -> Unit,
@@ -300,17 +302,15 @@ private fun StatusList(
         item(key = "search") {
             SearchRow(query, onQueryChange, onPreRegister, changedCount, onOpenFilter, preRegisterEnabled = !readOnly)
         }
-        // 表示の件数と、初期値と違う条件（✕で外せる札）
-        item(key = "conditions") { ConditionLine(visible.size, conditions, onClearCondition, onResetFilter) }
-        if (!readOnly) {
-            stickyHeader(key = "selection") {
-                SelectionBar(
-                    visibleCount = visible.size,
-                    selectedCount = selected.size,
-                    onSelectAllVisible = onSelectAllVisible,
-                    onClearSelection = onClearSelection,
-                )
-            }
+        // 表示の件数と、選択の帯（閲覧中は選べないので、件数だけ）
+        stickyHeader(key = "selection") {
+            SelectionBar(
+                visibleCount = visible.size,
+                selectedCount = selected.size,
+                showActions = !readOnly,
+                onSelectAllVisible = onSelectAllVisible,
+                onClearSelection = onClearSelection,
+            )
         }
         if (visible.isEmpty()) {
             item(key = "empty") {
@@ -375,6 +375,7 @@ private fun SearchRow(
 private fun SelectionBar(
     visibleCount: Int,
     selectedCount: Int,
+    showActions: Boolean,
     onSelectAllVisible: () -> Unit,
     onClearSelection: () -> Unit,
 ) {
@@ -390,102 +391,166 @@ private fun SelectionBar(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.secondaryContainer)
+                .heightIn(min = 48.dp)
                 .padding(start = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // 選んでいない時は件数を出さない（上の「表示 n件」と重なるため）。選んでいる時は「n件選択中」
+            // 左：選んでいない時は「表示 n件」、選んでいる時は「n件選択中」
             Text(
                 text = if (selectedCount > 0) {
                     pluralStringResource(R.plurals.status_selected_count, selectedCount, selectedCount)
                 } else {
-                    ""
+                    pluralStringResource(R.plurals.filter_summary_total, visibleCount, visibleCount)
                 },
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                 maxLines = 1,
             )
-            TextButton(onClick = onSelectAllVisible, enabled = visibleCount > 0, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                Text(stringResource(R.string.status_select_all_visible), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1)
-            }
-            TextButton(onClick = onClearSelection, enabled = selectedCount > 0, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                Text(stringResource(R.string.status_clear_selection), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1)
+            if (showActions) {
+                TextButton(onClick = onSelectAllVisible, enabled = visibleCount > 0, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    Text(stringResource(R.string.status_select_all_visible), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+                TextButton(onClick = onClearSelection, enabled = selectedCount > 0, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    Text(stringResource(R.string.status_clear_selection), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
             }
         }
     }
 }
 
-/** 一覧の1行。端末にないアプリは灰色。行を押すとアプリの詳細を開く。 */
+/**
+ * 一覧の1行。未導入のアプリは灰色。
+ * 選べる時は、行の左端からアイコンの右端まで（上から下まで）を押すと選択のオン・オフ、右の名前などを押すとアプリの詳細を開く。
+ * 2つの範囲は重ならず、押した時の波紋もそれぞれの範囲だけに出る。閲覧中（選べない時）は、行のどこを押しても詳細を開く。
+ */
 @Composable
 private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: Boolean, onToggleSelect: () -> Unit, onClick: () -> Unit) {
-    val colors = AppWatchTheme.colors
-    val dim = !entry.isPresent
-    val mainColor = if (dim) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
-    val subColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val rowColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+        color = rowColor,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
+            .then(if (showCheckbox) Modifier else Modifier.clickable(onClick = onClick)),
     ) {
-        Row(Modifier.padding(start = if (showCheckbox) 0.dp else 14.dp, end = 12.dp, top = 4.dp, bottom = 12.dp)) {
-            if (showCheckbox) {
-                val selectLabel = stringResource(R.string.status_select_app, entry.name)
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = { onToggleSelect() },
-                    modifier = Modifier.semantics { contentDescription = selectLabel },
-                )
-            }
-            RowIcon(
-                entry = entry,
-                loadIcon = showCheckbox,
-                rowColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-                modifier = Modifier.padding(top = 10.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-            Column(Modifier.weight(1f).padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = entry.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = mainColor,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    if (entry.isSelf) SmallLabel(stringResource(R.string.app_self_label))
-                }
-                entry.versionName?.takeIf { it.isNotBlank() }?.let {
-                    Text(stringResource(R.string.format_version, it), style = MaterialTheme.typography.bodySmall, color = subColor)
-                }
-                Text(
-                    text = AppSearch.breakablePackageName(entry.packageName),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    color = subColor,
-                )
-                val reasons = ReviewReason.of(entry.warnings, entry.status, includeCaution = false, isSelf = entry.isSelf)
-                SourceLine(entry, withSource = !ReviewReason.hidesSourceText(reasons))
-                RowWarnings(entry, reasons)
-                entry.adminMemo?.takeIf { it.isNotBlank() }?.let { memo ->
-                    Text(
-                        text = stringResource(R.string.status_row_memo, memo),
+        if (showCheckbox) {
+            val selectLabel = stringResource(R.string.status_select_app, entry.name)
+            SplitRow(
+                left = {
+                    // 左の範囲：チェックとアイコン。読み上げは今のチェックボックスと同じ（アプリの名前、選択／未選択）
+                    Row(
                         modifier = Modifier
-                            .padding(top = 4.dp)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                            .toggleable(value = isSelected, role = Role.Checkbox, onValueChange = { onToggleSelect() })
+                            .clearAndSetSemantics {
+                                contentDescription = selectLabel
+                                role = Role.Checkbox
+                                toggleableState = ToggleableState(isSelected)
+                                onClick { onToggleSelect(); true }
+                            }
+                            .padding(top = 4.dp, bottom = 12.dp, end = 6.dp),
+                    ) {
+                        Checkbox(checked = isSelected, onCheckedChange = null, modifier = Modifier.padding(12.dp))
+                        RowIcon(entry = entry, loadIcon = true, rowColor = rowColor, modifier = Modifier.padding(top = 10.dp))
+                    }
+                },
+                right = {
+                    // 右の範囲：名前など。押すと詳細を開く（確認状態は左のアイコンの印にあるので、ここで読み上げる）
+                    Box(
+                        Modifier
+                            .clickable(onClick = onClick)
+                            .padding(top = 14.dp, end = 12.dp, bottom = 12.dp),
+                    ) {
+                        StatusRowText(entry, statusForReader = true)
+                    }
+                },
+            )
+        } else {
+            Row(Modifier.padding(start = 14.dp, end = 12.dp, top = 4.dp, bottom = 12.dp)) {
+                RowIcon(entry = entry, loadIcon = false, rowColor = rowColor, modifier = Modifier.padding(top = 10.dp))
+                Spacer(Modifier.width(6.dp))
+                Box(Modifier.weight(1f).padding(top = 10.dp)) { StatusRowText(entry, statusForReader = false) }
             }
+        }
+    }
+}
+
+/**
+ * 行を左右の2つの範囲に分ける。右の高さ（名前・札など。折り返しで変わる）を先に決めてから、
+ * 左（チェックとアイコン）を同じ高さにのばす。どちらも行の上から下まで押せる。
+ */
+@Composable
+private fun SplitRow(left: @Composable () -> Unit, right: @Composable () -> Unit) {
+    Layout(contents = listOf(left, right)) { (leftMeasurables, rightMeasurables), constraints ->
+        val leftMeasurable = leftMeasurables.single()
+        val rightMeasurable = rightMeasurables.single()
+        val width = constraints.maxWidth
+        val leftWidth = leftMeasurable.maxIntrinsicWidth(Constraints.Infinity).coerceAtMost(width)
+        val leftMinHeight = leftMeasurable.minIntrinsicHeight(leftWidth)
+        val rightWidth = width - leftWidth
+        val rightPlaceable = rightMeasurable.measure(
+            Constraints(minWidth = rightWidth, maxWidth = rightWidth, minHeight = leftMinHeight),
+        )
+        val height = rightPlaceable.height
+        val leftPlaceable = leftMeasurable.measure(Constraints.fixed(leftWidth, height))
+        layout(width, height) {
+            leftPlaceable.place(0, 0)
+            rightPlaceable.place(leftWidth, 0)
+        }
+    }
+}
+
+/**
+ * 行の右側（アプリ名・バージョン・パッケージ名・入手元・札・管理者メモ）。
+ * [statusForReader] が true なら、確認状態を読み上げだけに足す（アイコンの印が左の範囲に入って読まれないため）。
+ */
+@Composable
+private fun StatusRowText(entry: AppStatusEntry, statusForReader: Boolean) {
+    val dim = !entry.isPresent
+    val mainColor = if (dim) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+    val subColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val statusLabel = stringResource(entry.status.labelRes())
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (statusForReader) Box(Modifier.clearAndSetSemantics { contentDescription = statusLabel })
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = entry.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = mainColor,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (entry.isSelf) SmallLabel(stringResource(R.string.app_self_label))
+        }
+        entry.versionName?.takeIf { it.isNotBlank() }?.let {
+            Text(stringResource(R.string.format_version, it), style = MaterialTheme.typography.bodySmall, color = subColor)
+        }
+        Text(
+            text = AppSearch.breakablePackageName(entry.packageName),
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = FontFamily.Monospace,
+            color = subColor,
+        )
+        val reasons = ReviewReason.of(entry.warnings, entry.status, includeCaution = false, isSelf = entry.isSelf)
+        SourceLine(entry, withSource = !ReviewReason.hidesSourceText(reasons))
+        RowWarnings(entry, reasons)
+        entry.adminMemo?.takeIf { it.isNotBlank() }?.let { memo ->
+            Text(
+                text = stringResource(R.string.status_row_memo, memo),
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

@@ -67,11 +67,11 @@ enum class FilterItem(val group: FilterGroup) {
 }
 
 /**
- * 一覧の上の1行の、初期値と違う条件（札）。
- * - [EXCLUDE]：「〜を除く」（✕でその項目をオンに戻す）
- * - [ONLY]：「〜だけ」（同じ組で1つだけ残っている時。✕でその組を初期値に戻す）
- * - [INCLUDE]：「〜を含む」（初期値でオフの「システム」をオンにした時。✕でオフに戻す）
- * [isDefault] は初期値のまま出す札（「システムを除く」）。ボタンの数字には数えない。
+ * 初期値と違う条件。「絞り込み」ボタンの数字（[StatusFilter.changedCount]）を数えるのに使う。
+ * - [EXCLUDE]：外した項目
+ * - [ONLY]：同じ組（3つ以上）で1つだけ残っている（組で1つと数える）
+ * - [INCLUDE]：初期値でオフの「システム」をオンにした
+ * [isDefault] は初期値のままの条件（「システム」がオフ）。数には入れない。
  */
 data class FilterCondition(val type: Type, val item: FilterItem, val isDefault: Boolean = false) {
     enum class Type { EXCLUDE, ONLY, INCLUDE }
@@ -202,9 +202,9 @@ object StatusFilter {
     fun toggle(enabled: Set<FilterItem>, item: FilterItem): Set<FilterItem> =
         if (item in enabled) enabled - item else enabled + item
 
-    // ---- 一覧の上の1行 ----
+    // ---- 初期値と違う条件（「絞り込み」ボタンの数字） ----
 
-    /** 一覧の上の1行に出す条件。効いていない組（オフの親の下）は出さない。 */
+    /** 初期値と違う条件。効いていない組（オフの親の下）は数えない。 */
     fun conditions(enabled: Set<FilterItem>): List<FilterCondition> {
         val list = FilterGroup.entries.flatMap { group ->
             val parent = group.parent
@@ -238,14 +238,4 @@ object StatusFilter {
 
     /** 初期値と違う条件の数（「絞り込み」ボタンの数字）。 */
     fun changedCount(enabled: Set<FilterItem>): Int = conditions(enabled).count { !it.isDefault }
-
-    /** 札の✕：その条件だけを初期値の側に戻す。 */
-    fun clear(enabled: Set<FilterItem>, condition: FilterCondition): Set<FilterItem> = when (condition.type) {
-        FilterCondition.Type.EXCLUDE -> enabled + condition.item
-        FilterCondition.Type.INCLUDE -> enabled - condition.item
-        FilterCondition.Type.ONLY -> {
-            val groupItems = FilterItem.entries.filter { it.group == condition.item.group }
-            enabled - groupItems.toSet() + groupItems.filter { it !in DEFAULT_OFF }
-        }
-    }
 }

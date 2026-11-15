@@ -341,7 +341,7 @@
     <string name="filter_item_absent">未導入</string>
     <string name="filter_item_removed">削除\nした</string>
     <string name="filter_item_pre_registered">事前\n登録</string>
-    <!-- 一覧の上の条件の札の中の名前（「%1$sを除く」「%1$sだけ」「%1$sを含む」に入る） -->
+    <!-- 項目の略さない名前（絞り込みの画面の読み上げに使う） -->
     <string name="filter_name_unconfirmed">未確認</string>
     <string name="filter_name_caution">要注意</string>
     <string name="filter_name_ok">問題なし</string>
@@ -361,10 +361,6 @@
     <string name="filter_name_absent">未導入</string>
     <string name="filter_name_removed">削除したアプリ</string>
     <string name="filter_name_pre_registered">事前登録のアプリ</string>
-    <string name="filter_exclude">%1$sを除く</string>
-    <string name="filter_only">%1$sだけ</string>
-    <string name="filter_include">%1$sを含む</string>
-    <string name="filter_condition_remove">条件を外す：%1$s</string>
     <string name="filter_reset">初期値に戻す</string>
     <plurals name="filter_show">
         <item quantity="other">%1$d件を表示</item>

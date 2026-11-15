@@ -68,6 +68,18 @@ data class AppSummary(
     val isEnabled: Boolean = true,
 )
 
+/**
+ * 「要注意」の件数の決まり（仕様書 6章）。トップの「要注意」・ウィジェットの赤・設定メニューの件数などで数える。
+ * 要注意でも、今無効になっているアプリは対応が済んだものとして数えない（確認状態は「要注意」のまま）。
+ * 種類（後から導入・プリインストール・システム）では区別しない。
+ */
+object CautionRule {
+    fun counts(status: ReviewStatus, isEnabled: Boolean): Boolean = status == ReviewStatus.CAUTION && isEnabled
+
+    /** 要注意で無効のアプリ（対応が済んだもの）。 */
+    fun isHandled(status: ReviewStatus, isEnabled: Boolean): Boolean = status == ReviewStatus.CAUTION && !isEnabled
+}
+
 /** アプリを消すときに開く画面（仕様書 6章）。 */
 enum class RemoveAction {
     /** Android のアンインストール画面 */

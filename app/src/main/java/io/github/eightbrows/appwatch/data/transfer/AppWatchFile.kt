@@ -6,7 +6,7 @@ import io.github.eightbrows.appwatch.data.db.AppPolicyEntity
 import io.github.eightbrows.appwatch.data.db.BaselineAppEntity
 import io.github.eightbrows.appwatch.data.db.ScanDailyEntity
 import io.github.eightbrows.appwatch.data.settings.ThemeMode
-import io.github.eightbrows.appwatch.model.ReviewStatus
+import io.github.eightbrows.appwatch.model.CautionRule
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -50,11 +50,14 @@ data class DatasetContent(
     /** 端末にあるアプリの数（取り込みの前に見せる「アプリ n件」）。 */
     val presentAppCount: Int get() = current.count { it.isPresent }
 
-    /** 端末にあるアプリのうち「要注意」の数（設定メニューの要注意の件数と同じ数え方）。 */
+    /** 導入済のアプリのうち「要注意」の数（設定メニューの要注意の件数と同じ数え方。無効にしたものは数えない）。 */
     val cautionCount: Int
         get() {
-            val present = current.filter { it.isPresent }.mapTo(HashSet()) { it.packageName }
-            return policies.count { it.reviewStatus == ReviewStatus.CAUTION && it.packageName in present }
+            val enabled = current.filter { it.isPresent }.associate { it.packageName to it.isEnabled }
+            return policies.count { policy ->
+                val isEnabled = enabled[policy.packageName] ?: return@count false
+                CautionRule.counts(policy.reviewStatus, isEnabled)
+            }
         }
 
     companion object {

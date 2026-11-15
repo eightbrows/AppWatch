@@ -351,7 +351,7 @@
     <string name="filter_item_absent">Not\ninstalled</string>
     <string name="filter_item_removed">Re-\nmoved</string>
     <string name="filter_item_pre_registered">Pre-\nreg.</string>
-    <!-- 一覧の上の条件の札の中の名前（「Hide %1$s」「Only %1$s」「Show %1$s」に入る） -->
+    <!-- 項目の略さない名前（絞り込みの画面の読み上げに使う） -->
     <string name="filter_name_unconfirmed">unreviewed apps</string>
     <string name="filter_name_caution">Caution apps</string>
     <string name="filter_name_ok">OK apps</string>
@@ -371,10 +371,6 @@
     <string name="filter_name_absent">apps not installed</string>
     <string name="filter_name_removed">removed apps</string>
     <string name="filter_name_pre_registered">pre-registered apps</string>
-    <string name="filter_exclude">Hide %1$s</string>
-    <string name="filter_only">Only %1$s</string>
-    <string name="filter_include">Show %1$s</string>
-    <string name="filter_condition_remove">Remove condition: %1$s</string>
     <string name="filter_reset">Reset</string>
     <plurals name="filter_show">
         <item quantity="one">Show %1$d app</item>

@@ -94,7 +94,7 @@ fun FilterItem.labelRes(): Int = when (this) {
     FilterItem.ABSENT_PRE_REGISTERED -> R.string.filter_item_pre_registered
 }
 
-/** 一覧の上の条件の1行で使う名前（「〜を除く」「〜だけ」の中。英語は「Hide 〜」で自然に読める形）。 */
+/** 項目の略さない名前（絞り込みの画面のボタンの読み上げに使う）。 */
 @StringRes
 fun FilterItem.conditionNameRes(): Int = when (this) {
     FilterItem.STATUS_UNCONFIRMED -> R.string.filter_name_unconfirmed

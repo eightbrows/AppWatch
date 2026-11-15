@@ -3,6 +3,7 @@ package io.github.eightbrows.appwatch.ui.top
 import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppSearch
 import io.github.eightbrows.appwatch.model.AppSummary
+import io.github.eightbrows.appwatch.model.CautionRule
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.ReviewStatus
 
@@ -48,11 +49,14 @@ data class TopLists(
         /**
          * カードで出すか。署名が変わった警告は「問題なし」にした時点で消える（仕様書 4章）ので、
          * 警告が付いている間は「問題なし」になっていない。
+         * 要注意で無効のアプリは対応が済んだものとして、カードに出さない（「すべて」には出る）。
          */
         private fun isCard(app: AppSummary): Boolean =
-            app.isNew ||
-                app.reviewStatus == ReviewStatus.CAUTION ||
-                (AppWarning.SIGNATURE_CHANGED in app.warnings && app.reviewStatus != ReviewStatus.OK)
+            !CautionRule.isHandled(app.reviewStatus, app.isEnabled) && (
+                app.isNew ||
+                    app.reviewStatus == ReviewStatus.CAUTION ||
+                    (AppWarning.SIGNATURE_CHANGED in app.warnings && app.reviewStatus != ReviewStatus.OK)
+                )
 
         /** カードの並び：要注意 → 警告あり → その他。同じ中では新しく入った順。 */
         internal val CardOrder: Comparator<AppSummary> =

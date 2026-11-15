@@ -153,11 +153,11 @@ interface TransferDao {
     @Query("SELECT * FROM dataset WHERE kind = 'IMPORTED' ORDER BY imported_at DESC")
     suspend fun getImported(): List<DatasetEntity>
 
-    /** データごとの、端末にあるアプリのうち「要注意」の数。 */
+    /** データごとの、導入済のアプリのうち「要注意」の数（無効にしたものは数えない。CautionRule と同じ）。 */
     @Query(
         "SELECT p.dataset_id AS dataset_id, COUNT(*) AS count FROM app_policy p " +
             "JOIN app_current c ON c.dataset_id = p.dataset_id AND c.package_name = p.package_name " +
-            "WHERE p.review_status = 'CAUTION' AND c.is_present = 1 GROUP BY p.dataset_id",
+            "WHERE p.review_status = 'CAUTION' AND c.is_present = 1 AND c.is_enabled = 1 GROUP BY p.dataset_id",
     )
     fun observeCautionCounts(): Flow<List<DatasetCount>>
 

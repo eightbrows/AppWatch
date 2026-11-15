@@ -32,7 +32,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,7 +51,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.eightbrows.appwatch.R
-import io.github.eightbrows.appwatch.data.status.FilterCondition
 import io.github.eightbrows.appwatch.data.status.FilterGroup
 import io.github.eightbrows.appwatch.data.status.FilterItem
 import io.github.eightbrows.appwatch.data.status.StatusFilter
@@ -117,83 +115,6 @@ internal fun FilterButton(changedCount: Int, onClick: () -> Unit, modifier: Modi
             ) {
                 Text(changedCount.toString(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = scheme.onPrimary)
             }
-        }
-    }
-}
-
-/**
- * 一覧の上の条件の1行（折り返しあり）：「表示 n件」と、初期値と違う条件を外せる札。札が2つ以上なら「初期値に戻す」。
- * 初期値の「システムを除く」も出す（✕で外すとシステムも出る）。
- */
-@Composable
-internal fun ConditionLine(
-    total: Int,
-    conditions: List<FilterCondition>,
-    onClear: (FilterCondition) -> Unit,
-    onReset: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        itemVerticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = pluralStringResource(R.plurals.filter_summary_total, total, total),
-            modifier = Modifier.padding(end = 2.dp),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        conditions.forEach { condition -> ConditionChip(condition, onClear = { onClear(condition) }) }
-        if (conditions.size >= 2) {
-            TextButton(onClick = onReset, contentPadding = PaddingValues(horizontal = 6.dp), modifier = Modifier.heightIn(min = 32.dp)) {
-                Text(stringResource(R.string.filter_reset), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}
-
-/** 条件の文：「〜を除く」「〜だけ」「〜を含む」。 */
-@Composable
-internal fun conditionText(condition: FilterCondition): String {
-    val name = stringResource(condition.item.conditionNameRes())
-    return when (condition.type) {
-        FilterCondition.Type.EXCLUDE -> stringResource(R.string.filter_exclude, name)
-        FilterCondition.Type.ONLY -> stringResource(R.string.filter_only, name)
-        FilterCondition.Type.INCLUDE -> stringResource(R.string.filter_include, name)
-    }
-}
-
-/** 外せる札（✕で、その条件だけを初期値に戻す）。 */
-@Composable
-private fun ConditionChip(condition: FilterCondition, onClear: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    val text = conditionText(condition)
-    val removeLabel = stringResource(R.string.filter_condition_remove, text)
-    val shape = RoundedCornerShape(50)
-    Row(
-        modifier = Modifier
-            .clip(shape)
-            .background(scheme.primaryContainer)
-            .border(1.dp, scheme.primary.copy(alpha = 0.5f), shape)
-            .clickable(role = Role.Button, onClick = onClear)
-            .clearAndSetSemantics { contentDescription = removeLabel }
-            .heightIn(min = 32.dp)
-            .padding(start = 10.dp, end = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(text, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = scheme.onPrimaryContainer, maxLines = 1)
-        Box(
-            modifier = Modifier
-                .size(20.dp)
-                .clip(CircleShape)
-                .background(scheme.surface),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(painterResource(R.drawable.ic_close), contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
         }
     }
 }

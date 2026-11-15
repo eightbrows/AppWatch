@@ -10,7 +10,7 @@ import io.github.eightbrows.appwatch.R
 import io.github.eightbrows.appwatch.data.settings.CheckInterval
 import io.github.eightbrows.appwatch.data.system.DeviceSettings
 import io.github.eightbrows.appwatch.data.system.ScanDay
-import io.github.eightbrows.appwatch.model.ReviewStatus
+import io.github.eightbrows.appwatch.model.CautionRule
 import io.github.eightbrows.appwatch.work.CheckScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -25,9 +25,9 @@ class SettingsController(context: Context) {
 
     // ---- 値（変わると流れる） ----
 
-    /** この端末の「要注意」の件数（端末にあるアプリ）。 */
+    /** この端末の「要注意」の件数（導入済のアプリ。無効にしたものは数えない）。 */
     val cautionCount: Flow<Int> = app.recordRepository.observePresentApps()
-        .map { apps -> apps.count { it.reviewStatus == ReviewStatus.CAUTION } }
+        .map { apps -> apps.count { CautionRule.counts(it.reviewStatus, it.isEnabled) } }
         .distinctUntilChanged()
 
     /** 取り込んだデータの名前（設定メニューの「取り込んだデータ」の行の補足）。 */

@@ -3,6 +3,7 @@ package io.github.eightbrows.appwatch.widget
 import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.AppWarning
+import io.github.eightbrows.appwatch.model.CautionRule
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.ReviewStatus
 import org.junit.Assert.assertEquals
@@ -137,6 +138,7 @@ class WidgetStatusDeciderTest {
         isNew: Boolean = false,
         kind: AppKind = AppKind.USER_INSTALLED,
         warnings: Set<AppWarning> = emptySet(),
+        enabled: Boolean = true,
     ) = AppSummary(
         packageName = pkg,
         name = pkg,
@@ -148,6 +150,7 @@ class WidgetStatusDeciderTest {
         adminMemo = null,
         installedAt = LocalDateTime.of(2026, 10, 1, 0, 0),
         isNew = isNew,
+        isEnabled = enabled,
     )
 
     @Test
@@ -161,5 +164,37 @@ class WidgetStatusDeciderTest {
             app("sig", warnings = setOf(AppWarning.SIGNATURE_CHANGED)), // 署名が変わったアプリはカード
         )
         assertEquals(1 to 3, WidgetStatusDecider.countApps(apps))
+    }
+
+    @Test
+    fun countApps_disabledCautionIsNotCounted_forEveryKind() {
+        // 要注意で無効のアプリは、ウィジェットの「要注意」（赤）に数えない。有効なら数える。種類で区別しない
+        for (kind in AppKind.entries) {
+            val disabled = listOf(app("c", status = ReviewStatus.CAUTION, kind = kind, enabled = false))
+            assertEquals("$kind", 0 to 0, WidgetStatusDecider.countApps(disabled))
+            val enabled = listOf(app("c", status = ReviewStatus.CAUTION, kind = kind, enabled = true))
+            assertEquals("$kind", 1 to 0, WidgetStatusDecider.countApps(enabled))
+        }
+        // 無効にした要注意のアプリしかなければ、赤（要注意）にならない
+        val (caution, review) = WidgetStatusDecider.countApps(
+            listOf(app("c", status = ReviewStatus.CAUTION, enabled = false), app("new", isNew = true)),
+        )
+        val state = WidgetStatusDecider.decide(
+            WidgetInput(
+                setupCompleted = true, cautionCount = caution, needsReviewCount = review,
+                lastCheckAt = 0L, now = 0L, checkIntervalMinutes = 720, deviceSettingsOk = true,
+            ),
+        )
+        assertEquals(WidgetStatus.NEEDS_REVIEW, state.status)
+        assertEquals(1, state.count)
+    }
+
+    @Test
+    fun cautionRule_isTheSameEverywhere() {
+        assertEquals(true, CautionRule.counts(ReviewStatus.CAUTION, isEnabled = true))
+        assertEquals(false, CautionRule.counts(ReviewStatus.CAUTION, isEnabled = false))
+        assertEquals(false, CautionRule.counts(ReviewStatus.OK, isEnabled = true))
+        assertEquals(true, CautionRule.isHandled(ReviewStatus.CAUTION, isEnabled = false))
+        assertEquals(false, CautionRule.isHandled(ReviewStatus.UNCONFIRMED, isEnabled = false))
     }
 }

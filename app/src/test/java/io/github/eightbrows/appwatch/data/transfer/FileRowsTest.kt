@@ -125,16 +125,18 @@ class FileRowsTest {
     }
 
     @Test
-    fun 件数は端末にあるアプリで数える() {
-        val present = current.copy(packageName = "p.present", isPresent = true)
+    fun 件数は導入済のアプリで数え_要注意は無効のものを数えない() {
+        val present = current.copy(packageName = "p.present", isPresent = true, isEnabled = true)
+        val disabled = current.copy(packageName = "p.disabled", isPresent = true, isEnabled = false)
         val content = DatasetContent(
             baseline = emptyList(),
-            current = listOf(present, current), // current は端末にない
+            current = listOf(present, disabled, current), // current は未導入
             events = emptyList(),
-            policies = listOf(policy.copy(packageName = "p.present"), policy), // 要注意が2件、端末にあるのは1件
+            // 要注意が3件：導入済で有効が1件、導入済で無効が1件（数えない）、未導入が1件（数えない）
+            policies = listOf(policy.copy(packageName = "p.present"), policy.copy(packageName = "p.disabled"), policy),
             scanDays = emptyList(),
         )
-        assertEquals(1, content.presentAppCount)
+        assertEquals(2, content.presentAppCount)
         assertEquals(1, content.cautionCount)
     }
 
