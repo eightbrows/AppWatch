@@ -64,7 +64,7 @@ data class AppSummary(
     val isNew: Boolean,
     /** 本アプリ自身かどうか。名前の横に「本アプリ」を付ける。 */
     val isSelf: Boolean = false,
-    /** 有効かどうか。無効なら名前の横に「無効」を付ける。 */
+    /** 有効かどうか。無効なら「無効」の札を付け、カード・行を薄くする（トップ）。 */
     val isEnabled: Boolean = true,
 )
 
@@ -102,3 +102,10 @@ val AppSummary.removeAction: RemoveAction
         AppKind.PREINSTALLED -> RemoveAction.APP_INFO
         AppKind.SYSTEM -> RemoveAction.NONE
     }
+
+/**
+ * トップのカード・一覧の行のボタン。無効のアプリは削除ではなく Android のアプリ情報を開く（そこから有効に戻せる。種類で区別しない）。
+ * 無効でなければ [removeAction] と同じ。
+ */
+val AppSummary.topAction: RemoveAction
+    get() = if (!isEnabled) RemoveAction.APP_INFO else removeAction

@@ -70,7 +70,6 @@ import io.github.eightbrows.appwatch.model.AppKind
 import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.RemoveAction
 import io.github.eightbrows.appwatch.model.ReviewStatus
-import io.github.eightbrows.appwatch.model.removeAction
 import io.github.eightbrows.appwatch.ui.components.AppIcon
 import io.github.eightbrows.appwatch.ui.components.AppSearchField
 import io.github.eightbrows.appwatch.ui.components.ReasonChips
@@ -105,6 +104,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.text.style.TextAlign
 import io.github.eightbrows.appwatch.ui.components.SectionHeading
 import io.github.eightbrows.appwatch.ui.components.SectionTone
+import androidx.compose.ui.draw.alpha
+import io.github.eightbrows.appwatch.model.topAction
+import io.github.eightbrows.appwatch.ui.components.LabelChip
+import io.github.eightbrows.appwatch.ui.components.sectionTone
 
 private enum class TopTab { NEEDS_REVIEW, ALL }
 
@@ -398,8 +401,14 @@ private fun LazyListScope.allContent(lists: TopLists, searching: Boolean, action
         emptyMessage(R.string.top_search_empty)
         return
     }
-    items(lists.all, key = { "all_" + it.packageName }) { app ->
-        AppRow(app = app, showStatus = true, actions = actions)
+    // 確認状態の画面と同じ分け方・同じ見出し（要注意 → 未確認 → 問題なし）。0件の組は出さない
+    lists.allSections.forEach { (status, apps) ->
+        item(key = "all_title_" + status.name) {
+            SectionHeading(stringResource(status.labelRes()), apps.size, status.sectionTone())
+        }
+        items(apps, key = { "all_" + it.packageName }) { app ->
+            AppRow(app = app, showStatus = true, actions = actions)
+        }
     }
 }
 
@@ -577,6 +586,7 @@ private fun NewAppCard(app: AppSummary, actions: TopActions) {
     val isCaution = app.reviewStatus == ReviewStatus.CAUTION
     val hasWarning = app.warnings.isNotEmpty()
     val reasons = ReviewReason.forTop(app)
+    val disabled = !app.isEnabled
     val border = when {
         isCaution -> BorderStroke(3.dp, colors.danger)
         hasWarning -> BorderStroke(2.dp, colors.warningBorder)
@@ -585,14 +595,20 @@ private fun NewAppCard(app: AppSummary, actions: TopActions) {
     Surface(
         onClick = { actions.onShowDetails(app) },
         shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surface,
+        color = if (disabled) colors.segmentTrack else MaterialTheme.colorScheme.surface,
         border = border,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // 無効のアプリは、カード全体を薄く（灰色寄りに）する（字・アイコンは読める濃さ）
+        Column(
+            Modifier
+                .alpha(if (disabled) DISABLED_CONTENT_ALPHA else 1f)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box {
-                    AppIcon(name = app.name, packageName = app.packageName, versionKey = app.versionName)
+                    AppIcon(name = app.name, packageName = app.packageName, versionKey = app.versionName, dimmed = disabled)
                     if (isCaution) {
                         StatusMark(
                             status = ReviewStatus.CAUTION,
@@ -615,15 +631,15 @@ private fun NewAppCard(app: AppSummary, actions: TopActions) {
                 }
             }
 
-            ReasonChips(reasons, onClick = { actions.onExplainReasons(app) })
+            DisabledChipAndReasons(app, reasons, Modifier, onExplain = { actions.onExplainReasons(app) })
 
             if (isCaution && !app.adminMemo.isNullOrBlank()) {
                 AdminMemoBox(app.adminMemo)
             }
 
-            // 各カード（要注意を含む）に「削除する」と「詳しく」。消し方はアプリの種類で変わる
+            // 各カード（要注意を含む）に「削除する」と「詳しく」。消し方はアプリの種類で変わる。無効のアプリは「Android のアプリ情報」
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                when (app.removeAction) {
+                when (app.topAction) {
                     RemoveAction.UNINSTALL -> DeleteButton(
                         onClick = { actions.onDelete(app) },
                         modifier = Modifier.weight(2f),
@@ -655,7 +671,7 @@ private fun NewAppCard(app: AppSummary, actions: TopActions) {
     }
 }
 
-/** アプリ名と「本アプリ」「無効」のラベル。幅が足りないときは、名前を詰めずにラベルを次の行に送る。 */
+/** アプリ名と「本アプリ」のラベル。幅が足りないときは、名前を詰めずにラベルを次の行に送る。「無効」は下の札で出す。 */
 @Composable
 private fun AppName(app: AppSummary, style: TextStyle) {
     FlowRow(
@@ -670,9 +686,32 @@ private fun AppName(app: AppSummary, style: TextStyle) {
             overflow = TextOverflow.Ellipsis,
         )
         if (app.isSelf) NameLabel(stringResource(R.string.app_self_label))
-        if (!app.isEnabled) NameLabel(stringResource(R.string.app_disabled_label))
     }
 }
+
+/**
+ * 無効のアプリの灰色の「無効」の札（確認状態の画面と同じ部品）と、確認が必要になった理由の札。
+ * 「無効」の札は読み上げでも読む（行・カードの読み上げに入る）。
+ */
+@Composable
+private fun DisabledChipAndReasons(app: AppSummary, reasons: List<ReviewReason>, modifier: Modifier, onExplain: () -> Unit) {
+    if (app.isEnabled) {
+        ReasonChips(reasons, modifier, onClick = onExplain)
+        return
+    }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // 行・カードの地が灰色なので、札は濃い灰色に白い字にして見分けられるようにする
+        LabelChip(
+            text = stringResource(R.string.app_disabled_label),
+            container = AppWatchTheme.colors.unconfirmed,
+            content = Color.White,
+        )
+        ReasonChips(reasons, onClick = onExplain)
+    }
+}
+
+/** 無効のアプリのカード・行の中身の濃さ（字・アイコンが読める濃さ）。 */
+private const val DISABLED_CONTENT_ALPHA = 0.72f
 
 @Composable
 private fun NameLabel(text: String) {
@@ -763,19 +802,23 @@ private fun AppInfoButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 private fun AppRow(app: AppSummary, showStatus: Boolean, actions: TopActions) {
     val colors = AppWatchTheme.colors
     val reasons = ReviewReason.forTop(app)
+    val disabled = !app.isEnabled
     Surface(
         onClick = { actions.onShowDetails(app) },
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
+        color = if (disabled) colors.segmentTrack else MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth(),
     ) {
+        // 無効のアプリは、行全体を薄く（灰色寄りに）する（字・アイコンは読める濃さ）
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            modifier = Modifier
+                .alpha(if (disabled) DISABLED_CONTENT_ALPHA else 1f)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // 確認状態の印はアイコンの右下に重ねる（幅の狭い端末でも名前の幅を確保するため）
             Box {
-                AppIcon(name = app.name, packageName = app.packageName, size = 44.dp, versionKey = app.versionName)
+                AppIcon(name = app.name, packageName = app.packageName, size = 44.dp, versionKey = app.versionName, dimmed = disabled)
                 if (showStatus) {
                     StatusMark(
                         status = app.reviewStatus,
@@ -800,9 +843,10 @@ private fun AppRow(app: AppSummary, showStatus: Boolean, actions: TopActions) {
                     // プリインストール・システムは追加日時や入手元に意味がないので、種類を出す
                     RowDetail(stringResource(app.kind.labelRes()))
                 }
-                ReasonChips(reasons, Modifier.padding(top = 6.dp), onClick = { actions.onExplainReasons(app) })
+                DisabledChipAndReasons(app, reasons, Modifier.padding(top = 6.dp), onExplain = { actions.onExplainReasons(app) })
             }
-            when (app.removeAction) {
+            // 無効のアプリは「削除」ではなく「アプリ情報」（そこから有効に戻せる）
+            when (app.topAction) {
                 RemoveAction.UNINSTALL -> RowButton(
                     text = stringResource(R.string.action_delete),
                     color = colors.danger,

@@ -32,6 +32,15 @@ data class TopLists(
     /** カードのうち要注意以外のもの（新しく入った・署名が変わった・再導入など。「新しく入った・変わったアプリ」の見出しの下）。 */
     val changedCards: List<AppSummary> get() = cards.filter { it.reviewStatus != ReviewStatus.CAUTION }
 
+    /**
+     * 「すべて」のタブの組：要注意 → 未確認 → 問題なし（確認状態の画面と同じ分け方）。組の中は [all] の順のまま
+     * （有効なアプリが名前の順、その後に無効のアプリが名前の順）。0件の組は入れない。
+     */
+    val allSections: List<Pair<ReviewStatus, List<AppSummary>>>
+        get() = listOf(ReviewStatus.CAUTION, ReviewStatus.UNCONFIRMED, ReviewStatus.OK)
+            .map { status -> status to all.filter { it.reviewStatus == status } }
+            .filter { (_, apps) -> apps.isNotEmpty() }
+
     /** 「確認が必要」のタブの件数（3つの組の合計）。 */
     val needsReviewCount: Int get() = cards.size + unconfirmed.size
 
@@ -71,10 +80,13 @@ data class TopLists(
         internal val CardOrder: Comparator<AppSummary> =
             compareBy<AppSummary> { cardRank(it) }.thenByDescending { it.installedAt }
 
-        /** 「すべて」の並び：確認状態（要注意 → 未確認 → 問題なし）→ 種類（後から導入 → プリイン → システム）→ 名前。 */
+        /**
+         * 「すべて」の並び：確認状態（要注意 → 未確認 → 問題なし）→ 有効なアプリが先、無効のアプリはその組の一番下 → 名前。
+         * （ステップ28までは、確認状態 → 種類（後から導入 → プリイン → システム）→ 名前だった）
+         */
         internal val AllOrder: Comparator<AppSummary> =
             compareBy<AppSummary> { statusRank(it.reviewStatus) }
-                .thenBy { it.kind.ordinal } // AppKind の宣言順（後から導入 → プリイン → システム）
+                .thenBy { !it.isEnabled }
                 .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
 
         private fun cardRank(app: AppSummary): Int = when {

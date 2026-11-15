@@ -6,6 +6,8 @@ import io.github.eightbrows.appwatch.model.AppSummary
 import io.github.eightbrows.appwatch.model.AppWarning
 import io.github.eightbrows.appwatch.model.InstallSource
 import io.github.eightbrows.appwatch.model.ReviewStatus
+import io.github.eightbrows.appwatch.model.topAction
+import io.github.eightbrows.appwatch.model.RemoveAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -123,7 +125,8 @@ class TopListsTest {
     }
 
     @Test
-    fun all_isOrderedByStatusThenKindThenName() {
+    fun all_isOrderedByStatusThenEnabledThenName() {
+        // 種類では並べない（ステップ29）。確認状態 → 有効が先・無効は組の一番下 → 名前
         val lists = TopLists.from(
             listOf(
                 app("b_sys", kind = AppKind.SYSTEM),
@@ -132,7 +135,7 @@ class TopListsTest {
                 app("z_caution", status = ReviewStatus.CAUTION, kind = AppKind.SYSTEM),
             ),
         )
-        assertEquals(listOf("z_caution", "c_user", "a_pre", "b_sys"), lists.all.map { it.packageName })
+        assertEquals(listOf("z_caution", "a_pre", "b_sys", "c_user"), lists.all.map { it.packageName })
     }
 
     @Test
@@ -185,5 +188,42 @@ class TopListsTest {
         val filtered = lists.filtered("caution")
         assertEquals(1, filtered.needsReviewCount)
         assertEquals(1, filtered.cautionCards.size + filtered.changedCards.size + filtered.unconfirmed.size)
+    }
+
+    @Test
+    fun allSections_sumToTabCount_disabledAppsGoLast_andEmptyGroupsAreLeftOut() {
+        val lists = TopLists.from(
+            listOf(
+                app("a_caution_off", status = ReviewStatus.CAUTION, enabled = false),
+                app("z_caution", status = ReviewStatus.CAUTION),
+                app("b_un", kind = AppKind.PREINSTALLED),
+                app("a_un_off", enabled = false),
+                app("c_un"),
+                app("b_ok_off", status = ReviewStatus.OK, enabled = false, kind = AppKind.SYSTEM),
+                app("a_ok", status = ReviewStatus.OK),
+            ),
+        )
+        val sections = lists.allSections
+        assertEquals(listOf(ReviewStatus.CAUTION, ReviewStatus.UNCONFIRMED, ReviewStatus.OK), sections.map { it.first })
+        // 無効のアプリは組の一番下（名前が先でも）
+        assertEquals(listOf("z_caution", "a_caution_off"), sections[0].second.map { it.packageName })
+        assertEquals(listOf("b_un", "c_un", "a_un_off"), sections[1].second.map { it.packageName })
+        assertEquals(listOf("a_ok", "b_ok_off"), sections[2].second.map { it.packageName })
+        // 合計はタブの「すべて n」
+        assertEquals(lists.all.size, sections.sumOf { it.second.size })
+        assertEquals(lists.all, sections.flatMap { it.second })
+        // 検索の後も合計が同じ。0件の組は入れない
+        val found = lists.filtered("_ok")
+        assertEquals(listOf(ReviewStatus.OK), found.allSections.map { it.first })
+        assertEquals(found.all.size, found.allSections.sumOf { it.second.size })
+        assertTrue(TopLists.from(emptyList()).allSections.isEmpty())
+    }
+
+    @Test
+    fun disabledApps_openAppInfoInsteadOfDelete() {
+        assertEquals(RemoveAction.APP_INFO, app("u", enabled = false).topAction)
+        assertEquals(RemoveAction.APP_INFO, app("s", enabled = false, kind = AppKind.SYSTEM).topAction)
+        assertEquals(RemoveAction.UNINSTALL, app("u2").topAction)
+        assertEquals(RemoveAction.NONE, app("s2", kind = AppKind.SYSTEM).topAction)
     }
 }
