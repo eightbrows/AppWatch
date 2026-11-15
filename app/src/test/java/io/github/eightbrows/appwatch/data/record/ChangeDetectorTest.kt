@@ -262,11 +262,14 @@ class ChangeDetectorTest {
     // ---- その他 ----
 
     @Test
-    fun warnings_areOnlyForUserInstalledApps() {
-        val first = ChangeDetector.baseline(listOf(installed("pre", kind = AppKind.PREINSTALLED)), t0)
-        val result = ChangeDetector.diff(first, listOf(installed("pre", kind = AppKind.PREINSTALLED, signer = "bbbb")), emptyMap(), t1)
-        assertEquals(ChangeType.SIGNATURE_CHANGED, result.changes.single().type) // 変化は記録する
-        assertTrue(result.changedApps.single().warnings.isEmpty()) // 警告は付けない
+    fun signatureWarning_isForEveryKind() {
+        // 署名が変わった・再インストールの警告は、種類で区別しない（ステップ25）
+        for (kind in listOf(AppKind.PREINSTALLED, AppKind.SYSTEM, AppKind.USER_INSTALLED)) {
+            val first = ChangeDetector.baseline(listOf(installed("app", kind = kind)), t0)
+            val result = ChangeDetector.diff(first, listOf(installed("app", kind = kind, signer = "bbbb")), emptyMap(), t1)
+            assertEquals(ChangeType.SIGNATURE_CHANGED, result.changes.single().type)
+            assertTrue("$kind", AppWarning.SIGNATURE_CHANGED in result.changedApps.single().warnings)
+        }
     }
 
     @Test

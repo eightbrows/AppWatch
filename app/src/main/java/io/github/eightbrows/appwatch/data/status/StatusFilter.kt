@@ -8,15 +8,15 @@ import io.github.eightbrows.appwatch.model.ReviewStatus
 // アプリの確認状態の画面の絞り込み（仕様書 6章）。親子の関係があるツリーで、Android を使わない純粋な関数だけを置く。
 //
 //   確認状態：未確認／要注意／問題なし（すべてのアプリに効く。ツリーの外）
-//   端末にある
+//   導入済
 //     状態：有効／無効
+//     警告：なし／開発用の署名／署名が変わった／再インストール（1つのアプリに複数付くことがある）
 //     種類：
 //       後から導入
 //         入手：Google Play／Google Play 以外／入手元が分からない
-//         警告：なし／開発用の署名／署名が変わった／再インストール
 //       プリインストール
 //       システム
-//   端末にない
+//   未導入
 //     削除したアプリ
 //     事前登録だけ
 
@@ -30,44 +30,41 @@ enum class FilterGroup {
     val parent: FilterItem?
         get() = when (this) {
             STATUS, DEVICE -> null
-            STATE, KIND -> FilterItem.DEVICE_PRESENT
-            SOURCE, WARNING -> FilterItem.KIND_USER
+            STATE, WARNING, KIND -> FilterItem.DEVICE_PRESENT
+            SOURCE -> FilterItem.KIND_USER
             ABSENT -> FilterItem.DEVICE_ABSENT
         }
 }
 
 /**
  * 絞り込みの項目（ツリーの上からの順）。保存は名前で行うので、名前を変えるときは [StatusFilter.LEGACY_NAMES] に読み替えを足す。
- * [isCheckbox] はツリーの親（チェックボックス）、それ以外はチップ。
+ * 名前の DEVICE_PRESENT／DEVICE_ABSENT は、画面の「導入済／未導入」。
  */
-enum class FilterItem(val group: FilterGroup, val isCheckbox: Boolean = false) {
+enum class FilterItem(val group: FilterGroup) {
     STATUS_UNCONFIRMED(FilterGroup.STATUS),
     STATUS_CAUTION(FilterGroup.STATUS),
     STATUS_OK(FilterGroup.STATUS),
-    DEVICE_PRESENT(FilterGroup.DEVICE, isCheckbox = true),
+    DEVICE_PRESENT(FilterGroup.DEVICE),
     ENABLED(FilterGroup.STATE),
     DISABLED(FilterGroup.STATE),
-    KIND_USER(FilterGroup.KIND, isCheckbox = true),
-    SOURCE_PLAY(FilterGroup.SOURCE),
-    SOURCE_OTHER(FilterGroup.SOURCE),
-    SOURCE_UNKNOWN(FilterGroup.SOURCE),
     WARNING_NONE(FilterGroup.WARNING),
     WARNING_DEBUG(FilterGroup.WARNING),
     WARNING_SIGNATURE(FilterGroup.WARNING),
     WARNING_REINSTALL(FilterGroup.WARNING),
-    KIND_PREINSTALLED(FilterGroup.KIND, isCheckbox = true),
-    KIND_SYSTEM(FilterGroup.KIND, isCheckbox = true),
-    DEVICE_ABSENT(FilterGroup.DEVICE, isCheckbox = true),
-    ABSENT_REMOVED(FilterGroup.ABSENT, isCheckbox = true),
-    ABSENT_PRE_REGISTERED(FilterGroup.ABSENT, isCheckbox = true),
+    KIND_USER(FilterGroup.KIND),
+    SOURCE_PLAY(FilterGroup.SOURCE),
+    SOURCE_OTHER(FilterGroup.SOURCE),
+    SOURCE_UNKNOWN(FilterGroup.SOURCE),
+    KIND_PREINSTALLED(FilterGroup.KIND),
+    KIND_SYSTEM(FilterGroup.KIND),
+    DEVICE_ABSENT(FilterGroup.DEVICE),
+    ABSENT_REMOVED(FilterGroup.ABSENT),
+    ABSENT_PRE_REGISTERED(FilterGroup.ABSENT),
     ;
 
-    /** すぐ上の項目（確認状態・端末にある・端末にないは null）。 */
+    /** すぐ上の項目（確認状態・導入済・未導入は null）。 */
     val parent: FilterItem? get() = group.parent
 }
-
-/** ツリーの親のチェックボックスの見た目。 */
-enum class CheckState { ON, OFF, PARTIAL }
 
 /**
  * 一覧の上の1行の、初期値と違う条件（札）。
@@ -89,6 +86,12 @@ object StatusFilter {
 
     val DEFAULT_ENABLED: Set<FilterItem> = ALL - DEFAULT_OFF
 
+    /** 「すべてオン」：すべての項目をオン（システムも出る）。 */
+    val ALL_ON: Set<FilterItem> = ALL
+
+    /** 「すべてオフ」：すべての項目をオフ（表示は 0件）。 */
+    val ALL_OFF: Set<FilterItem> = emptySet()
+
     /** オフの項目から、オンの項目を求める（保存はオフの方で行う。新しい項目が増えても初期値はオン）。 */
     fun enabledFrom(off: Set<FilterItem>): Set<FilterItem> = ALL - off
 
@@ -98,16 +101,18 @@ object StatusFilter {
         "NOT_REGISTERED" to FilterItem.ABSENT_REMOVED,
     )
 
-    /** 保存したオフの名前を項目にする。知らない名前は読み飛ばす。 */
-    fun offFromSaved(saved: Set<String>): Set<FilterItem> =
-        saved.mapNotNullTo(HashSet()) { name -> FilterItem.entries.firstOrNull { it.name == name } ?: LEGACY_NAMES[name] }
+    /** 保存したオフの名前を項目にする。今の形に合わない名前が1つでもあれば、初期値に戻す。 */
+    fun offFromSaved(saved: Set<String>): Set<FilterItem> {
+        val items = saved.map { name -> FilterItem.entries.firstOrNull { it.name == name } ?: LEGACY_NAMES[name] }
+        return if (items.any { it == null }) DEFAULT_OFF else items.filterNotNullTo(HashSet())
+    }
 
     /** 保存する名前（オフの項目）。 */
     fun savedNames(enabled: Set<FilterItem>): Set<String> = (ALL - enabled).mapTo(HashSet()) { it.name }
 
     // ---- アプリの位置 ----
 
-    /** 端末にないアプリのうち、事前登録だけで一度も入っていないもの（削除したアプリを事前登録したものは「削除したアプリ」）。 */
+    /** 未導入のアプリのうち、事前登録だけで一度も入っていないもの（削除したアプリを事前登録したものは「削除したアプリ」）。 */
     fun isPreRegisteredOnly(entry: AppStatusEntry): Boolean =
         !entry.isPresent && entry.isPreRegistered && entry.kind == null && entry.removedAt == null
 
@@ -128,11 +133,12 @@ object StatusFilter {
         }
         add(FilterGroup.DEVICE to setOf(FilterItem.DEVICE_PRESENT))
         add(FilterGroup.STATE to setOf(if (entry.isEnabled) FilterItem.ENABLED else FilterItem.DISABLED))
+        // 警告は導入済のアプリ全部（後から導入・プリインストール・システム）に効く
+        add(FilterGroup.WARNING to warningItems(entry.warnings))
         add(FilterGroup.KIND to entry.kind?.let { setOf(kindItem(it)) })
-        // 入手・警告は後から導入のアプリだけ
+        // 入手は後から導入のアプリだけ
         if (entry.kind == AppKind.USER_INSTALLED) {
             add(FilterGroup.SOURCE to entry.source?.let { setOf(sourceItem(it)) })
-            add(FilterGroup.WARNING to warningItems(entry.warnings))
         }
     }
 
@@ -170,7 +176,7 @@ object StatusFilter {
 
     /**
      * 各項目の件数：その項目に当てはまるアプリの数（ほかの条件・検索には関係しない）。
-     * 入手・警告は端末にある後から導入のアプリで数える。警告が2つあるアプリは両方に数える。
+     * 状態・警告は導入済のアプリ全部で、入手は導入済の後から導入のアプリで数える。警告が2つあるアプリは両方に数える。
      */
     fun counts(entries: List<AppStatusEntry>): Map<FilterItem, Int> {
         val counts = HashMap<FilterItem, Int>()
@@ -182,7 +188,7 @@ object StatusFilter {
 
     // ---- ツリーの見た目 ----
 
-    /** その項目が効いているか：上の項目がすべてオン（自分のオン・オフは見ない）。オフの親の下は灰色で押せない。 */
+    /** その項目が効いているか：上の項目がすべてオン（自分のオン・オフは見ない）。オフの親の下は灰色で、効かない。 */
     fun isActive(item: FilterItem, enabled: Set<FilterItem>): Boolean {
         var parent = item.parent
         while (parent != null) {
@@ -190,17 +196,6 @@ object StatusFilter {
             parent = parent.parent
         }
         return true
-    }
-
-    /** 下にある項目（子・孫）。 */
-    fun descendantsOf(item: FilterItem): List<FilterItem> =
-        FilterItem.entries.filter { other -> generateSequence(other.parent) { it.parent }.any { it == item } }
-
-    /** 親のチェックボックスの見た目：オフ／すべてオン／下の一部だけオン（「−」）。 */
-    fun checkState(item: FilterItem, enabled: Set<FilterItem>): CheckState = when {
-        item !in enabled -> CheckState.OFF
-        descendantsOf(item).all { it in enabled } -> CheckState.ON
-        else -> CheckState.PARTIAL
     }
 
     /** 1つの項目のオン・オフを切り替える（下の項目のオン・オフは覚えたまま）。 */

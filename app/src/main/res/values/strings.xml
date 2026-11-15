@@ -316,36 +316,46 @@
         <item quantity="other">Filter, %1$d conditions changed</item>
     </plurals>
     <string name="filter_sheet_title">Filter</string>
-    <string name="filter_sheet_hint">Unchecking hides everything under it</string>
-    <string name="filter_group_status">Review</string>
-    <string name="filter_group_state">State</string>
-    <string name="filter_group_source">Source</string>
-    <string name="filter_group_warning">Warning</string>
-    <!-- 絞り込みの画面の項目（チップは短く） -->
+    <plurals name="filter_sheet_total">
+        <item quantity="one">Total %1$d</item>
+        <item quantity="other">Total %1$d</item>
+    </plurals>
+    <string name="filter_all_on">All\non</string>
+    <string name="filter_all_off">All\noff</string>
+    <string name="filter_all_on_desc">Turn all on</string>
+    <string name="filter_all_off_desc">Turn all off</string>
+    <string name="filter_group_status">By review status</string>
+    <string name="filter_group_device">By installed or not</string>
+    <string name="filter_group_state">By state</string>
+    <string name="filter_group_warning">Warnings (may overlap)</string>
+    <string name="filter_group_kind">By type</string>
+    <string name="filter_group_source">By source</string>
+    <string name="filter_inactive">%1$s, not in effect because the item above is off</string>
+    <!-- 絞り込みの画面のボタン（この画面の中だけの短い名前。狭いボタンは2行に折り返す） -->
     <string name="filter_item_unconfirmed">Unreviewed</string>
     <string name="filter_item_caution">Caution</string>
     <string name="filter_item_ok">OK</string>
-    <string name="filter_item_present">On device</string>
+    <string name="filter_item_present">Installed</string>
     <string name="filter_item_enabled">Enabled</string>
     <string name="filter_item_disabled">Disabled</string>
-    <string name="filter_item_user">Installed by user</string>
-    <string name="filter_item_preinstalled">Preinstalled</string>
-    <string name="filter_item_system">System</string>
+    <string name="filter_item_user">By user</string>
+    <string name="filter_item_preinstalled">Pre-\ninst.</string>
+    <string name="filter_item_system">Sys-\ntem</string>
     <string name="filter_item_play">Play</string>
-    <string name="filter_item_other">Non-Play</string>
-    <string name="filter_item_unknown">Unknown</string>
+    <string name="filter_item_other">Non-\nPlay</string>
+    <string name="filter_item_unknown">Un-\nknown</string>
     <string name="filter_item_warning_none">None</string>
-    <string name="filter_item_debug">Dev sig.</string>
-    <string name="filter_item_signature">Sig. changed</string>
-    <string name="filter_item_reinstall">Reinstalled</string>
-    <string name="filter_item_absent">Not on device</string>
-    <string name="filter_item_removed">Removed</string>
-    <string name="filter_item_pre_registered">Pre-registered only</string>
+    <string name="filter_item_debug">Dev\nsig.</string>
+    <string name="filter_item_signature">Sig.\nchanged</string>
+    <string name="filter_item_reinstall">Re-\ninstalled</string>
+    <string name="filter_item_absent">Not\ninstalled</string>
+    <string name="filter_item_removed">Re-\nmoved</string>
+    <string name="filter_item_pre_registered">Pre-\nreg.</string>
     <!-- 一覧の上の条件の札の中の名前（「Hide %1$s」「Only %1$s」「Show %1$s」に入る） -->
     <string name="filter_name_unconfirmed">unreviewed apps</string>
     <string name="filter_name_caution">Caution apps</string>
     <string name="filter_name_ok">OK apps</string>
-    <string name="filter_name_present">apps on device</string>
+    <string name="filter_name_present">installed apps</string>
     <string name="filter_name_enabled">enabled apps</string>
     <string name="filter_name_disabled">disabled apps</string>
     <string name="filter_name_user">user-installed apps</string>
@@ -358,7 +368,7 @@
     <string name="filter_name_debug">developer-signed apps</string>
     <string name="filter_name_signature">apps with changed signatures</string>
     <string name="filter_name_reinstall">reinstalled apps</string>
-    <string name="filter_name_absent">apps not on device</string>
+    <string name="filter_name_absent">apps not installed</string>
     <string name="filter_name_removed">removed apps</string>
     <string name="filter_name_pre_registered">pre-registered apps</string>
     <string name="filter_exclude">Hide %1$s</string>
@@ -390,7 +400,7 @@
     <string name="status_empty">No matching apps. Change the filters or search.</string>
     <string name="format_version">v%1$s</string>
     <string name="status_row_source_date">%1$s · %2$s</string>
-    <string name="status_row_removed">Not on device (removed %1$s)</string>
+    <string name="status_row_removed">Not installed (removed %1$s)</string>
     <string name="status_row_not_installed">Not installed</string>
     <string name="status_row_memo">Note: %1$s</string>
     <string name="status_reinstalled_at">Found again %1$s</string>
@@ -426,7 +436,7 @@
     <!-- アプリの詳細 -->
     <string name="detail_title">App details</string>
     <string name="detail_installed">%1$s · installed %2$s</string>
-    <string name="detail_absent_mark">App not on this device</string>
+    <string name="detail_absent_mark">App not installed</string>
     <string name="detail_caution_title">This app needs attention</string>
     <string name="detail_warning_title">This app needs review</string>
     <string name="detail_warning_item">• %1$s</string>
@@ -488,12 +498,12 @@
     <string name="prereg_name_note">Filled in from the shared text. If it\'s missing, type it (it can be left empty)</string>
     <string name="prereg_memo_hint">Optional. The user can see this too</string>
     <string name="prereg_already_registered">Already registered</string>
-    <string name="prereg_installed">On this device now (status: %1$s)</string>
-    <string name="prereg_installed_before">Was on this device before (status: %1$s)</string>
+    <string name="prereg_installed">Installed now (status: %1$s)</string>
+    <string name="prereg_installed_before">Was installed before, not installed now (status: %1$s)</string>
     <string name="prereg_register">Register as \"Caution\"</string>
     <plurals name="prereg_registered_list">
-        <item quantity="one">Registered, not on device: %1$d</item>
-        <item quantity="other">Registered, not on device: %1$d</item>
+        <item quantity="one">Registered, not installed: %1$d</item>
+        <item quantity="other">Registered, not installed: %1$d</item>
     </plurals>
     <string name="prereg_registered_empty">None yet</string>
     <string name="prereg_registered_at">Registered %1$s</string>

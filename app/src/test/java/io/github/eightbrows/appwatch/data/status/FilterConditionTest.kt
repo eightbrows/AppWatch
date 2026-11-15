@@ -21,7 +21,7 @@ class FilterConditionTest {
 
     @Test
     fun excludedItems_inTreeOrder_afterTheDefaultOne() {
-        // 画面サンプル④：「有効」と「端末にない」を外した
+        // 「有効」と「未導入」を外した
         val enabled = default - FilterItem.ENABLED - FilterItem.DEVICE_ABSENT
         assertEquals(
             listOf(systemDefault, FilterCondition(EXCLUDE, FilterItem.ENABLED), FilterCondition(EXCLUDE, FilterItem.DEVICE_ABSENT)),
@@ -73,26 +73,59 @@ class FilterConditionTest {
 
     @Test
     fun itemsUnderAnOffParent_areNotShown() {
-        // 「後から導入」を外すと、その下の入手・警告の条件は出さない（覚えてはいる）。
+        // 「後から導入」を外すと、その下の入手の条件は出さない（覚えてはいる）。
         // システムは初期値でオフなので、種類は「プリインストールだけ」になる
         val enabled = default - FilterItem.SOURCE_OTHER - FilterItem.KIND_USER
         assertEquals(listOf(FilterCondition(ONLY, FilterItem.KIND_PREINSTALLED)), StatusFilter.conditions(enabled))
         // ✕で種類を初期値に戻すと、覚えていた入手の条件が出る
         val back = StatusFilter.clear(enabled, FilterCondition(ONLY, FilterItem.KIND_PREINSTALLED))
         assertEquals(listOf(systemDefault, FilterCondition(EXCLUDE, FilterItem.SOURCE_OTHER)), StatusFilter.conditions(back))
-        // 「端末にある」を外すと、その下（状態・種類・入手・警告）は出さない。「システムを除く」も出さない
+        // 「導入済」を外すと、その下（状態・警告・種類・入手）は出さない。「システムを除く」も出さない
         val noPresent = default - FilterItem.DEVICE_PRESENT - FilterItem.ENABLED
         assertEquals(listOf(FilterCondition(EXCLUDE, FilterItem.DEVICE_PRESENT)), StatusFilter.conditions(noPresent))
         assertEquals(1, StatusFilter.changedCount(noPresent))
     }
 
     @Test
-    fun checkStates_ofParents() {
-        assertEquals(CheckState.PARTIAL, StatusFilter.checkState(FilterItem.DEVICE_PRESENT, default))
-        assertEquals(CheckState.ON, StatusFilter.checkState(FilterItem.KIND_USER, default))
-        assertEquals(CheckState.ON, StatusFilter.checkState(FilterItem.DEVICE_ABSENT, default))
-        assertEquals(CheckState.OFF, StatusFilter.checkState(FilterItem.KIND_SYSTEM, default))
-        assertEquals(CheckState.ON, StatusFilter.checkState(FilterItem.DEVICE_PRESENT, all))
-        assertEquals(CheckState.PARTIAL, StatusFilter.checkState(FilterItem.DEVICE_ABSENT, default - FilterItem.ABSENT_REMOVED))
+    fun allOn_showsIncludeSystem_only() {
+        assertEquals(listOf(FilterCondition(INCLUDE, FilterItem.KIND_SYSTEM)), StatusFilter.conditions(StatusFilter.ALL_ON))
+        assertEquals(1, StatusFilter.changedCount(StatusFilter.ALL_ON))
+    }
+
+    @Test
+    fun allOff_showsTheTopGroupsOnly() {
+        // すべてオフ：確認状態の3つと、導入済・未導入。その下の条件は効かないので出さない
+        assertEquals(
+            listOf(
+                FilterCondition(EXCLUDE, FilterItem.STATUS_UNCONFIRMED),
+                FilterCondition(EXCLUDE, FilterItem.STATUS_CAUTION),
+                FilterCondition(EXCLUDE, FilterItem.STATUS_OK),
+                FilterCondition(EXCLUDE, FilterItem.DEVICE_PRESENT),
+                FilterCondition(EXCLUDE, FilterItem.DEVICE_ABSENT),
+            ),
+            StatusFilter.conditions(StatusFilter.ALL_OFF),
+        )
+        assertEquals(5, StatusFilter.changedCount(StatusFilter.ALL_OFF))
+    }
+
+    @Test
+    fun warningConditions_followInstalled_notUserInstalled() {
+        // 警告は「導入済」の下。「後から導入」を外しても、警告の条件は出る
+        val enabled = default - FilterItem.KIND_USER - FilterItem.WARNING_DEBUG
+        assertEquals(
+            listOf(FilterCondition(EXCLUDE, FilterItem.WARNING_DEBUG), FilterCondition(ONLY, FilterItem.KIND_PREINSTALLED)),
+            StatusFilter.conditions(enabled),
+        )
+        // 並びはツリーの上から：状態 → 警告 → 種類 → 入手
+        val order = default - FilterItem.SOURCE_UNKNOWN - FilterItem.WARNING_NONE - FilterItem.DISABLED
+        assertEquals(
+            listOf(
+                systemDefault,
+                FilterCondition(EXCLUDE, FilterItem.DISABLED),
+                FilterCondition(EXCLUDE, FilterItem.WARNING_NONE),
+                FilterCondition(EXCLUDE, FilterItem.SOURCE_UNKNOWN),
+            ),
+            StatusFilter.conditions(order),
+        )
     }
 }

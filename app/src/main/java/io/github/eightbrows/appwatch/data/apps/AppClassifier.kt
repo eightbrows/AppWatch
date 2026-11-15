@@ -30,17 +30,18 @@ object AppClassifier {
     }
 
     /**
-     * 端末の情報だけで決まる警告（Google Play 以外、入手元が分からない、開発用の署名）。
-     * 警告は「後から導入」のアプリにだけ付ける（仕様書 4章）。プリインストールやシステムは
-     * 入手元が取れないのが普通で、メーカーが開発用の鍵で署名していることもあるため。
-     * 「署名が変わった」「再インストール」は記録と比べて決める（ChangeDetector）。
+     * 端末の情報だけで決まる警告（Google Play 以外、入手元が分からない、開発用の署名）。仕様書 4章。
+     * - 入手元の警告は「後から導入」のアプリにだけ付ける（プリインストールやシステムは入手元が取れないのが普通）。
+     * - 開発用の署名は、種類で区別せずに付ける。
+     * 「署名が変わった」「再インストール」は記録と比べて決める（ChangeDetector）。こちらも種類で区別しない。
      */
     fun warnings(kind: AppKind, source: InstallSource, signerSubjects: List<String>): Set<AppWarning> = buildSet {
-        if (kind != AppKind.USER_INSTALLED) return@buildSet
-        when (source) {
-            InstallSource.GOOGLE_PLAY -> Unit
-            InstallSource.OTHER -> add(AppWarning.NOT_FROM_PLAY)
-            InstallSource.UNKNOWN -> add(AppWarning.UNKNOWN_SOURCE)
+        if (kind == AppKind.USER_INSTALLED) {
+            when (source) {
+                InstallSource.GOOGLE_PLAY -> Unit
+                InstallSource.OTHER -> add(AppWarning.NOT_FROM_PLAY)
+                InstallSource.UNKNOWN -> add(AppWarning.UNKNOWN_SOURCE)
+            }
         }
         if (signerSubjects.any { isDebugCertificate(it) }) add(AppWarning.DEBUG_SIGNATURE)
     }

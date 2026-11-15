@@ -178,6 +178,7 @@ fun AppStatusRoute(
             StatusFilterSheet(
                 enabled = currentEnabled,
                 counts = counts,
+                totalCount = currentEntries.orEmpty().size,
                 visibleCount = visible.size,
                 onChange = controller::setFilterEnabled,
                 onDismiss = { showFilter = false },

@@ -42,16 +42,15 @@ data class TrackedApp(
     /** この行の内容が最後に変わった時刻 */
     val updatedAt: Long,
 ) {
-    /** 画面に出す警告。仕様書 4章のとおり「後から導入」のアプリにだけ付ける。 */
+    /**
+     * 画面に出す警告（仕様書 4章）。開発用の署名・署名が変わった・再インストールは種類で区別しない。
+     * 入手元の警告は「後から導入」のアプリだけ（記録に残っていても、ほかの種類では出さない）。
+     */
     val warnings: Set<AppWarning>
-        get() = if (kind != AppKind.USER_INSTALLED) {
-            emptySet()
-        } else {
-            buildSet {
-                addAll(staticWarnings)
-                if (reinstalledAt != null) add(AppWarning.REINSTALLED)
-                if (signatureChangedAt != null) add(AppWarning.SIGNATURE_CHANGED)
-            }
+        get() = buildSet {
+            staticWarnings.filterTo(this) { kind == AppKind.USER_INSTALLED || !it.isSource }
+            if (reinstalledAt != null) add(AppWarning.REINSTALLED)
+            if (signatureChangedAt != null) add(AppWarning.SIGNATURE_CHANGED)
         }
 
     /** 最初のチェックより後に入ったアプリか（「新しく入ったアプリ」の判定に使う） */

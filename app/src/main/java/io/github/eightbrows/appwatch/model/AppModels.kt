@@ -9,7 +9,12 @@ enum class AppKind { USER_INSTALLED, PREINSTALLED, SYSTEM }
 enum class InstallSource { GOOGLE_PLAY, OTHER, UNKNOWN }
 
 /** 警告（仕様書 4章）。自動で判定する。 */
-enum class AppWarning { NOT_FROM_PLAY, UNKNOWN_SOURCE, DEBUG_SIGNATURE, SIGNATURE_CHANGED, REINSTALLED }
+enum class AppWarning {
+    NOT_FROM_PLAY, UNKNOWN_SOURCE, DEBUG_SIGNATURE, SIGNATURE_CHANGED, REINSTALLED;
+
+    /** 入手元にかかわる警告か（「後から導入」のアプリにだけ付ける）。 */
+    val isSource: Boolean get() = this == NOT_FROM_PLAY || this == UNKNOWN_SOURCE
+}
 
 /** 確認状態（仕様書 4章）。管理者が設定する。 */
 enum class ReviewStatus { UNCONFIRMED, OK, CAUTION }

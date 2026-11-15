@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- 絞り込みの画面の左の見出し（確認・状態・入手・警告）の幅。言語ごとにそろえる -->
-    <dimen name="filter_label_width">54dp</dimen>
-</resources>

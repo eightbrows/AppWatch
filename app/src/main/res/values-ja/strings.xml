@@ -307,36 +307,45 @@
         <item quantity="other">絞り込み（初期値と違う条件 %1$d件）</item>
     </plurals>
     <string name="filter_sheet_title">絞り込み</string>
-    <string name="filter_sheet_hint">外すと、その下も表示されません</string>
-    <string name="filter_group_status">確認</string>
-    <string name="filter_group_state">状態</string>
-    <string name="filter_group_source">入手</string>
-    <string name="filter_group_warning">警告</string>
-    <!-- 絞り込みの画面の項目（チップは短く） -->
+    <plurals name="filter_sheet_total">
+        <item quantity="other">合計 %1$d件</item>
+    </plurals>
+    <string name="filter_all_on">すべて\nオン</string>
+    <string name="filter_all_off">すべて\nオフ</string>
+    <string name="filter_all_on_desc">すべてオン</string>
+    <string name="filter_all_off_desc">すべてオフ</string>
+    <string name="filter_group_status">確認状態で分ける</string>
+    <string name="filter_group_device">導入で分ける</string>
+    <string name="filter_group_state">状態で分ける</string>
+    <string name="filter_group_warning">警告（重なりあり）</string>
+    <string name="filter_group_kind">種類で分ける</string>
+    <string name="filter_group_source">入手で分ける</string>
+    <string name="filter_inactive">%1$s、上の項目がオフのため効きません</string>
+    <!-- 絞り込みの画面のボタン（この画面の中だけの短い名前。狭いボタンは2行に折り返す） -->
     <string name="filter_item_unconfirmed">未確認</string>
     <string name="filter_item_caution">要注意</string>
     <string name="filter_item_ok">問題なし</string>
-    <string name="filter_item_present">端末にある</string>
+    <string name="filter_item_present">導入済</string>
     <string name="filter_item_enabled">有効</string>
     <string name="filter_item_disabled">無効</string>
     <string name="filter_item_user">後から導入</string>
-    <string name="filter_item_preinstalled">プリインストール</string>
+    <string name="filter_item_preinstalled">プリイン</string>
     <string name="filter_item_system">システム</string>
     <string name="filter_item_play">Play</string>
-    <string name="filter_item_other">Play以外</string>
+    <string name="filter_item_other">Play\n以外</string>
     <string name="filter_item_unknown">不明</string>
     <string name="filter_item_warning_none">なし</string>
     <string name="filter_item_debug">開発署名</string>
     <string name="filter_item_signature">署名変更</string>
     <string name="filter_item_reinstall">再導入</string>
-    <string name="filter_item_absent">端末にない</string>
-    <string name="filter_item_removed">削除した</string>
-    <string name="filter_item_pre_registered">事前登録だけ</string>
+    <string name="filter_item_absent">未導入</string>
+    <string name="filter_item_removed">削除\nした</string>
+    <string name="filter_item_pre_registered">事前\n登録</string>
     <!-- 一覧の上の条件の札の中の名前（「%1$sを除く」「%1$sだけ」「%1$sを含む」に入る） -->
     <string name="filter_name_unconfirmed">未確認</string>
     <string name="filter_name_caution">要注意</string>
     <string name="filter_name_ok">問題なし</string>
-    <string name="filter_name_present">端末にある</string>
+    <string name="filter_name_present">導入済</string>
     <string name="filter_name_enabled">有効</string>
     <string name="filter_name_disabled">無効</string>
     <string name="filter_name_user">後から導入</string>
@@ -349,7 +358,7 @@
     <string name="filter_name_debug">開発用の署名</string>
     <string name="filter_name_signature">署名が変わった</string>
     <string name="filter_name_reinstall">再インストール</string>
-    <string name="filter_name_absent">端末にない</string>
+    <string name="filter_name_absent">未導入</string>
     <string name="filter_name_removed">削除したアプリ</string>
     <string name="filter_name_pre_registered">事前登録のアプリ</string>
     <string name="filter_exclude">%1$sを除く</string>
@@ -377,8 +386,8 @@
     <string name="status_empty">当てはまるアプリはありません。絞り込みや検索を変えて下さい。</string>
     <string name="format_version">v%1$s</string>
     <string name="status_row_source_date">%1$s ・ %2$s</string>
-    <string name="status_row_removed">端末にありません（%1$s に削除）</string>
-    <string name="status_row_not_installed">端末に入っていません</string>
+    <string name="status_row_removed">未導入（%1$s に削除）</string>
+    <string name="status_row_not_installed">未導入</string>
     <string name="status_row_memo">管理者メモ：%1$s</string>
     <string name="status_reinstalled_at">%1$s に再検出</string>
     <string name="status_signature_changed_at">%1$s に検出</string>
@@ -408,7 +417,7 @@
     <!-- アプリの詳細 -->
     <string name="detail_title">アプリの詳細</string>
     <string name="detail_installed">%1$s ・ %2$s にインストール</string>
-    <string name="detail_absent_mark">端末にないアプリ</string>
+    <string name="detail_absent_mark">未導入のアプリ</string>
     <string name="detail_caution_title">注意が必要なアプリです</string>
     <string name="detail_warning_title">確認が必要なアプリです</string>
     <string name="detail_warning_item">・%1$s</string>
@@ -470,11 +479,11 @@
     <string name="prereg_name_note">共有された文面から自動で入力します。取り出せない場合は手入力して下さい（空でも登録できます）</string>
     <string name="prereg_memo_hint">任意。本人にも表示されます</string>
     <string name="prereg_already_registered">既に登録されています</string>
-    <string name="prereg_installed">この端末に入っています（今の確認状態：%1$s）</string>
-    <string name="prereg_installed_before">以前この端末に入っていました（今の確認状態：%1$s）</string>
+    <string name="prereg_installed">導入済です（今の確認状態：%1$s）</string>
+    <string name="prereg_installed_before">以前は導入済でした。今は未導入です（今の確認状態：%1$s）</string>
     <string name="prereg_register">「要注意」として登録</string>
     <plurals name="prereg_registered_list">
-        <item quantity="other">登録済み（端末にない）%1$d件</item>
+        <item quantity="other">登録済み（未導入）%1$d件</item>
     </plurals>
     <string name="prereg_registered_empty">まだありません</string>
     <string name="prereg_registered_at">登録 %1$s</string>
