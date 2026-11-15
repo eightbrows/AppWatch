@@ -29,9 +29,11 @@
     <string name="top_last_check">Last check %1$s</string>
     <string name="top_tab_needs_review">Needs review</string>
     <string name="top_tab_all">All</string>
-    <string name="top_new_apps">New apps</string>
+    <plurals name="top_tab_desc">
+        <item quantity="one">%1$s, %2$d app</item>
+        <item quantity="other">%1$s, %2$d apps</item>
+    </plurals>
     <string name="top_unconfirmed_apps">Not reviewed yet</string>
-    <string name="top_all_apps">All apps</string>
     <string name="top_nothing_to_review">No apps need review</string>
     <string name="top_search_empty">No matching apps</string>
     <string name="top_open_settings">Settings (press and hold to open)</string>
@@ -316,9 +318,10 @@
         <item quantity="other">Filter, %1$d conditions changed</item>
     </plurals>
     <string name="filter_sheet_title">Filter</string>
-    <plurals name="filter_sheet_total">
-        <item quantity="one">Total %1$d</item>
-        <item quantity="other">Total %1$d</item>
+    <!-- 絞り込みの画面の見出しの件数。%1$s に太く大きい「今の条件で表示される数」が入る -->
+    <plurals name="filter_sheet_count">
+        <item quantity="one">%1$s / %2$d total</item>
+        <item quantity="other">%1$s / %2$d total</item>
     </plurals>
     <string name="filter_all_on">All\non</string>
     <string name="filter_all_off">All\noff</string>

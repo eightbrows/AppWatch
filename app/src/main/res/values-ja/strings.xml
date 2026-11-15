@@ -24,11 +24,12 @@
 
     <!-- トップ -->
     <string name="top_last_check">最終チェック %1$s</string>
-    <string name="top_tab_needs_review">確認が必要なアプリ</string>
+    <string name="top_tab_needs_review">確認が必要</string>
     <string name="top_tab_all">すべて</string>
-    <string name="top_new_apps">新しく入ったアプリ</string>
+    <plurals name="top_tab_desc">
+        <item quantity="other">%1$s、%2$d件</item>
+    </plurals>
     <string name="top_unconfirmed_apps">まだ確認していないアプリ</string>
-    <string name="top_all_apps">すべてのアプリ</string>
     <string name="top_nothing_to_review">確認が必要なアプリはありません</string>
     <string name="top_search_empty">当てはまるアプリはありません</string>
     <string name="top_open_settings">設定（長押しで開きます）</string>
@@ -307,8 +308,9 @@
         <item quantity="other">絞り込み（初期値と違う条件 %1$d件）</item>
     </plurals>
     <string name="filter_sheet_title">絞り込み</string>
-    <plurals name="filter_sheet_total">
-        <item quantity="other">合計 %1$d件</item>
+    <!-- 絞り込みの画面の見出しの件数。%1$s に太く大きい「今の条件で表示される数」が入る -->
+    <plurals name="filter_sheet_count">
+        <item quantity="other">%1$s件 / 合計 %2$d件</item>
     </plurals>
     <string name="filter_all_on">すべて\nオン</string>
     <string name="filter_all_off">すべて\nオフ</string>

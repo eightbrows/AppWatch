@@ -2,7 +2,6 @@ package io.github.eightbrows.appwatch.ui.status
 
 import android.content.res.Resources
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -97,6 +96,9 @@ import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.layout.Layout
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import io.github.eightbrows.appwatch.ui.top.HeaderShadow
 
 /**
  * アプリの確認状態（管理者）。画面サンプル 06_app_status.png、仕様書 6章。
@@ -272,7 +274,6 @@ internal fun noticeText(resources: Resources, notice: StatusNotice): String = wh
     StatusNotice.Undone -> resources.getString(R.string.notice_undone)
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StatusList(
     visible: List<AppStatusEntry>,
@@ -290,20 +291,17 @@ private fun StatusList(
     onClearSelection: () -> Unit,
     onOpenDetail: (String) -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        // データの切り替え（この端末／取り込んだデータ）と、閲覧中の帯
-        if (selection != null && selection.showsSwitcher) {
-            item(key = "data") { DataSwitcher(selection, onSelectDataset, Modifier.padding(top = 4.dp)) }
-        }
-        item(key = "search") {
+    val listState = rememberLazyListState()
+    Column(Modifier.fillMaxSize()) {
+        // 上部（データの切り替え・検索の行・選択の帯）。一覧をスクロールしても動かない。高さ・並びは今のまま
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            // データの切り替え（この端末／取り込んだデータ）と、閲覧中の帯
+            if (selection != null && selection.showsSwitcher) {
+                DataSwitcher(selection, onSelectDataset, Modifier.padding(top = 4.dp, bottom = 8.dp))
+            }
             SearchRow(query, onQueryChange, onPreRegister, changedCount, onOpenFilter, preRegisterEnabled = !readOnly)
-        }
-        // 表示の件数と、選択の帯（閲覧中は選べないので、件数だけ）
-        stickyHeader(key = "selection") {
+            Spacer(Modifier.height(8.dp))
+            // 表示の件数と、選択の帯（閲覧中は選べないので、件数だけ）
             SelectionBar(
                 visibleCount = visible.size,
                 selectedCount = selected.size,
@@ -312,6 +310,30 @@ private fun StatusList(
                 onClearSelection = onClearSelection,
             )
         }
+        Box(Modifier.weight(1f)) {
+            StatusRows(visible, selected, readOnly, onToggleSelect, onOpenDetail, listState)
+            // 一覧がスクロールされている時は、上部の下に薄い影を付けて区切る
+            HeaderShadow(visible = listState.canScrollBackward)
+        }
+    }
+}
+
+/** 一覧の行（上部の下を流れる）。 */
+@Composable
+private fun StatusRows(
+    visible: List<AppStatusEntry>,
+    selected: Set<String>,
+    readOnly: Boolean,
+    onToggleSelect: (String) -> Unit,
+    onOpenDetail: (String) -> Unit,
+    listState: LazyListState,
+) {
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         if (visible.isEmpty()) {
             item(key = "empty") {
                 Text(
@@ -379,7 +401,7 @@ private fun SelectionBar(
     onSelectAllVisible: () -> Unit,
     onClearSelection: () -> Unit,
 ) {
-    // 上に重なってスクロールするので、背景の色で塗った上に置く
+    // 上部に固定して置く（上下 4dp の余白を含む。今までと同じ高さ）
     Box(
         Modifier
             .fillMaxWidth()

@@ -80,12 +80,30 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.stateDescription
 import io.github.eightbrows.appwatch.model.ReviewReason
-import io.github.eightbrows.appwatch.ui.components.SegmentedToggle
 import io.github.eightbrows.appwatch.ui.components.StatusMark
 import io.github.eightbrows.appwatch.ui.components.formatDateTime
 import io.github.eightbrows.appwatch.ui.components.labelRes
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 import java.time.LocalDateTime
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import io.github.eightbrows.appwatch.ui.components.DateForm
+import io.github.eightbrows.appwatch.ui.components.toEpochMillis
+import io.github.eightbrows.appwatch.ui.components.formatDate
 
 private enum class TopTab { NEEDS_REVIEW, ALL }
 
@@ -129,21 +147,23 @@ fun TopScreen(
     val shown = remember(lists, query) { lists?.filtered(query) }
     val searching = query.isNotBlank()
     val systemBars = WindowInsets.systemBars.asPaddingValues()
+    val listState = rememberLazyListState()
 
-    LazyColumn(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .imePadding(),
-        contentPadding = PaddingValues(
-            start = 20.dp,
-            end = 20.dp,
-            top = systemBars.calculateTopPadding() + 16.dp,
-            bottom = systemBars.calculateBottomPadding() + 24.dp,
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item(key = "header") {
+        // 上部（タイトル・検索・タブ）。一覧をスクロールしても動かない
+        Column(
+            modifier = Modifier.padding(
+                start = 20.dp,
+                end = 20.dp,
+                top = systemBars.calculateTopPadding() + 8.dp,
+                bottom = 6.dp,
+            ),
+        ) {
             TopHeader(
                 lastCheckAt = lastCheckAt,
                 isLoading = isLoading,
@@ -151,43 +171,42 @@ fun TopScreen(
                 onOpenHealthCheck = actions.onOpenHealthCheck,
                 onOpenSettings = actions.onOpenSettings,
             )
-        }
-        item(key = "search") {
-            AppSearchField(query = query, onQueryChange = { query = it }, modifier = Modifier.fillMaxWidth())
-        }
-        item(key = "tabs") {
-            Column {
-                SegmentedToggle(
-                    options = listOf(
-                        TopTab.NEEDS_REVIEW to stringResource(R.string.top_tab_needs_review),
-                        TopTab.ALL to stringResource(R.string.top_tab_all),
-                    ),
-                    selected = tab,
-                    onSelect = { tab = it },
-                    itemHeight = 48.dp,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+            Spacer(Modifier.height(6.dp))
+            AppSearchField(query = query, onQueryChange = { query = it }, modifier = Modifier.fillMaxWidth(), height = 40.dp)
+            // タブは押せる範囲（42dp）が見た目（36dp）より上下に 3dp ずつ広いので、間を 3dp にして見た目の間を 6dp にそろえる
+            Spacer(Modifier.height(3.dp))
+            TopTabs(
+                selected = tab,
+                needsReviewCount = shown?.let { it.cards.size + it.unconfirmed.size },
+                allCount = shown?.all?.size,
+                onSelect = { tab = it },
+            )
+            // 取り直し中は、前回の一覧を出したまま細い棒で知らせる
+            if (isLoading && lists != null) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
                 )
-                // 取り直し中は、前回の一覧を出したまま細い棒で知らせる
-                if (isLoading && lists != null) {
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
-                            .clip(RoundedCornerShape(2.dp)),
-                    )
-                }
             }
         }
-        when {
-            shown == null && loadFailed -> item(key = "failed") { LoadFailed(actions.onRetry) }
-            shown == null -> item(key = "loading") { FirstLoading() }
-            else -> {
-                if (loadFailed) item(key = "refresh_failed") { LoadFailed(actions.onRetry) }
-                when (tab) {
-                    TopTab.NEEDS_REVIEW -> needsReviewContent(shown, searching, cardActions)
-                    TopTab.ALL -> allContent(shown, searching, cardActions)
-                }
+        Box(Modifier.weight(1f)) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 6.dp,
+                    bottom = systemBars.calculateBottomPadding() + 24.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                topListContent(shown, loadFailed, tab, searching, cardActions, actions.onRetry)
             }
+            // 一覧がスクロールされている時は、上部の下に薄い影を付けて区切る
+            HeaderShadow(visible = listState.canScrollBackward)
         }
     }
 
@@ -200,6 +219,155 @@ fun TopScreen(
             onDismiss = { explainFor = null },
         )
     }
+}
+
+/** トップの一覧の中身（読み込み中・失敗・タブごとの一覧）。 */
+private fun LazyListScope.topListContent(
+    shown: TopLists?,
+    loadFailed: Boolean,
+    tab: TopTab,
+    searching: Boolean,
+    actions: TopActions,
+    onRetry: () -> Unit,
+) {
+    when {
+        shown == null && loadFailed -> item(key = "failed") { LoadFailed(onRetry) }
+        shown == null -> item(key = "loading") { FirstLoading() }
+        else -> {
+            if (loadFailed) item(key = "refresh_failed") { LoadFailed(onRetry) }
+            when (tab) {
+                TopTab.NEEDS_REVIEW -> needsReviewContent(shown, searching, actions)
+                TopTab.ALL -> allContent(shown, searching, actions)
+            }
+        }
+    }
+}
+
+/**
+ * トップのタブ：「確認が必要 n」「すべて n」。数は小さな丸い札（確認が必要はオレンジ、0件と「すべて」は灰色）。
+ * 見た目の高さは 36dp、押せる範囲は 42dp（上下に 3dp ずつ広い）。読み上げは「確認が必要、n件」と、選択中かどうか。
+ */
+@Composable
+private fun TopTabs(selected: TopTab, needsReviewCount: Int?, allCount: Int?, onSelect: (TopTab) -> Unit) {
+    val colors = AppWatchTheme.colors
+    val track = colors.segmentTrack
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(TAB_TOUCH_HEIGHT)
+            .drawBehind {
+                // 見た目の帯（36dp）は、押せる範囲の上下 3dp を空けて描く
+                val inset = ((TAB_TOUCH_HEIGHT - TAB_HEIGHT) / 2).toPx()
+                drawRoundRect(
+                    color = track,
+                    topLeft = Offset(0f, inset),
+                    size = Size(size.width, size.height - inset * 2),
+                    cornerRadius = CornerRadius(12.dp.toPx()),
+                )
+            }
+            .padding(horizontal = 3.dp),
+    ) {
+        TopTabItem(
+            label = stringResource(R.string.top_tab_needs_review),
+            count = needsReviewCount,
+            countColor = if ((needsReviewCount ?: 0) > 0) colors.warningStrong else colors.unconfirmed,
+            selected = selected == TopTab.NEEDS_REVIEW,
+            onClick = { onSelect(TopTab.NEEDS_REVIEW) },
+            modifier = Modifier.weight(1f),
+        )
+        TopTabItem(
+            label = stringResource(R.string.top_tab_all),
+            count = allCount,
+            countColor = colors.unconfirmed,
+            selected = selected == TopTab.ALL,
+            onClick = { onSelect(TopTab.ALL) },
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun TopTabItem(
+    label: String,
+    count: Int?,
+    countColor: Color,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+) {
+    val colors = AppWatchTheme.colors
+    val description = if (count != null) {
+        pluralStringResource(R.plurals.top_tab_desc, count, label, count)
+    } else {
+        label
+    }
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            .clearAndSetSemantics {
+                contentDescription = description
+                role = Role.Tab
+                this.selected = selected
+                onClick { onClick(); true }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        // 選んでいるタブの白い地（見た目の帯の中に、上下 3dp を空けて置く）
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = (TAB_TOUCH_HEIGHT - TAB_HEIGHT) / 2 + 3.dp)
+                .fillMaxHeight()
+                .then(
+                    if (selected) {
+                        Modifier
+                            .shadow(1.dp, RoundedCornerShape(9.dp))
+                            .background(colors.segmentSelected, RoundedCornerShape(9.dp))
+                    } else {
+                        Modifier
+                    },
+                ),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+            if (count != null) {
+                Text(
+                    text = count.toString(),
+                    modifier = Modifier
+                        .background(countColor, RoundedCornerShape(50))
+                        .padding(horizontal = 7.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+/** タブの見た目の高さと、押せる範囲の高さ。 */
+private val TAB_HEIGHT = 36.dp
+private val TAB_TOUCH_HEIGHT = 42.dp
+
+/** 一覧がスクロールされている時に、上部の下に出す薄い影。 */
+@Composable
+internal fun BoxScope.HeaderShadow(visible: Boolean) {
+    if (!visible) return
+    Box(
+        Modifier
+            .align(Alignment.TopCenter)
+            .fillMaxWidth()
+            .height(6.dp)
+            .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.12f), Color.Transparent))),
+    )
 }
 
 /** 一覧が空のときの文。検索しているときは「当てはまるアプリはありません」。 */
@@ -222,7 +390,7 @@ private fun LazyListScope.needsReviewContent(lists: TopLists, searching: Boolean
         return
     }
     if (lists.cards.isNotEmpty()) {
-        item(key = "cards_title") { SectionTitle(stringResource(R.string.top_new_apps), lists.cards.size) }
+        // 件数はタブに出すので、見出しの行は出さない
         items(lists.cards, key = { "card_" + it.packageName }) { app -> NewAppCard(app, actions) }
     }
     if (lists.unconfirmed.isNotEmpty()) {
@@ -244,7 +412,6 @@ private fun LazyListScope.allContent(lists: TopLists, searching: Boolean, action
         emptyMessage(R.string.top_search_empty)
         return
     }
-    item(key = "all_title") { SectionTitle(stringResource(R.string.top_all_apps), lists.all.size) }
     items(lists.all, key = { "all_" + it.packageName }) { app ->
         AppRow(app = app, showStatus = true, actions = actions)
     }
@@ -258,16 +425,21 @@ private fun TopHeader(
     onOpenHealthCheck: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.Top) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(
                 text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineMedium,
+                // 文字の大きさはそのまま、行の高さだけを詰める（最終チェックの行と合わせて 48dp）
+                style = MaterialTheme.typography.headlineMedium.copy(lineHeight = 32.sp),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.semantics { heading() },
             )
             val status = when {
-                lastCheckAt != null -> withDaysAgo(stringResource(R.string.top_last_check, formatDateTime(lastCheckAt)), lastCheckAt)
+                // 上部を詰めるため、一覧の行と同じ短い形（「11/15(日) 12:57」）にして1行に収める
+                lastCheckAt != null -> withDaysAgo(
+                    stringResource(R.string.top_last_check, formatDate(lastCheckAt.toEpochMillis(), DateForm.LIST)),
+                    lastCheckAt,
+                )
                 isLoading -> AnnotatedString(stringResource(R.string.top_loading))
                 else -> null
             }

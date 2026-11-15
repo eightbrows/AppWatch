@@ -78,6 +78,10 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 
 // アプリの確認状態の画面の絞り込み（仕様書 6章）：検索の右の「絞り込み」ボタン、一覧の上の条件の1行、下から出す絞り込みの画面。
 
@@ -154,6 +158,7 @@ internal fun StatusFilterSheet(
     ) {
         Column(Modifier.heightIn(max = maxHeight)) {
             SheetHeader(
+                visibleCount = visibleCount,
                 totalCount = totalCount,
                 onAllOn = { onChange(StatusFilter.ALL_ON) },
                 onAllOff = { onChange(StatusFilter.ALL_OFF) },
@@ -287,9 +292,12 @@ private fun SmallDragHandle() {
     }
 }
 
-/** 見出しの行：左に「絞り込み」と「合計 n件」、右に「すべてオン」「すべてオフ」（2段の小さいボタン）。 */
+/**
+ * 見出しの行：左に「絞り込み」と「m件 / 合計 n件」（m は今の条件で表示される数。太く大きく青い字）、
+ * 右に「すべてオン」「すべてオフ」（2段の小さいボタン）。字が大きくて入らない時は、件数の部分を次の行へ送る。
+ */
 @Composable
-private fun SheetHeader(totalCount: Int, onAllOn: () -> Unit, onAllOff: () -> Unit) {
+private fun SheetHeader(visibleCount: Int, totalCount: Int, onAllOn: () -> Unit, onAllOff: () -> Unit) {
     Row(
         modifier = Modifier.padding(start = 14.dp, end = 12.dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -307,13 +315,26 @@ private fun SheetHeader(totalCount: Int, onAllOn: () -> Unit, onAllOff: () -> Un
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = pluralStringResource(R.plurals.filter_sheet_total, totalCount, totalCount),
+                text = sheetCountText(visibleCount, totalCount),
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
             )
         }
         AllButton(R.string.filter_all_on, R.string.filter_all_on_desc, onAllOn)
         AllButton(R.string.filter_all_off, R.string.filter_all_off_desc, onAllOff)
+    }
+}
+
+/** 「m件 / 合計 n件」。m だけを太く大きく（18sp）青い字にする。 */
+@Composable
+private fun sheetCountText(visibleCount: Int, totalCount: Int): AnnotatedString {
+    val marker = "\u0000"
+    val template = pluralStringResource(R.plurals.filter_sheet_count, totalCount, marker, totalCount)
+    val parts = template.split(marker)
+    val primary = MaterialTheme.colorScheme.primary
+    return buildAnnotatedString {
+        append(parts.first())
+        withStyle(SpanStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = primary)) { append(visibleCount.toString()) }
+        parts.drop(1).forEach { append(it) }
     }
 }
 
