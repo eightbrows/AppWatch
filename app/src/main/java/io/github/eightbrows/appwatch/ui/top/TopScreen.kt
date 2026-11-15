@@ -108,6 +108,9 @@ import androidx.compose.ui.draw.alpha
 import io.github.eightbrows.appwatch.model.topAction
 import io.github.eightbrows.appwatch.ui.components.LabelChip
 import io.github.eightbrows.appwatch.ui.components.sectionTone
+import io.github.eightbrows.appwatch.ui.components.ScrollLabel
+import io.github.eightbrows.appwatch.ui.components.ScrollbarBox
+import io.github.eightbrows.appwatch.ui.components.shownAppName
 
 private enum class TopTab { NEEDS_REVIEW, ALL }
 
@@ -194,13 +197,20 @@ fun TopScreen(
                 )
             }
         }
-        Box(Modifier.weight(1f)) {
+        val scrollLabels = topScrollLabels(shown)
+        // 右端につかんで動かせるスクロールバー。押せる範囲が行のボタンと重ならないよう、右の余白を 12dp 広げる
+        ScrollbarBox(
+            state = listState,
+            labelFor = { scrollLabels[it] },
+            modifier = Modifier.weight(1f),
+            bottomInset = systemBars.calculateBottomPadding(),
+        ) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = 20.dp,
-                    end = 20.dp,
+                    end = 32.dp,
                     top = 8.dp,
                     bottom = systemBars.calculateBottomPadding() + 24.dp,
                 ),
@@ -217,10 +227,37 @@ fun TopScreen(
     val explained = explainFor?.let { pkg -> lists?.all?.firstOrNull { it.packageName == pkg } }
     if (explained != null) {
         ReasonExplanationSheet(
-            appName = explained.name,
+            appName = shownAppName(explained.name, explained.isSelf),
             applying = ReviewReason.forTop(explained),
             onDismiss = { explainFor = null },
         )
+    }
+}
+
+/**
+ * スクロールバーの吹き出しに出す、一覧の項目（キー）ごとの組の名前とアプリ名。見出しの項目は、その組の最初のアプリ。
+ * 「確認が必要」は3つの組（要注意のアプリ／新しく入った・変わったアプリ／まだ確認していないアプリ）、「すべて」は確認状態の組。
+ */
+@Composable
+private fun topScrollLabels(shown: TopLists?): Map<Any, ScrollLabel> {
+    val selfName = stringResource(R.string.app_name)
+    val caution = stringResource(R.string.top_section_caution)
+    val changed = stringResource(R.string.top_section_changed)
+    val unconfirmed = stringResource(R.string.top_unconfirmed_apps)
+    val statusNames = ReviewStatus.entries.associateWith { stringResource(it.labelRes()) }
+    return remember(shown, selfName, caution, changed, unconfirmed, statusNames) {
+        val map = HashMap<Any, ScrollLabel>()
+        if (shown == null) return@remember map
+        fun add(titleKey: String, prefix: String, group: String, apps: List<AppSummary>) {
+            if (apps.isEmpty()) return
+            map[titleKey] = ScrollLabel(group, shownAppName(apps.first().name, apps.first().isSelf, selfName))
+            apps.forEach { map[prefix + it.packageName] = ScrollLabel(group, shownAppName(it.name, it.isSelf, selfName)) }
+        }
+        add("caution_title", "card_", caution, shown.cautionCards)
+        add("changed_title", "card_", changed, shown.changedCards)
+        add("unconfirmed_title", "unconfirmed_", unconfirmed, shown.unconfirmed)
+        shown.allSections.forEach { (status, apps) -> add("all_title_" + status.name, "all_", statusNames.getValue(status), apps) }
+        map
     }
 }
 
@@ -608,7 +645,7 @@ private fun NewAppCard(app: AppSummary, actions: TopActions) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box {
-                    AppIcon(name = app.name, packageName = app.packageName, versionKey = app.versionName, dimmed = disabled)
+                    AppIcon(name = shownAppName(app.name, app.isSelf), packageName = app.packageName, versionKey = app.versionName, dimmed = disabled)
                     if (isCaution) {
                         StatusMark(
                             status = ReviewStatus.CAUTION,
@@ -679,7 +716,7 @@ private fun AppName(app: AppSummary, style: TextStyle) {
         itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = app.name,
+            text = shownAppName(app.name, app.isSelf),
             style = style,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
@@ -818,7 +855,7 @@ private fun AppRow(app: AppSummary, showStatus: Boolean, actions: TopActions) {
         ) {
             // 確認状態の印はアイコンの右下に重ねる（幅の狭い端末でも名前の幅を確保するため）
             Box {
-                AppIcon(name = app.name, packageName = app.packageName, size = 44.dp, versionKey = app.versionName, dimmed = disabled)
+                AppIcon(name = shownAppName(app.name, app.isSelf), packageName = app.packageName, size = 44.dp, versionKey = app.versionName, dimmed = disabled)
                 if (showStatus) {
                     StatusMark(
                         status = app.reviewStatus,

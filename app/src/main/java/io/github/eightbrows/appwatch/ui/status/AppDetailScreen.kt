@@ -89,6 +89,8 @@ import io.github.eightbrows.appwatch.model.AppSearch
 import io.github.eightbrows.appwatch.model.ReviewReason
 import io.github.eightbrows.appwatch.ui.components.formatShortDate
 import io.github.eightbrows.appwatch.ui.components.labelRes
+import io.github.eightbrows.appwatch.ui.components.LabelChip
+import io.github.eightbrows.appwatch.ui.components.shownAppName
 import io.github.eightbrows.appwatch.ui.components.toLocalDateTime
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 
@@ -263,7 +265,7 @@ fun AppDetailRoute(
 
     if (showExplanation && entry != null) {
         ReasonExplanationSheet(
-            appName = entry.name,
+            appName = shownAppName(entry.name, entry.isSelf),
             applying = ReviewReason.of(entry.warnings, entry.status, isSelf = entry.isSelf),
             onDismiss = { showExplanation = false },
         )
@@ -323,9 +325,9 @@ internal fun SectionLabel(text: String) {
 internal fun Header(entry: AppStatusEntry, loadIcon: Boolean = true) {
     Row(verticalAlignment = Alignment.Top) {
         if (entry.isPresent) {
-            AppIcon(name = entry.name, packageName = entry.packageName, size = 56.dp, versionKey = entry.versionName.orEmpty(), loadIcon = loadIcon)
+            AppIcon(name = shownAppName(entry.name, entry.isSelf), packageName = entry.packageName, size = 56.dp, versionKey = entry.versionName.orEmpty(), loadIcon = loadIcon)
         } else {
-            AbsentMark(entry.name)
+            AbsentMark(shownAppName(entry.name, entry.isSelf))
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -334,12 +336,19 @@ internal fun Header(entry: AppStatusEntry, loadIcon: Boolean = true) {
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = entry.name,
+                    text = shownAppName(entry.name, entry.isSelf),
                     style = MaterialTheme.typography.titleLarge,
                     color = if (entry.isPresent) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (entry.isSelf) SmallLabel(stringResource(R.string.app_self_label))
-                if (entry.isPresent && !entry.isEnabled) SmallLabel(stringResource(R.string.app_disabled_label))
+                // 「無効」の札は、トップ・確認状態の画面と同じ濃い灰色に白い字
+                if (entry.isPresent && !entry.isEnabled) {
+                    LabelChip(
+                        text = stringResource(R.string.app_disabled_label),
+                        container = AppWatchTheme.colors.unconfirmed,
+                        content = Color.White,
+                    )
+                }
             }
             entry.versionName?.takeIf { it.isNotBlank() }?.let {
                 DetailText(stringResource(R.string.format_version, it))

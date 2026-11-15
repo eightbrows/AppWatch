@@ -101,6 +101,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import io.github.eightbrows.appwatch.ui.top.HeaderShadow
 import io.github.eightbrows.appwatch.ui.components.SectionHeading
 import io.github.eightbrows.appwatch.ui.components.sectionTone
+import io.github.eightbrows.appwatch.ui.components.ScrollLabel
+import io.github.eightbrows.appwatch.ui.components.ScrollbarBox
+import io.github.eightbrows.appwatch.ui.components.shownAppName
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.ui.unit.Dp
 
 /**
  * アプリの確認状態（管理者）。画面サンプル 06_app_status.png、仕様書 6章。
@@ -171,6 +178,12 @@ fun AppStatusRoute(
                     onSelectAllVisible = { selected = (selected + visible.map { it.packageName }).distinct() },
                     onClearSelection = { selected = emptyList() },
                     onOpenDetail = onOpenDetail,
+                    // 下部の3つのボタンがある時は、一覧の枠がその上で終わる。ない時はナビゲーションバーの上で止める
+                    scrollbarBottomInset = if (selectedVisible.isEmpty() && !readOnly) {
+                        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                    } else {
+                        0.dp
+                    },
                 )
             }
             SnackbarHost(
@@ -292,6 +305,7 @@ private fun StatusList(
     onSelectAllVisible: () -> Unit,
     onClearSelection: () -> Unit,
     onOpenDetail: (String) -> Unit,
+    scrollbarBottomInset: Dp,
 ) {
     val listState = rememberLazyListState()
     Column(Modifier.fillMaxSize()) {
@@ -312,11 +326,34 @@ private fun StatusList(
                 onClearSelection = onClearSelection,
             )
         }
-        Box(Modifier.weight(1f)) {
+        val scrollLabels = statusScrollLabels(visible)
+        // 右端につかんで動かせるスクロールバー（トップと同じ部品）。チェックの範囲・行と重ならないよう、右の余白を 12dp 広げる
+        ScrollbarBox(
+            state = listState,
+            labelFor = { scrollLabels[it] },
+            modifier = Modifier.weight(1f),
+            bottomInset = scrollbarBottomInset,
+        ) {
             StatusRows(visible, selected, readOnly, onToggleSelect, onOpenDetail, listState)
             // 一覧がスクロールされている時は、上部の下に薄い影を付けて区切る
             HeaderShadow(visible = listState.canScrollBackward)
         }
+    }
+}
+
+/** スクロールバーの吹き出しに出す、一覧の項目（キー）ごとの組の名前（確認状態）とアプリ名。見出しはその組の最初のアプリ。 */
+@Composable
+private fun statusScrollLabels(visible: List<AppStatusEntry>): Map<Any, ScrollLabel> {
+    val selfName = stringResource(R.string.app_name)
+    val statusNames = ReviewStatus.entries.associateWith { stringResource(it.labelRes()) }
+    return remember(visible, selfName, statusNames) {
+        val map = HashMap<Any, ScrollLabel>()
+        AppStatusRules.sections(visible).forEach { (status, entries) ->
+            val group = statusNames.getValue(status)
+            entries.firstOrNull()?.let { map["section_" + status.name] = ScrollLabel(group, shownAppName(it.name, it.isSelf, selfName)) }
+            entries.forEach { map[it.packageName] = ScrollLabel(group, shownAppName(it.name, it.isSelf, selfName)) }
+        }
+        map
     }
 }
 
@@ -333,7 +370,7 @@ private fun StatusRows(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 28.dp, top = 8.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (visible.isEmpty()) {
@@ -467,7 +504,7 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
             .then(if (showCheckbox) Modifier else Modifier.clickable(onClick = onClick)),
     ) {
         if (showCheckbox) {
-            val selectLabel = stringResource(R.string.status_select_app, entry.name)
+            val selectLabel = stringResource(R.string.status_select_app, shownAppName(entry.name, entry.isSelf))
             SplitRow(
                 left = {
                     // 左の範囲：チェックとアイコン。読み上げは今のチェックボックスと同じ（アプリの名前、選択／未選択）
@@ -546,7 +583,7 @@ private fun StatusRowText(entry: AppStatusEntry, statusForReader: Boolean) {
         if (statusForReader) Box(Modifier.clearAndSetSemantics { contentDescription = statusLabel })
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = entry.name,
+                text = shownAppName(entry.name, entry.isSelf),
                 style = MaterialTheme.typography.titleMedium,
                 color = mainColor,
                 maxLines = 2,
@@ -589,7 +626,7 @@ private fun StatusRowText(entry: AppStatusEntry, statusForReader: Boolean) {
 @Composable
 private fun RowIcon(entry: AppStatusEntry, loadIcon: Boolean, rowColor: Color, modifier: Modifier = Modifier) {
     AppIconWithMark(
-        name = entry.name,
+        name = shownAppName(entry.name, entry.isSelf),
         packageName = entry.packageName,
         versionKey = entry.versionName.orEmpty(),
         present = entry.isPresent,
@@ -652,12 +689,12 @@ private fun RowWarnings(entry: AppStatusEntry, reasons: List<ReviewReason>) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
     ) {
-        // 無効（灰）・事前登録だけ（青）の札。警告の札と同じ形
+        // 無効（濃い灰色に白い字。トップ・アプリの詳細と同じ）・事前登録だけ（青）の札。警告の札と同じ形
         if (disabled) {
             LabelChip(
                 text = stringResource(R.string.app_disabled_label),
-                container = MaterialTheme.colorScheme.surfaceVariant,
-                content = MaterialTheme.colorScheme.onSurfaceVariant,
+                container = AppWatchTheme.colors.unconfirmed,
+                content = Color.White,
             )
         }
         if (preRegisteredOnly) {
