@@ -158,4 +158,32 @@ class TopListsTest {
         assertEquals(DummyData.apps.size, lists.all.size)
         assertEquals(1, DummyData.apps.count { it.isSelf })
     }
+
+    @Test
+    fun needsReviewSections_sumToTabCount_andEmptyGroupsAreLeftOut() {
+        val lists = TopLists.from(
+            listOf(
+                app("caution", status = ReviewStatus.CAUTION),
+                app("new", isNew = true),
+                app("sig", warnings = setOf(AppWarning.SIGNATURE_CHANGED), kind = AppKind.PREINSTALLED),
+                app("unconfirmed"),
+                app("ok", status = ReviewStatus.OK),
+            ),
+        )
+        assertEquals(listOf("caution"), lists.cautionCards.map { it.packageName })
+        assertEquals(setOf("new", "sig"), lists.changedCards.map { it.packageName }.toSet())
+        assertEquals(listOf("unconfirmed"), lists.unconfirmed.map { it.packageName })
+        // 3つの組の合計がタブの「確認が必要 n」
+        assertEquals(4, lists.needsReviewCount)
+        assertEquals(lists.needsReviewCount, lists.cautionCards.size + lists.changedCards.size + lists.unconfirmed.size)
+        // 要注意がなければ、その組は空（見出しごと出さない）
+        val noCaution = TopLists.from(listOf(app("new", isNew = true)))
+        assertTrue(noCaution.cautionCards.isEmpty())
+        assertEquals(1, noCaution.changedCards.size)
+        assertEquals(1, noCaution.needsReviewCount)
+        // 検索の後も、合計はタブの数と同じ
+        val filtered = lists.filtered("caution")
+        assertEquals(1, filtered.needsReviewCount)
+        assertEquals(1, filtered.cautionCards.size + filtered.changedCards.size + filtered.unconfirmed.size)
+    }
 }

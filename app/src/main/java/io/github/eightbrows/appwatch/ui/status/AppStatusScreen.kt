@@ -99,6 +99,8 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import io.github.eightbrows.appwatch.ui.top.HeaderShadow
+import io.github.eightbrows.appwatch.ui.components.SectionHeading
+import io.github.eightbrows.appwatch.ui.components.sectionTone
 
 /**
  * アプリの確認状態（管理者）。画面サンプル 06_app_status.png、仕様書 6章。
@@ -344,14 +346,20 @@ private fun StatusRows(
                 )
             }
         }
-        items(visible, key = { it.packageName }) { entry ->
-            StatusRow(
-                entry = entry,
-                isSelected = entry.packageName in selected,
-                showCheckbox = !readOnly,
-                onToggleSelect = { onToggleSelect(entry.packageName) },
-                onClick = { onOpenDetail(entry.packageName) },
-            )
+        // 確認状態の組ごとに見出し（要注意 → 未確認 → 問題なし）。件数は絞り込み・検索の後の数。閲覧中も同じ
+        AppStatusRules.sections(visible).forEach { (status, entries) ->
+            item(key = "section_" + status.name) {
+                SectionHeading(stringResource(status.labelRes()), entries.size, status.sectionTone())
+            }
+            items(entries, key = { it.packageName }) { entry ->
+                StatusRow(
+                    entry = entry,
+                    isSelected = entry.packageName in selected,
+                    showCheckbox = !readOnly,
+                    onToggleSelect = { onToggleSelect(entry.packageName) },
+                    onClick = { onOpenDetail(entry.packageName) },
+                )
+            }
         }
     }
 }

@@ -26,6 +26,15 @@ data class TopLists(
         return TopLists(cards = cards.filter(match), unconfirmed = unconfirmed.filter(match), all = all.filter(match))
     }
 
+    /** カードのうち要注意のもの（「要注意のアプリ」の見出しの下）。 */
+    val cautionCards: List<AppSummary> get() = cards.filter { it.reviewStatus == ReviewStatus.CAUTION }
+
+    /** カードのうち要注意以外のもの（新しく入った・署名が変わった・再導入など。「新しく入った・変わったアプリ」の見出しの下）。 */
+    val changedCards: List<AppSummary> get() = cards.filter { it.reviewStatus != ReviewStatus.CAUTION }
+
+    /** 「確認が必要」のタブの件数（3つの組の合計）。 */
+    val needsReviewCount: Int get() = cards.size + unconfirmed.size
+
     companion object {
         /**
          * トップの振り分け（仕様書 6章）。[apps] には端末にあるアプリだけを渡す。

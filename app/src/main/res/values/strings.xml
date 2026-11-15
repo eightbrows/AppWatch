@@ -33,7 +33,11 @@
         <item quantity="one">%1$s, %2$d app</item>
         <item quantity="other">%1$s, %2$d apps</item>
     </plurals>
-    <string name="top_unconfirmed_apps">Not reviewed yet</string>
+    <string name="top_section_caution">Caution apps</string>
+    <string name="top_section_changed">New or changed apps</string>
+    <!-- 一覧の見出しの件数（英語は数だけ） -->
+    <string name="section_count">%1$d</string>
+    <string name="top_unconfirmed_apps">Not yet reviewed</string>
     <string name="top_nothing_to_review">No apps need review</string>
     <string name="top_search_empty">No matching apps</string>
     <string name="top_open_settings">Settings (press and hold to open)</string>

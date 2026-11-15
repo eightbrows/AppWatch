@@ -216,4 +216,28 @@ class AppStatusRulesTest {
         assertFalse(preOnly.isPresent)
         assertTrue(preOnly.isPreRegistered)
     }
+
+    @Test
+    fun sections_areCautionThenUnconfirmedThenOk_andKeepTheOrderInside() {
+        val entries = listOf(
+            entry("b_ok", name = "B", status = ReviewStatus.OK),
+            entry("a_un", name = "A", status = ReviewStatus.UNCONFIRMED),
+            entry("c_caution", name = "C", status = ReviewStatus.CAUTION),
+            entry("a_ok", name = "A", status = ReviewStatus.OK),
+            entry("a_caution", name = "A", status = ReviewStatus.CAUTION, present = false),
+        )
+        val visible = AppStatusRules.visible(entries, all, "")
+        val sections = AppStatusRules.sections(visible)
+        assertEquals(listOf(ReviewStatus.CAUTION, ReviewStatus.UNCONFIRMED, ReviewStatus.OK), sections.map { it.first })
+        assertEquals(listOf("a_caution", "c_caution"), sections[0].second.map { it.packageName })
+        assertEquals(listOf("a_ok", "b_ok"), sections[2].second.map { it.packageName })
+        // 3つの合計は「表示 n件」と同じ
+        assertEquals(visible.size, sections.sumOf { it.second.size })
+        // 並べた順は、組を順につないだものと同じ
+        assertEquals(visible, sections.flatMap { it.second })
+        // 0件の組は入れない（絞り込みで問題なしを外した時）
+        val noOk = AppStatusRules.sections(AppStatusRules.visible(entries, all - FilterItem.STATUS_OK, ""))
+        assertEquals(listOf(ReviewStatus.CAUTION, ReviewStatus.UNCONFIRMED), noOk.map { it.first })
+        assertTrue(AppStatusRules.sections(emptyList()).isEmpty())
+    }
 }

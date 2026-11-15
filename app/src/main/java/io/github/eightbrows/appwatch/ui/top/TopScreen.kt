@@ -89,11 +89,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -104,6 +100,11 @@ import androidx.compose.ui.text.font.FontWeight
 import io.github.eightbrows.appwatch.ui.components.DateForm
 import io.github.eightbrows.appwatch.ui.components.toEpochMillis
 import io.github.eightbrows.appwatch.ui.components.formatDate
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.style.TextAlign
+import io.github.eightbrows.appwatch.ui.components.SectionHeading
+import io.github.eightbrows.appwatch.ui.components.SectionTone
 
 private enum class TopTab { NEEDS_REVIEW, ALL }
 
@@ -155,13 +156,13 @@ fun TopScreen(
             .background(MaterialTheme.colorScheme.background)
             .imePadding(),
     ) {
-        // 上部（タイトル・検索・タブ）。一覧をスクロールしても動かない
+        // 上部（タイトル・検索・タブ）。一覧をスクロールしても動かない。
+        // 各段の高さと間は、確認状態の画面の上部（題の行・検索の行・選択の帯）と同じ
         Column(
             modifier = Modifier.padding(
                 start = 20.dp,
                 end = 20.dp,
-                top = systemBars.calculateTopPadding() + 8.dp,
-                bottom = 6.dp,
+                top = systemBars.calculateTopPadding() + 4.dp,
             ),
         ) {
             TopHeader(
@@ -171,13 +172,12 @@ fun TopScreen(
                 onOpenHealthCheck = actions.onOpenHealthCheck,
                 onOpenSettings = actions.onOpenSettings,
             )
-            Spacer(Modifier.height(6.dp))
-            AppSearchField(query = query, onQueryChange = { query = it }, modifier = Modifier.fillMaxWidth(), height = 40.dp)
-            // タブは押せる範囲（42dp）が見た目（36dp）より上下に 3dp ずつ広いので、間を 3dp にして見た目の間を 6dp にそろえる
-            Spacer(Modifier.height(3.dp))
+            Spacer(Modifier.height(8.dp))
+            AppSearchField(query = query, onQueryChange = { query = it }, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(8.dp))
             TopTabs(
                 selected = tab,
-                needsReviewCount = shown?.let { it.cards.size + it.unconfirmed.size },
+                needsReviewCount = shown?.needsReviewCount,
                 allCount = shown?.all?.size,
                 onSelect = { tab = it },
             )
@@ -198,7 +198,7 @@ fun TopScreen(
                 contentPadding = PaddingValues(
                     start = 20.dp,
                     end = 20.dp,
-                    top = 6.dp,
+                    top = 8.dp,
                     bottom = systemBars.calculateBottomPadding() + 24.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -245,27 +245,22 @@ private fun LazyListScope.topListContent(
 
 /**
  * トップのタブ：「確認が必要 n」「すべて n」。数は小さな丸い札（確認が必要はオレンジ、0件と「すべて」は灰色）。
- * 見た目の高さは 36dp、押せる範囲は 42dp（上下に 3dp ずつ広い）。読み上げは「確認が必要、n件」と、選択中かどうか。
+ * 高さは確認状態の画面の選択の帯と同じ（上下 4dp の余白と、最低 48dp の帯）。文字が大きい時は帯がのびる。
+ * 読み上げは「確認が必要、n件」と、選択中かどうか。
  */
 @Composable
 private fun TopTabs(selected: TopTab, needsReviewCount: Int?, allCount: Int?, onSelect: (TopTab) -> Unit) {
     val colors = AppWatchTheme.colors
-    val track = colors.segmentTrack
     Row(
         modifier = Modifier
+            .padding(vertical = 4.dp)
             .fillMaxWidth()
-            .height(TAB_TOUCH_HEIGHT)
-            .drawBehind {
-                // 見た目の帯（36dp）は、押せる範囲の上下 3dp を空けて描く
-                val inset = ((TAB_TOUCH_HEIGHT - TAB_HEIGHT) / 2).toPx()
-                drawRoundRect(
-                    color = track,
-                    topLeft = Offset(0f, inset),
-                    size = Size(size.width, size.height - inset * 2),
-                    cornerRadius = CornerRadius(12.dp.toPx()),
-                )
-            }
-            .padding(horizontal = 3.dp),
+            .height(IntrinsicSize.Min)
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.segmentTrack)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         TopTabItem(
             label = stringResource(R.string.top_tab_needs_review),
@@ -301,41 +296,30 @@ private fun TopTabItem(
     } else {
         label
     }
+    val shape = RoundedCornerShape(9.dp)
     Box(
         modifier = modifier
             .fillMaxHeight()
+            .then(if (selected) Modifier.shadow(1.dp, shape).background(colors.segmentSelected, shape) else Modifier)
+            .clip(shape)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .clearAndSetSemantics {
                 contentDescription = description
                 role = Role.Tab
                 this.selected = selected
                 onClick { onClick(); true }
-            },
+            }
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
-        // 選んでいるタブの白い地（見た目の帯の中に、上下 3dp を空けて置く）
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = (TAB_TOUCH_HEIGHT - TAB_HEIGHT) / 2 + 3.dp)
-                .fillMaxHeight()
-                .then(
-                    if (selected) {
-                        Modifier
-                            .shadow(1.dp, RoundedCornerShape(9.dp))
-                            .background(colors.segmentSelected, RoundedCornerShape(9.dp))
-                    } else {
-                        Modifier
-                    },
-                ),
-        )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = label,
+                modifier = Modifier.weight(1f, fill = false),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                 color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
+                textAlign = TextAlign.Center,
             )
             if (count != null) {
                 Text(
@@ -352,10 +336,6 @@ private fun TopTabItem(
         }
     }
 }
-
-/** タブの見た目の高さと、押せる範囲の高さ。 */
-private val TAB_HEIGHT = 36.dp
-private val TAB_TOUCH_HEIGHT = 42.dp
 
 /** 一覧がスクロールされている時に、上部の下に出す薄い影。 */
 @Composable
@@ -384,22 +364,28 @@ private fun LazyListScope.emptyMessage(text: Int) {
     }
 }
 
+/**
+ * 「確認が必要」のタブ：3つの組に分け、それぞれの前に見出し（要注意のアプリ／新しく入った・変わったアプリ／まだ確認していないアプリ）。
+ * 0件の組は見出しごと出さない。3つの件数の合計はタブの数と同じ。
+ */
 private fun LazyListScope.needsReviewContent(lists: TopLists, searching: Boolean, actions: TopActions) {
     if (lists.cards.isEmpty() && lists.unconfirmed.isEmpty()) {
         emptyMessage(if (searching) R.string.top_search_empty else R.string.top_nothing_to_review)
         return
     }
-    if (lists.cards.isNotEmpty()) {
-        // 件数はタブに出すので、見出しの行は出さない
-        items(lists.cards, key = { "card_" + it.packageName }) { app -> NewAppCard(app, actions) }
+    val caution = lists.cautionCards
+    if (caution.isNotEmpty()) {
+        item(key = "caution_title") { SectionHeading(stringResource(R.string.top_section_caution), caution.size, SectionTone.RED) }
+        items(caution, key = { "card_" + it.packageName }) { app -> NewAppCard(app, actions) }
+    }
+    val changed = lists.changedCards
+    if (changed.isNotEmpty()) {
+        item(key = "changed_title") { SectionHeading(stringResource(R.string.top_section_changed), changed.size, SectionTone.ORANGE) }
+        items(changed, key = { "card_" + it.packageName }) { app -> NewAppCard(app, actions) }
     }
     if (lists.unconfirmed.isNotEmpty()) {
         item(key = "unconfirmed_title") {
-            SectionTitle(
-                stringResource(R.string.top_unconfirmed_apps),
-                lists.unconfirmed.size,
-                modifier = Modifier.padding(top = 8.dp),
-            )
+            SectionHeading(stringResource(R.string.top_unconfirmed_apps), lists.unconfirmed.size, SectionTone.GRAY)
         }
         items(lists.unconfirmed, key = { "unconfirmed_" + it.packageName }) { app ->
             AppRow(app = app, showStatus = false, actions = actions)
@@ -577,28 +563,6 @@ internal fun LongPressSettingsButton(onLongPress: () -> Unit) {
             contentDescription = null,
             tint = AppWatchTheme.colors.subtleIcon,
             modifier = Modifier.size(26.dp),
-        )
-    }
-}
-
-@Composable
-private fun SectionTitle(title: String, count: Int, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics(mergeDescendants = true) { heading() },
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = pluralStringResource(R.plurals.count_apps, count, count),
-            style = MaterialTheme.typography.titleMedium,
-            color = AppWatchTheme.colors.warning,
         )
     }
 }

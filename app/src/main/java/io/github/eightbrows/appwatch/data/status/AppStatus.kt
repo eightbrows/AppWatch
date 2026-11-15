@@ -131,6 +131,15 @@ object AppStatusRules {
         }
     }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }.thenBy { it.packageName }
 
+    /**
+     * 一覧の見出しの組：要注意 → 未確認 → 問題なし。組の中は [visible] の順のまま。0件の組は入れない。
+     * [visible] は [ORDER] で並べたもの（確認状態の順になっている）。
+     */
+    fun sections(visible: List<AppStatusEntry>): List<Pair<ReviewStatus, List<AppStatusEntry>>> =
+        listOf(ReviewStatus.CAUTION, ReviewStatus.UNCONFIRMED, ReviewStatus.OK)
+            .map { status -> status to visible.filter { it.status == status } }
+            .filter { (_, entries) -> entries.isNotEmpty() }
+
     /** 絞り込み・検索をして並べた、画面に出す行。 */
     fun visible(entries: List<AppStatusEntry>, enabled: Set<FilterItem>, query: String): List<AppStatusEntry> =
         entries.filter { matchesFilter(it, enabled) && matchesQuery(it, query) }.sortedWith(ORDER)

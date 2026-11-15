@@ -29,6 +29,10 @@
     <plurals name="top_tab_desc">
         <item quantity="other">%1$s、%2$d件</item>
     </plurals>
+    <string name="top_section_caution">要注意のアプリ</string>
+    <string name="top_section_changed">新しく入った・変わったアプリ</string>
+    <!-- 一覧の見出しの件数 -->
+    <string name="section_count">%1$d件</string>
     <string name="top_unconfirmed_apps">まだ確認していないアプリ</string>
     <string name="top_nothing_to_review">確認が必要なアプリはありません</string>
     <string name="top_search_empty">当てはまるアプリはありません</string>
