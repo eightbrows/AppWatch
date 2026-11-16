@@ -613,17 +613,13 @@ private fun SelectionBar(
                 .padding(start = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // 左：選んでいる時だけ「n件選択中」。選んでいない時は何も出さず、ボタンを右に寄せる（件数はタブに出ている）
+            // 左：「n件選択中」。選んでいない時も「0件選択中」を出す（字は少し薄く。読める濃さ）
             Text(
-                text = if (selectedCount > 0) {
-                    pluralStringResource(R.plurals.status_selected_count, selectedCount, selectedCount)
-                } else {
-                    ""
-                },
+                text = pluralStringResource(R.plurals.status_selected_count, selectedCount, selectedCount),
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = if (selectedCount > 0) 1f else 0.7f),
                 maxLines = 1,
             )
             if (showActions) {

@@ -360,7 +360,7 @@ private fun LazyListScope.needsReviewContent(lists: TopLists, searching: Boolean
             SectionHeading(stringResource(R.string.top_unconfirmed_apps), lists.unconfirmed.size, SectionTone.GRAY)
         }
         items(lists.unconfirmed, key = { "unconfirmed_" + it.packageName }) { app ->
-            AppRow(app = app, showStatus = false, actions = actions, systemAppInfo = true)
+            AppRow(app = app, showStatus = false, actions = actions)
         }
     }
 }
@@ -617,7 +617,6 @@ private fun NewAppCard(app: AppSummary, actions: TopActions) {
                         onClick = { actions.onOpenAppInfo(app) },
                         modifier = Modifier.weight(2f),
                     )
-                    RemoveAction.NONE -> Unit
                 }
                 OutlinedButton(
                     onClick = { actions.onShowDetails(app) },
@@ -768,13 +767,7 @@ private fun AppInfoButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 /** 一覧の1行（「まだ確認していないアプリ」「すべて」）。行を押すとアプリの詳細を開く。 */
 @Composable
-private fun AppRow(
-    app: AppSummary,
-    showStatus: Boolean,
-    actions: TopActions,
-    /** 「まだ確認していないアプリ」の行：システムのアプリにも「アプリ情報」のボタンを出す（削除はできないため） */
-    systemAppInfo: Boolean = false,
-) {
+private fun AppRow(app: AppSummary, showStatus: Boolean, actions: TopActions) {
     val colors = AppWatchTheme.colors
     val reasons = ReviewReason.forTop(app)
     val disabled = !app.isEnabled
@@ -821,8 +814,7 @@ private fun AppRow(
                 DisabledChipAndReasons(app, reasons, Modifier.padding(top = 6.dp), onExplain = { actions.onExplainReasons(app) })
             }
             // 無効のアプリは「削除」ではなく「アプリ情報」（そこから有効に戻せる）
-            val action = app.topAction.let { if (it == RemoveAction.NONE && systemAppInfo) RemoveAction.APP_INFO else it }
-            when (action) {
+            when (app.topAction) {
                 RemoveAction.UNINSTALL -> RowButton(
                     text = stringResource(R.string.action_delete),
                     color = colors.danger,
@@ -833,8 +825,6 @@ private fun AppRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     onClick = { actions.onOpenAppInfo(app) },
                 )
-                // システムのアプリには削除ボタンを出さない（仕様書 6章）
-                RemoveAction.NONE -> Unit
             }
         }
     }

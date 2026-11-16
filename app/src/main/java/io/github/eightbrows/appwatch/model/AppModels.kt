@@ -85,22 +85,18 @@ enum class RemoveAction {
     /** Android のアンインストール画面 */
     UNINSTALL,
 
-    /** Android のアプリ情報（削除できないプリインストールのアプリ。無効化はそこから行う） */
+    /** Android のアプリ情報（削除できないプリインストール・システムのアプリ。無効化はそこから行う） */
     APP_INFO,
-
-    /** 削除ボタンを出さない（システムのアプリ） */
-    NONE,
 }
 
 /**
  * システムの印があるアプリは、利用者が削除できない（更新の取り消しだけになる）。
- * そのためプリインストールはアプリ情報へ案内し、システムはボタンを出さない。
+ * そのためプリインストールとシステムは、どちらもアプリ情報へ案内する（種類で区別しない。ステップ32まではシステムはボタンなしだった）。
  */
 val AppSummary.removeAction: RemoveAction
     get() = when (kind) {
         AppKind.USER_INSTALLED -> RemoveAction.UNINSTALL
-        AppKind.PREINSTALLED -> RemoveAction.APP_INFO
-        AppKind.SYSTEM -> RemoveAction.NONE
+        AppKind.PREINSTALLED, AppKind.SYSTEM -> RemoveAction.APP_INFO
     }
 
 /**

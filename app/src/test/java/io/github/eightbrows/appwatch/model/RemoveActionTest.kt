@@ -30,7 +30,19 @@ class RemoveActionTest {
     }
 
     @Test
-    fun system_hasNoButton() {
-        assertEquals(RemoveAction.NONE, app(AppKind.SYSTEM).removeAction)
+    fun system_opensAppInfo_likePreinstalled() {
+        // システムのアプリも、プリインストールと同じく「アプリ情報」（種類で区別しない）
+        assertEquals(RemoveAction.APP_INFO, app(AppKind.SYSTEM).removeAction)
+    }
+
+    @Test
+    fun topButton_isDeleteOnlyForEnabledUserInstalledApps() {
+        // トップのボタン：後から導入で有効なら「削除」、それ以外（プリインストール・システム・無効）は「アプリ情報」。ボタンなしはない
+        for (kind in AppKind.entries) {
+            for (enabled in listOf(true, false)) {
+                val expected = if (kind == AppKind.USER_INSTALLED && enabled) RemoveAction.UNINSTALL else RemoveAction.APP_INFO
+                assertEquals("$kind enabled=$enabled", expected, app(kind).copy(isEnabled = enabled).topAction)
+            }
+        }
     }
 }

@@ -258,6 +258,6 @@ class TopListsTest {
         assertEquals(RemoveAction.APP_INFO, app("u", enabled = false).topAction)
         assertEquals(RemoveAction.APP_INFO, app("s", enabled = false, kind = AppKind.SYSTEM).topAction)
         assertEquals(RemoveAction.UNINSTALL, app("u2").topAction)
-        assertEquals(RemoveAction.NONE, app("s2", kind = AppKind.SYSTEM).topAction)
+        assertEquals(RemoveAction.APP_INFO, app("s2", kind = AppKind.SYSTEM).topAction)
     }
 }
