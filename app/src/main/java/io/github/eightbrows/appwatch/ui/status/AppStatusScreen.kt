@@ -373,9 +373,9 @@ private fun StatusList(
                 selectedIndex = tab.ordinal,
                 onSelect = { onSelectTab(StatusTab.entries[it]) },
             )
-            // 表示の件数と、選択の帯（閲覧中は選べないので、件数だけ）
+            // 選択の帯（閲覧中は選べないので出さない）
             SelectionBar(
-                visibleCount = visible.size,
+                canSelectAll = visible.isNotEmpty(),
                 selectedCount = selected.size,
                 showActions = !readOnly,
                 onSelectAllVisible = onSelectAllVisible,
@@ -589,12 +589,14 @@ private fun SearchRow(
 
 @Composable
 private fun SelectionBar(
-    visibleCount: Int,
+    canSelectAll: Boolean,
     selectedCount: Int,
     showActions: Boolean,
     onSelectAllVisible: () -> Unit,
     onClearSelection: () -> Unit,
 ) {
+    // 閲覧中は選べないので、帯を出さない（件数はタブに出ている）
+    if (!showActions) return
     // 上部に固定して置く（上下 4dp の余白を含む。今までと同じ高さ）
     Box(
         Modifier
@@ -611,12 +613,12 @@ private fun SelectionBar(
                 .padding(start = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // 左：選んでいない時は「表示 n件」、選んでいる時は「n件選択中」
+            // 左：選んでいる時だけ「n件選択中」。選んでいない時は何も出さず、ボタンを右に寄せる（件数はタブに出ている）
             Text(
                 text = if (selectedCount > 0) {
                     pluralStringResource(R.plurals.status_selected_count, selectedCount, selectedCount)
                 } else {
-                    pluralStringResource(R.plurals.filter_summary_total, visibleCount, visibleCount)
+                    ""
                 },
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelLarge,
@@ -625,7 +627,7 @@ private fun SelectionBar(
                 maxLines = 1,
             )
             if (showActions) {
-                TextButton(onClick = onSelectAllVisible, enabled = visibleCount > 0, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                TextButton(onClick = onSelectAllVisible, enabled = canSelectAll, contentPadding = PaddingValues(horizontal = 8.dp)) {
                     Text(stringResource(R.string.status_select_all_visible), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
                 TextButton(onClick = onClearSelection, enabled = selectedCount > 0, contentPadding = PaddingValues(horizontal = 8.dp)) {

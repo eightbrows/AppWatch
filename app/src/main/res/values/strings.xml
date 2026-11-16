@@ -383,10 +383,6 @@
         <item quantity="one">Show %1$d app</item>
         <item quantity="other">Show %1$d apps</item>
     </plurals>
-    <plurals name="filter_summary_total">
-        <item quantity="one">%1$d shown</item>
-        <item quantity="other">%1$d shown</item>
-    </plurals>
     <plurals name="filter_count">
         <item quantity="one">%1$d app</item>
         <item quantity="other">%1$d apps</item>

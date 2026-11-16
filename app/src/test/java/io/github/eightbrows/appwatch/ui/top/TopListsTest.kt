@@ -99,17 +99,51 @@ class TopListsTest {
     }
 
     @Test
-    fun unconfirmed_isOnlyUserInstalledApps() {
-        // 仕様書 6章：プリインストールとシステムは、未確認でも「まだ確認していないアプリ」に出さない
+    fun unconfirmed_includesEveryKind() {
+        // 仕様書 6章：未確認のアプリは、後から導入・プリインストール・システムの区別なく「まだ確認していないアプリ」に出す
         val lists = TopLists.from(
             listOf(
-                app("user"),
-                app("pre", kind = AppKind.PREINSTALLED),
-                app("sys", kind = AppKind.SYSTEM),
+                app("user", day = 3),
+                app("pre", kind = AppKind.PREINSTALLED, day = 2),
+                app("sys", kind = AppKind.SYSTEM, day = 1),
+                app("pre_ok", kind = AppKind.PREINSTALLED, status = ReviewStatus.OK),
+                app("sys_ok", kind = AppKind.SYSTEM, status = ReviewStatus.OK),
             ),
         )
-        assertEquals(listOf("user"), lists.unconfirmed.map { it.packageName })
-        assertEquals(3, lists.all.size)
+        assertEquals(listOf("user", "pre", "sys"), lists.unconfirmed.map { it.packageName })
+        assertTrue(lists.cards.isEmpty())
+        assertEquals(3, lists.needsReviewCount)
+        assertEquals(5, lists.all.size)
+    }
+
+    @Test
+    fun unconfirmed_includesDisabledApps_butNotDisabledCaution() {
+        // 未確認で無効のアプリも「確認が必要」に出す（種類で区別しない）。要注意で無効のアプリは出さない（今のまま）
+        val apps = AppKind.entries.flatMap { kind ->
+            listOf(
+                app("unconfirmed_off_${kind.name}", kind = kind, enabled = false),
+                app("caution_off_${kind.name}", kind = kind, status = ReviewStatus.CAUTION, enabled = false),
+            )
+        }
+        val lists = TopLists.from(apps)
+        assertEquals(
+            AppKind.entries.map { "unconfirmed_off_${it.name}" }.toSet(),
+            lists.unconfirmed.map { it.packageName }.toSet(),
+        )
+        assertTrue(lists.cards.isEmpty())
+        assertEquals(AppKind.entries.size, lists.needsReviewCount)
+        // 無効のアプリのボタンは「アプリ情報」
+        assertTrue(lists.unconfirmed.all { it.topAction == RemoveAction.APP_INFO })
+    }
+
+    @Test
+    fun unconfirmed_withWarning_staysCard_forEveryKind() {
+        // 警告の付いた未確認のアプリ（署名が変わった）は、種類に関係なく今のとおりカード。行には重ねて出さない
+        val apps = AppKind.entries.map { app("sig_${it.name}", kind = it, warnings = setOf(AppWarning.SIGNATURE_CHANGED)) }
+        val lists = TopLists.from(apps)
+        assertEquals(3, lists.cards.size)
+        assertTrue(lists.unconfirmed.isEmpty())
+        assertEquals(3, lists.needsReviewCount)
     }
 
     @Test

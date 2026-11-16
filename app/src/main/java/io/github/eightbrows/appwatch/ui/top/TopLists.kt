@@ -52,16 +52,15 @@ data class TopLists(
          * トップの振り分け（仕様書 6章）。[apps] には端末にあるアプリだけを渡す。
          * - カード：新しく入ったアプリ（最初のチェックより後に追加され、問題なしでない）、要注意のアプリ、
          *   署名が変わったアプリ（「問題なし」になるまで。オレンジ枠）
-         * - まだ確認していないアプリ：確認状態が「未確認」の「後から導入」のアプリのうち、カードに出ていないもの
+         * - まだ確認していないアプリ：確認状態が「未確認」のアプリのうち、カードに出ていないもの。
+         *   種類（後から導入・プリインストール・システム）と有効・無効では区別しない（ステップ31までは「後から導入」だけだった）
          */
         fun from(apps: List<AppSummary>): TopLists {
             val cards = apps.filter { isCard(it) }.sortedWith(CardOrder)
             val cardPackages = cards.mapTo(HashSet()) { it.packageName }
             val unconfirmed = apps
                 .filter {
-                    it.reviewStatus == ReviewStatus.UNCONFIRMED &&
-                        it.kind == AppKind.USER_INSTALLED &&
-                        it.packageName !in cardPackages
+                    it.reviewStatus == ReviewStatus.UNCONFIRMED && it.packageName !in cardPackages
                 }
                 .sortedByDescending { it.installedAt }
             return TopLists(cards = cards, unconfirmed = unconfirmed, all = apps.sortedWith(AllOrder))

@@ -160,10 +160,15 @@ class WidgetStatusDeciderTest {
             app("new", isNew = true),
             app("unconfirmed"),
             app("ok", status = ReviewStatus.OK),
-            app("pre", kind = AppKind.PREINSTALLED), // プリインストールは数えない
+            app("pre", kind = AppKind.PREINSTALLED), // 未確認なら、プリインストールも数える（種類で区別しない）
+            app("sys", kind = AppKind.SYSTEM), // システムも数える
+            app("pre_off", kind = AppKind.PREINSTALLED, enabled = false), // 未確認で無効も数える
+            app("sys_ok", kind = AppKind.SYSTEM, status = ReviewStatus.OK),
             app("sig", warnings = setOf(AppWarning.SIGNATURE_CHANGED)), // 署名が変わったアプリはカード
         )
-        assertEquals(1 to 3, WidgetStatusDecider.countApps(apps))
+        // トップの「確認が必要」のタブの数（要注意 1 + それ以外 6）と同じ
+        assertEquals(1 to 6, WidgetStatusDecider.countApps(apps))
+        assertEquals(7, io.github.eightbrows.appwatch.ui.top.TopLists.from(apps).needsReviewCount)
     }
 
     @Test
