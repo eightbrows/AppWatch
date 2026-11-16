@@ -67,6 +67,18 @@ class TopSearchTest {
     }
 
     @Test
+    fun selfApp_matchesCurrentLanguageName() {
+        // 本アプリ：記録した名前は英語、今の言語は日本語
+        val self = app("io.github.eightbrows.appwatch", "AppWatch", status = ReviewStatus.OK).copy(isSelf = true)
+        val withSelf = TopLists.from(listOf(self, app("com.example.notes", "メモ帳", status = ReviewStatus.OK)))
+        assertEquals(listOf("io.github.eightbrows.appwatch"), withSelf.filtered("見守", "アプリ見守当番").all.map { it.packageName })
+        assertEquals(listOf("io.github.eightbrows.appwatch"), withSelf.filtered("appwatch", "アプリ見守当番").all.map { it.packageName })
+        // 今の言語の名前を渡さなければ当たらない。ほかのアプリには効かない
+        assertTrue(withSelf.filtered("見守").all.isEmpty())
+        assertEquals(listOf("com.example.notes"), withSelf.filtered("メモ", "アプリ見守当番").all.map { it.packageName })
+    }
+
+    @Test
     fun query_keepsOrderOfEachList() {
         val result = lists.filtered("example")
         assertEquals(lists.cards, result.cards)

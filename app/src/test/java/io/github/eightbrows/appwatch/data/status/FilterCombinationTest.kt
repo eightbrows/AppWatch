@@ -27,7 +27,7 @@ class FilterCombinationTest {
         packageName = pkg, name = pkg, versionName = "1.0", kind = kind, source = source,
         installerPackage = null, initiatingPackage = null, warnings = warnings, status = status, statusReason = null,
         adminMemo = null, isPresent = present, isPreRegistered = preRegistered, isEnabled = enabled, isSelf = false,
-        firstInstallTime = 0, removedAt = removedAt, reinstalledAt = null, signatureChangedAt = null,
+        firstInstallTime = 0, lastUpdateTime = 0, removedAt = removedAt, reinstalledAt = null, signatureChangedAt = null,
     )
 
     // 用意したアプリ（レポートの「組み合わせの表」の行と同じ）

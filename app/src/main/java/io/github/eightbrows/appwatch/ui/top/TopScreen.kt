@@ -111,6 +111,8 @@ import io.github.eightbrows.appwatch.ui.components.sectionTone
 import io.github.eightbrows.appwatch.ui.components.ScrollLabel
 import io.github.eightbrows.appwatch.ui.components.ScrollbarBox
 import io.github.eightbrows.appwatch.ui.components.shownAppName
+import io.github.eightbrows.appwatch.ui.components.SegmentTab
+import io.github.eightbrows.appwatch.ui.components.SegmentTabs
 
 private enum class TopTab { NEEDS_REVIEW, ALL }
 
@@ -151,7 +153,8 @@ fun TopScreen(
     val cardActions = remember(actions) { actions.copy(onExplainReasons = { explainFor = it.packageName }) }
     // 検索の文字は保存しない（画面を離れたら空に戻す）
     var query by remember { mutableStateOf("") }
-    val shown = remember(lists, query) { lists?.filtered(query) }
+    val selfName = stringResource(R.string.app_name)
+    val shown = remember(lists, query, selfName) { lists?.filtered(query, selfName) }
     val searching = query.isNotBlank()
     val systemBars = WindowInsets.systemBars.asPaddingValues()
     val listState = rememberLazyListState()
@@ -291,90 +294,19 @@ private fun LazyListScope.topListContent(
 @Composable
 private fun TopTabs(selected: TopTab, needsReviewCount: Int?, allCount: Int?, onSelect: (TopTab) -> Unit) {
     val colors = AppWatchTheme.colors
-    Row(
-        modifier = Modifier
-            .padding(vertical = 4.dp)
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(colors.segmentTrack)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        TopTabItem(
-            label = stringResource(R.string.top_tab_needs_review),
-            count = needsReviewCount,
-            countColor = if ((needsReviewCount ?: 0) > 0) colors.warningStrong else colors.unconfirmed,
-            selected = selected == TopTab.NEEDS_REVIEW,
-            onClick = { onSelect(TopTab.NEEDS_REVIEW) },
-            modifier = Modifier.weight(1f),
-        )
-        TopTabItem(
-            label = stringResource(R.string.top_tab_all),
-            count = allCount,
-            countColor = colors.unconfirmed,
-            selected = selected == TopTab.ALL,
-            onClick = { onSelect(TopTab.ALL) },
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-@Composable
-private fun TopTabItem(
-    label: String,
-    count: Int?,
-    countColor: Color,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier,
-) {
-    val colors = AppWatchTheme.colors
-    val description = if (count != null) {
-        pluralStringResource(R.plurals.top_tab_desc, count, label, count)
-    } else {
-        label
-    }
-    val shape = RoundedCornerShape(9.dp)
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .then(if (selected) Modifier.shadow(1.dp, shape).background(colors.segmentSelected, shape) else Modifier)
-            .clip(shape)
-            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .clearAndSetSemantics {
-                contentDescription = description
-                role = Role.Tab
-                this.selected = selected
-                onClick { onClick(); true }
-            }
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                text = label,
-                modifier = Modifier.weight(1f, fill = false),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            if (count != null) {
-                Text(
-                    text = count.toString(),
-                    modifier = Modifier
-                        .background(countColor, RoundedCornerShape(50))
-                        .padding(horizontal = 7.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    maxLines = 1,
-                )
-            }
-        }
-    }
+    // 形は共通の部品（確認状態の画面のタブと同じ）
+    SegmentTabs(
+        tabs = listOf(
+            SegmentTab(
+                label = stringResource(R.string.top_tab_needs_review),
+                count = needsReviewCount,
+                countColor = if ((needsReviewCount ?: 0) > 0) colors.warningStrong else colors.unconfirmed,
+            ),
+            SegmentTab(label = stringResource(R.string.top_tab_all), count = allCount, countColor = colors.unconfirmed),
+        ),
+        selectedIndex = if (selected == TopTab.NEEDS_REVIEW) 0 else 1,
+        onSelect = { onSelect(if (it == 0) TopTab.NEEDS_REVIEW else TopTab.ALL) },
+    )
 }
 
 /** 一覧がスクロールされている時に、上部の下に出す薄い影。 */

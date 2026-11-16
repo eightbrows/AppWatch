@@ -20,9 +20,12 @@ data class TopLists(
      * 検索で絞った一覧（アプリ名・パッケージ名の部分一致、大文字・小文字を区別しない）。
      * どの一覧にも同じように効かせ、並び順は変えない。空の検索なら、そのまま返す。
      */
-    fun filtered(query: String): TopLists {
+    fun filtered(query: String, selfName: String? = null): TopLists {
         if (query.isBlank()) return this
-        val match = { app: AppSummary -> AppSearch.matches(app.name, app.packageName, query) }
+        // 本アプリは、今の言語の名前（selfName）でも当たる
+        val match = { app: AppSummary ->
+            AppSearch.matches(app.name, app.packageName, query, extraName = selfName.takeIf { app.isSelf })
+        }
         return TopLists(cards = cards.filter(match), unconfirmed = unconfirmed.filter(match), all = all.filter(match))
     }
 

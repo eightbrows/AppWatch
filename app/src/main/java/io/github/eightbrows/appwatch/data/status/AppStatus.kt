@@ -32,6 +32,8 @@ data class AppStatusEntry(
     val isEnabled: Boolean,
     val isSelf: Boolean,
     val firstInstallTime: Long?,
+    /** Android の最終更新日時。事前登録だけのアプリは null */
+    val lastUpdateTime: Long?,
     val removedAt: Long?,
     val reinstalledAt: Long?,
     val signatureChangedAt: Long?,
@@ -82,6 +84,7 @@ object AppStatusRules {
         isEnabled = app.isEnabled,
         isSelf = app.packageName == selfPackageName,
         firstInstallTime = app.firstInstallTime,
+        lastUpdateTime = app.lastUpdateTime,
         removedAt = app.removedAt,
         reinstalledAt = app.reinstalledAt,
         signatureChangedAt = app.signatureChangedAt,
@@ -105,6 +108,7 @@ object AppStatusRules {
         isEnabled = true,
         isSelf = policy.packageName == selfPackageName,
         firstInstallTime = null,
+        lastUpdateTime = null,
         removedAt = null,
         reinstalledAt = null,
         signatureChangedAt = null,
@@ -118,9 +122,12 @@ object AppStatusRules {
     /** 絞り込みに当たるか（ツリーの決まりは [StatusFilter]）。 */
     fun matchesFilter(entry: AppStatusEntry, enabled: Set<FilterItem>): Boolean = StatusFilter.matches(entry, enabled)
 
-    /** 検索：アプリ名・パッケージ名の部分一致（大文字・小文字を区別しない）。空なら全部。 */
-    fun matchesQuery(entry: AppStatusEntry, query: String): Boolean =
-        AppSearch.matches(entry.name, entry.packageName, query)
+    /**
+     * 検索：アプリ名・パッケージ名の部分一致（大文字・小文字を区別しない）。空なら全部。
+     * 本アプリは、記録した名前に加えて、今の言語の名前（[selfName]）でも当たる。
+     */
+    fun matchesQuery(entry: AppStatusEntry, query: String, selfName: String? = null): Boolean =
+        AppSearch.matches(entry.name, entry.packageName, query, extraName = selfName.takeIf { entry.isSelf })
 
     /** 並び：要注意 → 未確認 → 問題なし、同じ中はアプリ名の順。 */
     val ORDER: Comparator<AppStatusEntry> = compareBy<AppStatusEntry> {
@@ -141,8 +148,13 @@ object AppStatusRules {
             .filter { (_, entries) -> entries.isNotEmpty() }
 
     /** 絞り込み・検索をして並べた、画面に出す行。 */
-    fun visible(entries: List<AppStatusEntry>, enabled: Set<FilterItem>, query: String): List<AppStatusEntry> =
-        entries.filter { matchesFilter(it, enabled) && matchesQuery(it, query) }.sortedWith(ORDER)
+    fun visible(
+        entries: List<AppStatusEntry>,
+        enabled: Set<FilterItem>,
+        query: String,
+        selfName: String? = null,
+    ): List<AppStatusEntry> =
+        entries.filter { matchesFilter(it, enabled) && matchesQuery(it, query, selfName) }.sortedWith(ORDER)
 
     // ---- まとめて「問題なし」 ----
 

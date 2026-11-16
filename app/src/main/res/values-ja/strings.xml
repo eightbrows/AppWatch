@@ -386,6 +386,15 @@
     <string name="status_select_app">「%1$s」を選ぶ</string>
     <string name="status_action_unconfirmed">未確認に戻す</string>
     <string name="status_empty">当てはまるアプリはありません。絞り込みや検索を変えて下さい。</string>
+    <string name="status_tab_by_status">状態別</string>
+    <string name="status_tab_recent">最近の更新</string>
+    <string name="status_row_updated">更新 %1$s</string>
+    <string name="status_recent_empty">更新されたアプリはありません</string>
+    <string name="status_recent_no_times">このデータには更新の日時がありません</string>
+    <string name="update_group_today">今日</string>
+    <string name="update_group_yesterday">昨日</string>
+    <string name="format_update_day">M/d(E)</string>
+    <string name="format_update_month">yyyy年M月</string>
     <string name="format_version">v%1$s</string>
     <string name="status_row_source_date">%1$s ・ %2$s</string>
     <string name="status_row_removed">未導入（%1$s に削除）</string>

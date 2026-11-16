@@ -25,7 +25,7 @@ import io.github.eightbrows.appwatch.model.ReviewStatus
 import io.github.eightbrows.appwatch.ui.theme.AppWatchTheme
 
 /** 見出しの色の組（左の縦棒と、件数の字）。確認状態の印・カードの枠と同じ色。 */
-enum class SectionTone { RED, ORANGE, GRAY, GREEN }
+enum class SectionTone { RED, ORANGE, GRAY, GREEN, BLUE }
 
 /**
  * 一覧の中の見出し（トップの「確認が必要」のタブ、確認状態の画面で共通）。
@@ -39,6 +39,8 @@ fun SectionHeading(title: String, count: Int, tone: SectionTone, modifier: Modif
         SectionTone.ORANGE -> colors.warningStrong to colors.warning
         SectionTone.GRAY -> colors.unconfirmed to MaterialTheme.colorScheme.onSurfaceVariant
         SectionTone.GREEN -> colors.ok to colors.ok
+        // 日付の見出し（確認状態の画面の「最近の更新」）。確認状態の色と重ならない青
+        SectionTone.BLUE -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.primary
     }
     Row(
         modifier = modifier

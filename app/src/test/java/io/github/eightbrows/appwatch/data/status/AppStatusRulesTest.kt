@@ -40,6 +40,7 @@ class AppStatusRulesTest {
         isEnabled = enabled,
         isSelf = false,
         firstInstallTime = 0,
+        lastUpdateTime = 0,
         removedAt = null,
         reinstalledAt = null,
         signatureChangedAt = null,

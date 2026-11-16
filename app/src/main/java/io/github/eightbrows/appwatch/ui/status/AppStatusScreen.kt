@@ -108,6 +108,20 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.core.os.ConfigurationCompat
+import io.github.eightbrows.appwatch.data.status.RecentUpdates
+import io.github.eightbrows.appwatch.data.status.UpdateGroup
+import io.github.eightbrows.appwatch.ui.components.SectionTone
+import io.github.eightbrows.appwatch.ui.components.SegmentTab
+import io.github.eightbrows.appwatch.ui.components.SegmentTabs
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+/** 確認状態の画面のタブ。 */
+private enum class StatusTab { BY_STATUS, RECENT }
 
 /**
  * アプリの確認状態（管理者）。画面サンプル 06_app_status.png、仕様書 6章。
@@ -134,11 +148,28 @@ fun AppStatusRoute(
     val scope = rememberCoroutineScope()
     val showNotice = rememberNoticePresenter(controller, snackbarHostState)
 
+    // タブ（状態別／最近の更新）。画面を開いている間は覚える（画面を出たら「状態別」に戻る）
+    var tab by rememberSaveable { mutableStateOf(StatusTab.BY_STATUS) }
     val currentEntries = entries
     val currentEnabled = enabled
-    val visible = remember(currentEntries, currentEnabled, query) {
+    // 本アプリは、今の言語の名前でも検索に当たる
+    val selfName = stringResource(R.string.app_name)
+    val byStatus = remember(currentEntries, currentEnabled, query, selfName) {
         if (currentEntries == null || currentEnabled == null) emptyList()
-        else AppStatusRules.visible(currentEntries, currentEnabled, query)
+        else AppStatusRules.visible(currentEntries, currentEnabled, query, selfName)
+    }
+    // 「最近の更新」：絞り込み・検索の後の行のうち、更新のあったアプリを新しい順に
+    val recent = remember(byStatus) { RecentUpdates.list(byStatus) }
+    // 今のタブで画面に出ている行（選択・まとめての変更は、この行だけが対象）
+    val visible = if (tab == StatusTab.RECENT) recent else byStatus
+    // 「最近の更新」に何もない時の文：日時のないデータ／更新されたアプリがない／絞り込み・検索で当たらない
+    val recentEmptyText = remember(currentEntries, readOnly) {
+        val all = currentEntries.orEmpty()
+        when {
+            readOnly && all.isNotEmpty() && !RecentUpdates.hasTimes(all) -> R.string.status_recent_no_times
+            all.none(RecentUpdates::isUpdated) -> R.string.status_recent_empty
+            else -> R.string.status_empty
+        }
     }
     // 絞り込みの各項目の件数（ほかの条件・検索に関係しない）
     val counts = remember(currentEntries) { StatusFilter.counts(currentEntries.orEmpty()) }
@@ -159,7 +190,11 @@ fun AppStatusRoute(
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             } else {
                 StatusList(
-                    visible = visible,
+                    tab = tab,
+                    onSelectTab = { tab = it },
+                    byStatus = byStatus,
+                    recent = recent,
+                    recentEmptyText = recentEmptyText,
                     selection = selection,
                     onSelectDataset = { id ->
                         selected = emptyList()
@@ -291,7 +326,11 @@ internal fun noticeText(resources: Resources, notice: StatusNotice): String = wh
 
 @Composable
 private fun StatusList(
-    visible: List<AppStatusEntry>,
+    tab: StatusTab,
+    onSelectTab: (StatusTab) -> Unit,
+    byStatus: List<AppStatusEntry>,
+    recent: List<AppStatusEntry>,
+    recentEmptyText: Int,
     selection: DataSelection?,
     onSelectDataset: (String) -> Unit,
     readOnly: Boolean,
@@ -307,9 +346,16 @@ private fun StatusList(
     onOpenDetail: (String) -> Unit,
     scrollbarBottomInset: Dp,
 ) {
-    val listState = rememberLazyListState()
+    // 一覧の位置はタブごとに覚える
+    val statusListState = rememberLazyListState()
+    val recentListState = rememberLazyListState()
+    val listState = if (tab == StatusTab.RECENT) recentListState else statusListState
+    val visible = if (tab == StatusTab.RECENT) recent else byStatus
+    // 「最近の更新」の見出しの組（今日・昨日・日ごと・月ごと）
+    val recentSections = remember(recent) { RecentUpdates.sections(recent, LocalDate.now(), ZoneId.systemDefault()) }
+    val recentTitles = recentSections.map { (group, _) -> updateGroupTitle(group) }
     Column(Modifier.fillMaxSize()) {
-        // 上部（データの切り替え・検索の行・選択の帯）。一覧をスクロールしても動かない。高さ・並びは今のまま
+        // 上部（データの切り替え・検索の行・タブ・選択の帯）。一覧をスクロールしても動かない
         Column(Modifier.padding(horizontal = 16.dp)) {
             // データの切り替え（この端末／取り込んだデータ）と、閲覧中の帯
             if (selection != null && selection.showsSwitcher) {
@@ -317,6 +363,16 @@ private fun StatusList(
             }
             SearchRow(query, onQueryChange, onPreRegister, changedCount, onOpenFilter, preRegisterEnabled = !readOnly)
             Spacer(Modifier.height(8.dp))
+            // タブ（トップと同じ部品・同じ高さ）。数は絞り込み・検索の後の数で、札はどちらも灰色
+            val countColor = AppWatchTheme.colors.unconfirmed
+            SegmentTabs(
+                tabs = listOf(
+                    SegmentTab(stringResource(R.string.status_tab_by_status), byStatus.size, countColor),
+                    SegmentTab(stringResource(R.string.status_tab_recent), recent.size, countColor),
+                ),
+                selectedIndex = tab.ordinal,
+                onSelect = { onSelectTab(StatusTab.entries[it]) },
+            )
             // 表示の件数と、選択の帯（閲覧中は選べないので、件数だけ）
             SelectionBar(
                 visibleCount = visible.size,
@@ -326,7 +382,11 @@ private fun StatusList(
                 onClearSelection = onClearSelection,
             )
         }
-        val scrollLabels = statusScrollLabels(visible)
+        val scrollLabels = if (tab == StatusTab.RECENT) {
+            recentScrollLabels(recentSections, recentTitles)
+        } else {
+            statusScrollLabels(byStatus)
+        }
         // 右端につかんで動かせるスクロールバー（トップと同じ部品）。チェックの範囲・行と重ならないよう、右の余白を 12dp 広げる
         ScrollbarBox(
             state = listState,
@@ -334,7 +394,11 @@ private fun StatusList(
             modifier = Modifier.weight(1f),
             bottomInset = scrollbarBottomInset,
         ) {
-            StatusRows(visible, selected, readOnly, onToggleSelect, onOpenDetail, listState)
+            if (tab == StatusTab.RECENT) {
+                RecentRows(recentSections, recentTitles, recentEmptyText, selected, readOnly, onToggleSelect, onOpenDetail, listState)
+            } else {
+                StatusRows(byStatus, selected, readOnly, onToggleSelect, onOpenDetail, listState)
+            }
             // 一覧がスクロールされている時は、上部の下に薄い影を付けて区切る
             HeaderShadow(visible = listState.canScrollBackward)
         }
@@ -354,6 +418,91 @@ private fun statusScrollLabels(visible: List<AppStatusEntry>): Map<Any, ScrollLa
             entries.forEach { map[it.packageName] = ScrollLabel(group, shownAppName(it.name, it.isSelf, selfName)) }
         }
         map
+    }
+}
+
+/** 「最近の更新」の見出しの名前：「今日」「昨日」「11/14(土)」「2026年10月」（英語は「Today」「Yesterday」「Sat 11/14」「October 2026」）。 */
+@Composable
+private fun updateGroupTitle(group: UpdateGroup): String {
+    val locale = ConfigurationCompat.getLocales(LocalConfiguration.current)[0] ?: Locale.ROOT
+    return when (group) {
+        UpdateGroup.Today -> stringResource(R.string.update_group_today)
+        UpdateGroup.Yesterday -> stringResource(R.string.update_group_yesterday)
+        is UpdateGroup.Day -> DateTimeFormatter.ofPattern(stringResource(R.string.format_update_day), locale).format(group.date)
+        is UpdateGroup.Month -> DateTimeFormatter.ofPattern(stringResource(R.string.format_update_month), locale).format(group.month)
+    }
+}
+
+/** 「最近の更新」の見出しの項目のキー。 */
+private fun UpdateGroup.key(): String = when (this) {
+    UpdateGroup.Today -> "group_today"
+    UpdateGroup.Yesterday -> "group_yesterday"
+    is UpdateGroup.Day -> "group_$date"
+    is UpdateGroup.Month -> "group_$month"
+}
+
+/** 「最近の更新」のスクロールバーの吹き出し：組の名前は日付の見出し、下に一番上のアプリ名。 */
+@Composable
+private fun recentScrollLabels(
+    sections: List<Pair<UpdateGroup, List<AppStatusEntry>>>,
+    titles: List<String>,
+): Map<Any, ScrollLabel> {
+    val selfName = stringResource(R.string.app_name)
+    return remember(sections, titles, selfName) {
+        val map = HashMap<Any, ScrollLabel>()
+        sections.forEachIndexed { index, (group, entries) ->
+            val title = titles[index]
+            entries.firstOrNull()?.let { map[group.key()] = ScrollLabel(title, shownAppName(it.name, it.isSelf, selfName)) }
+            entries.forEach { map[it.packageName] = ScrollLabel(title, shownAppName(it.name, it.isSelf, selfName)) }
+        }
+        map
+    }
+}
+
+/**
+ * 「最近の更新」の一覧：更新の新しい順。見出しは日付の組（青）。行は「状態別」と同じ部品で、
+ * 入手元・日時の行の代わりに「更新 11/15(日) 12:57 ・ 今日」を出す。
+ */
+@Composable
+private fun RecentRows(
+    sections: List<Pair<UpdateGroup, List<AppStatusEntry>>>,
+    titles: List<String>,
+    emptyText: Int,
+    selected: Set<String>,
+    readOnly: Boolean,
+    onToggleSelect: (String) -> Unit,
+    onOpenDetail: (String) -> Unit,
+    listState: LazyListState,
+) {
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 28.dp, top = 8.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (sections.isEmpty()) {
+            item(key = "empty") {
+                Text(
+                    text = stringResource(emptyText),
+                    modifier = Modifier.padding(vertical = 24.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        sections.forEachIndexed { index, (group, entries) ->
+            item(key = group.key()) { SectionHeading(titles[index], entries.size, SectionTone.BLUE) }
+            items(entries, key = { it.packageName }) { entry ->
+                StatusRow(
+                    entry = entry,
+                    isSelected = entry.packageName in selected,
+                    showCheckbox = !readOnly,
+                    onToggleSelect = { onToggleSelect(entry.packageName) },
+                    onClick = { onOpenDetail(entry.packageName) },
+                    showUpdated = true,
+                )
+            }
+        }
     }
 }
 
@@ -493,7 +642,15 @@ private fun SelectionBar(
  * 2つの範囲は重ならず、押した時の波紋もそれぞれの範囲だけに出る。閲覧中（選べない時）は、行のどこを押しても詳細を開く。
  */
 @Composable
-private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: Boolean, onToggleSelect: () -> Unit, onClick: () -> Unit) {
+private fun StatusRow(
+    entry: AppStatusEntry,
+    isSelected: Boolean,
+    showCheckbox: Boolean,
+    onToggleSelect: () -> Unit,
+    onClick: () -> Unit,
+    /** 「最近の更新」の行：入手元・日時の行の代わりに、最終更新日時を出す */
+    showUpdated: Boolean = false,
+) {
     val rowColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface
     Surface(
         shape = RoundedCornerShape(14.dp),
@@ -530,7 +687,7 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
                             .clickable(onClick = onClick)
                             .padding(top = 14.dp, end = 12.dp, bottom = 12.dp),
                     ) {
-                        StatusRowText(entry, statusForReader = true)
+                        StatusRowText(entry, statusForReader = true, showUpdated = showUpdated)
                     }
                 },
             )
@@ -538,7 +695,7 @@ private fun StatusRow(entry: AppStatusEntry, isSelected: Boolean, showCheckbox: 
             Row(Modifier.padding(start = 14.dp, end = 12.dp, top = 4.dp, bottom = 12.dp)) {
                 RowIcon(entry = entry, loadIcon = false, rowColor = rowColor, modifier = Modifier.padding(top = 10.dp))
                 Spacer(Modifier.width(6.dp))
-                Box(Modifier.weight(1f).padding(top = 10.dp)) { StatusRowText(entry, statusForReader = false) }
+                Box(Modifier.weight(1f).padding(top = 10.dp)) { StatusRowText(entry, statusForReader = false, showUpdated = showUpdated) }
             }
         }
     }
@@ -574,7 +731,7 @@ private fun SplitRow(left: @Composable () -> Unit, right: @Composable () -> Unit
  * [statusForReader] が true なら、確認状態を読み上げだけに足す（アイコンの印が左の範囲に入って読まれないため）。
  */
 @Composable
-private fun StatusRowText(entry: AppStatusEntry, statusForReader: Boolean) {
+private fun StatusRowText(entry: AppStatusEntry, statusForReader: Boolean, showUpdated: Boolean) {
     val dim = !entry.isPresent
     val mainColor = if (dim) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
     val subColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -602,7 +759,17 @@ private fun StatusRowText(entry: AppStatusEntry, statusForReader: Boolean) {
             color = subColor,
         )
         val reasons = ReviewReason.of(entry.warnings, entry.status, includeCaution = false, isSelf = entry.isSelf)
-        SourceLine(entry, withSource = !ReviewReason.hidesSourceText(reasons))
+        val updatedAt = entry.lastUpdateTime
+        if (showUpdated && updatedAt != null) {
+            // 「更新 11/15(日) 12:57 ・ 今日」（最終更新日時と何日前）
+            Text(
+                text = withDaysAgo(stringResource(R.string.status_row_updated, formatDate(updatedAt, DateForm.LIST)), updatedAt),
+                style = MaterialTheme.typography.bodySmall,
+                color = subColor,
+            )
+        } else {
+            SourceLine(entry, withSource = !ReviewReason.hidesSourceText(reasons))
+        }
         RowWarnings(entry, reasons)
         entry.adminMemo?.takeIf { it.isNotBlank() }?.let { memo ->
             Text(

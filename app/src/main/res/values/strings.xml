@@ -401,6 +401,15 @@
     <string name="status_select_app">Select %1$s</string>
     <string name="status_action_unconfirmed">Not reviewed</string>
     <string name="status_empty">No matching apps. Change the filters or search.</string>
+    <string name="status_tab_by_status">By status</string>
+    <string name="status_tab_recent">Recently updated</string>
+    <string name="status_row_updated">Updated %1$s</string>
+    <string name="status_recent_empty">No updated apps</string>
+    <string name="status_recent_no_times">This data has no update times</string>
+    <string name="update_group_today">Today</string>
+    <string name="update_group_yesterday">Yesterday</string>
+    <string name="format_update_day">EEE M/d</string>
+    <string name="format_update_month">MMMM yyyy</string>
     <string name="format_version">v%1$s</string>
     <string name="status_row_source_date">%1$s · %2$s</string>
     <string name="status_row_removed">Not installed (removed %1$s)</string>
